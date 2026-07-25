@@ -6,13 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\PengkinianData;
 use App\Models\Personel;
 use App\Models\SkepData;
+use App\Models\SkepRequest;
 use App\Models\User;
 use App\Mail\SystemNotificationMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class PengkinianDataController extends Controller
@@ -114,7 +114,7 @@ class PengkinianDataController extends Controller
 
         $cleanQ = preg_replace('/[^A-Za-z0-9]/', '', $q);
 
-        // Generate 16 & 17 digit NIKC variations
+        // Variations of 16 & 17 digit NIKC
         $nikc16 = null;
         $nikc17 = null;
         if (strlen($cleanQ) === 17 && substr($cleanQ, 9, 1) === '0') {
@@ -128,25 +128,22 @@ class PengkinianDataController extends Controller
         $results = [];
         $addedIds = [];
 
+        // 1. Cari dari Database Master Personel
         try {
-            // 1. Cari dari Database Master Personel
             $personels = Personel::where(function($sub) use ($q, $cleanQ, $nikc16, $nikc17) {
                     $sub->where('full_name', 'like', "%{$q}%")
                         ->orWhere('nikc', 'like', "%{$q}%")
                         ->orWhere('nik', 'like', "%{$q}%");
 
-                    if (!empty($cleanQ)) {
-                        $sub->orWhereRaw("REPLACE(REPLACE(REPLACE(nikc, '.', ''), '-', ''), ' ', '') LIKE ?", ["%{$cleanQ}%"])
-                            ->orWhereRaw("REPLACE(REPLACE(REPLACE(nik, '.', ''), '-', ''), ' ', '') LIKE ?", ["%{$cleanQ}%"]);
+                    if ($cleanQ) {
+                        $sub->orWhere('nikc', 'like', "%{$cleanQ}%")
+                            ->orWhere('nik', 'like', "%{$cleanQ}%");
                     }
-
                     if ($nikc16) {
-                        $sub->orWhere('nikc', 'like', "%{$nikc16}%")
-                            ->orWhereRaw("REPLACE(REPLACE(REPLACE(nikc, '.', ''), '-', ''), ' ', '') LIKE ?", ["%{$nikc16}%"]);
+                        $sub->orWhere('nikc', 'like', "%{$nikc16}%");
                     }
                     if ($nikc17) {
-                        $sub->orWhere('nikc', 'like', "%{$nikc17}%")
-                            ->orWhereRaw("REPLACE(REPLACE(REPLACE(nikc, '.', ''), '-', ''), ' ', '') LIKE ?", ["%{$nikc17}%"]);
+                        $sub->orWhere('nikc', 'like', "%{$nikc17}%");
                     }
                 })
                 ->limit(10)
@@ -170,23 +167,24 @@ class PengkinianDataController extends Controller
                     'source'           => 'MASTER_PERSONEL',
                 ];
             }
+        } catch (\Throwable $e) {
+            Log::error("searchPersonel - Personel error: " . $e->getMessage());
+        }
 
-            // 2. Cari dari Database Master SKEP
+        // 2. Cari dari Database Master SKEP
+        try {
             $skepItems = SkepData::where(function($sub) use ($q, $cleanQ, $nikc16, $nikc17) {
                     $sub->where('nama_lengkap', 'like', "%{$q}%")
                         ->orWhere('nikc', 'like', "%{$q}%");
 
-                    if (!empty($cleanQ)) {
-                        $sub->orWhereRaw("REPLACE(REPLACE(REPLACE(nikc, '.', ''), '-', ''), ' ', '') LIKE ?", ["%{$cleanQ}%"]);
+                    if ($cleanQ) {
+                        $sub->orWhere('nikc', 'like', "%{$cleanQ}%");
                     }
-
                     if ($nikc16) {
-                        $sub->orWhere('nikc', 'like', "%{$nikc16}%")
-                            ->orWhereRaw("REPLACE(REPLACE(REPLACE(nikc, '.', ''), '-', ''), ' ', '') LIKE ?", ["%{$nikc16}%"]);
+                        $sub->orWhere('nikc', 'like', "%{$nikc16}%");
                     }
                     if ($nikc17) {
-                        $sub->orWhere('nikc', 'like', "%{$nikc17}%")
-                            ->orWhereRaw("REPLACE(REPLACE(REPLACE(nikc, '.', ''), '-', ''), ' ', '') LIKE ?", ["%{$nikc17}%"]);
+                        $sub->orWhere('nikc', 'like', "%{$nikc17}%");
                     }
                 })
                 ->limit(10)
@@ -234,8 +232,74 @@ class PengkinianDataController extends Controller
                     ];
                 }
             }
-        } catch (\Exception $e) {
-            Log::error("searchPersonel error: " . $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error("searchPersonel - SkepData error: " . $e->getMessage());
+        }
+
+        // 3. Cari dari Database Pengajuan SKEP
+        try {
+            $skepReqs = SkepRequest::where(function($sub) use ($q, $cleanQ, $nikc16, $nikc17) {
+                    $sub->where('nama_lengkap', 'like', "%{$q}%")
+                        ->orWhere('nikc', 'like', "%{$q}%")
+                        ->orWhere('nik', 'like', "%{$q}%");
+
+                    if ($cleanQ) {
+                        $sub->orWhere('nikc', 'like', "%{$cleanQ}%");
+                    }
+                    if ($nikc16) {
+                        $sub->orWhere('nikc', 'like', "%{$nikc16}%");
+                    }
+                    if ($nikc17) {
+                        $sub->orWhere('nikc', 'like', "%{$nikc17}%");
+                    }
+                })
+                ->limit(10)
+                ->get();
+
+            foreach ($skepReqs as $sr) {
+                $existing = Personel::where('nikc', $sr->nikc)->first();
+                if ($existing && in_array($existing->id, $addedIds)) {
+                    continue;
+                }
+
+                if ($existing) {
+                    $addedIds[] = $existing->id;
+                    $results[] = [
+                        'id'               => $existing->id,
+                        'full_name'        => $existing->full_name,
+                        'nikc'             => $existing->nikc ?: $existing->nik,
+                        'nik'              => $existing->nik,
+                        'pangkat'          => $existing->pangkat,
+                        'matra'            => $existing->matra,
+                        'angkatan'         => $existing->angkatan,
+                        'phone_number'     => $existing->phone_number,
+                        'province'         => $existing->province,
+                        'city'             => $existing->city,
+                        'subdistrict'       => $existing->subdistrict,
+                        'status_keaktifan' => $existing->status_keaktifan ?: 'AKTIF',
+                        'source'           => 'MASTER_PERSONEL',
+                    ];
+                } else {
+                    $results[] = [
+                        'id'               => null,
+                        'full_name'        => $sr->nama_lengkap,
+                        'nikc'             => $sr->nikc,
+                        'nik'              => $sr->nik,
+                        'pangkat'          => $sr->pangkat,
+                        'matra'            => $sr->matra,
+                        'angkatan'         => $sr->angkatan,
+                        'phone_number'     => $sr->phone_number,
+                        'province'         => null,
+                        'city'             => null,
+                        'subdistrict'       => null,
+                        'status_keaktifan' => 'PENGAJUAN SKEP',
+                        'source'           => 'SKEP_DATA',
+                        'dob'              => $sr->dob?->format('Y-m-d'),
+                    ];
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::error("searchPersonel - SkepRequest error: " . $e->getMessage());
         }
 
         return response()->json($results);
