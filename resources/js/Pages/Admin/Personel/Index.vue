@@ -44,7 +44,7 @@
         <tbody class="divide-y divide-[#E2E8F0] text-sm text-slate-600">
           <tr v-for="personel in personels.data" :key="personel.id" class="hover:bg-slate-50/30 transition">
             <td class="p-4">
-              <img :src="personel.photo_profile ? `/documents/private/${personel.photo_profile}` : '/storage/default.png'" class="w-9 h-12 object-cover rounded-lg bg-slate-100 shadow-sm border border-[#E2E8F0]" />
+              <img :src="personel.photo_profile ? `/documents/private/${personel.photo_profile}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(personel?.full_name || 'PERS')}&background=e2e8f0&color=334155`" class="w-9 h-12 object-cover rounded-lg bg-slate-100 shadow-sm border border-[#E2E8F0]" />
             </td>
             <td class="p-4">
               <div class="flex items-center gap-2">
@@ -96,7 +96,7 @@
     <div class="md:hidden space-y-4">
       <div v-for="personel in personels.data" :key="personel.id" class="bg-white border border-[#E2E8F0] rounded-3xl p-4 shadow-xs space-y-3.5">
         <div class="flex items-start gap-3.5">
-          <img :src="personel.photo_profile ? `/documents/private/${personel.photo_profile}` : '/storage/default.png'" class="w-12 h-16 object-cover rounded-xl bg-slate-100 shadow-sm border border-[#E2E8F0] shrink-0" />
+          <img :src="personel.photo_profile ? `/documents/private/${personel.photo_profile}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(personel?.full_name || 'PERS')}&background=e2e8f0&color=334155`" class="w-12 h-16 object-cover rounded-xl bg-slate-100 shadow-sm border border-[#E2E8F0] shrink-0" />
           <div class="space-y-1 flex-1 min-w-0">
             <div class="flex items-center gap-1.5 flex-wrap">
               <button @click="view360Profil(personel)" class="font-extrabold text-slate-800 hover:text-[#2563EB] hover:underline transition text-left cursor-pointer truncate max-w-[170px]">
@@ -171,7 +171,7 @@
             <div class="p-6 border-b border-[#E2E8F0] bg-slate-50/50 flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <img 
-                  :src="selectedPersonel.photo_profile ? `/documents/private/${selectedPersonel.photo_profile}` : '/storage/default.png'" 
+                  :src="selectedPersonel.photo_profile ? `/documents/private/${selectedPersonel.photo_profile}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(personel?.full_name || 'PERS')}&background=e2e8f0&color=334155`" 
                   class="w-10 h-10 object-cover rounded-xl bg-slate-100 border border-[#E2E8F0] shadow-sm shrink-0" 
                 />
                 <div>
@@ -196,7 +196,7 @@
               
               <div v-if="currentTab === 'profile'" class="space-y-4">
                 <div class="flex gap-4 items-start bg-white p-4 border border-[#E2E8F0] rounded-xl shadow-xs">
-                  <img :src="selectedPersonel.photo_profile ? `/documents/private/${selectedPersonel.photo_profile}` : '/storage/default.png'" class="w-16 h-20 object-cover rounded-lg border border-[#E2E8F0] bg-slate-50" />
+                  <img :src="selectedPersonel.photo_profile ? `/documents/private/${selectedPersonel.photo_profile}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(personel?.full_name || 'PERS')}&background=e2e8f0&color=334155`" class="w-16 h-20 object-cover rounded-lg border border-[#E2E8F0] bg-slate-50" />
                   <div class="space-y-1 text-xs">
                     <h4 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
                       {{ selectedPersonel.full_name }}
@@ -430,6 +430,13 @@ const deletePersonel = async (uuid) => {
       onSuccess: () => {
         closeLoading();
         alertSuccess('Berhasil Dihapus', 'Data personel telah dikeluarkan dari database instansi.');
+      },
+      onError: (errs) => {
+        closeLoading();
+        Swal.fire('Gagal Menghapus', errs?.error || 'Terjadi kesalahan saat menghapus data.', 'error');
+      },
+      onFinish: () => {
+        closeLoading();
       }
     });
   }

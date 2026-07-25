@@ -74,7 +74,7 @@
             <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Perbarui Pasfoto Profil (Abaikan jika tidak ingin diubah)</label>
             <div class="flex items-center gap-4">
               <div class="w-12 h-16 bg-slate-100 border border-[#E2E8F0] rounded-xl overflow-hidden shrink-0 shadow-xs">
-                <img :src="photoPreview || (personel.photo_profile ? `/documents/private/${personel.photo_profile}` : '/storage/default.png')" class="w-full h-full object-cover" alt="Pasfoto Personel" />
+                <img :src="photoPreview || (personel.photo_profile ? `/documents/private/${personel.photo_profile}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(personel?.full_name || 'PERS')}&background=e2e8f0&color=334155`)" class="w-full h-full object-cover" alt="Pasfoto Personel" />
               </div>
               <input type="file" @change="handlePhotoChange" :class="form.errors.photo_profile ? 'text-red-500' : ''" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-[#2563EB] hover:file:bg-blue-100 cursor-pointer" accept="image/*" />
             </div>

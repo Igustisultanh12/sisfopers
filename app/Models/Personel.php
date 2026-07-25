@@ -141,4 +141,37 @@ class Personel extends Model
         // Fitur auto-create DIKBATSIS_KOMCAD dinonaktifkan sesuai permintaan user
         return;
     }
+
+    public static function purgePersonelCompletely(Personel $personel): void
+    {
+        // 1. Hapus berkas foto & dokumen dari storage (private & public)
+        if ($personel->photo_profile) {
+            \Illuminate\Support\Facades\Storage::disk('private')->delete($personel->photo_profile);
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($personel->photo_profile);
+        }
+        if ($personel->ktp_document) {
+            \Illuminate\Support\Facades\Storage::disk('private')->delete($personel->ktp_document);
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($personel->ktp_document);
+        }
+
+        // 2. Hapus relasi
+        $personel->riwayatPendidikan()->delete();
+        $personel->jobHistories()->delete();
+        $personel->pengkinianData()->delete();
+        $personel->faceVerifications()->delete();
+        $personel->broadcastResponses()->delete();
+        if ($personel->sinyalmen) {
+            $personel->sinyalmen()->delete();
+        }
+        if ($personel->registration) {
+            $personel->registration()->delete();
+        }
+
+        // 3. Hapus Akun User & Record Personel
+        $user = $personel->user;
+        $personel->forceDelete();
+        if ($user) {
+            $user->forceDelete();
+        }
+    }
 }
