@@ -108,7 +108,7 @@
 
         <form @submit.prevent="submitAddForm" class="p-6 space-y-4 max-h-[85vh] overflow-y-auto">
           <!-- Autocomplete Search Personel / NIKC -->
-          <div class="relative flex flex-col gap-1.5">
+          <div class="flex flex-col gap-1.5">
             <label class="font-bold text-slate-600 uppercase text-[10px]">Cari NIKC / NIK / Nama Personel (Master DB & SKEP)</label>
             <div class="relative">
               <input
@@ -122,18 +122,18 @@
               <span v-if="isSearching" class="absolute right-3 top-2.5 text-[10px] text-slate-400 font-bold animate-pulse">Memuat...</span>
             </div>
 
-            <!-- Dropdown Hasil Pencarian Personel -->
-            <div v-if="searchResults.length > 0" class="absolute top-full left-0 right-0 z-20 mt-1 bg-white border border-[#E2E8F0] rounded-xl shadow-xl max-h-56 overflow-y-auto divide-y divide-slate-100">
+            <!-- Inline Hasil Pencarian Personel -->
+            <div v-if="searchResults.length > 0" class="mt-1 bg-white border border-blue-200 rounded-xl shadow-lg max-h-56 overflow-y-auto divide-y divide-slate-100">
               <button
                 v-for="p in searchResults"
                 :key="p.nikc"
                 type="button"
                 @click="selectPersonel(p)"
-                class="w-full text-left p-3 hover:bg-blue-50/60 transition flex items-center justify-between"
+                class="w-full text-left p-3 hover:bg-blue-50/80 transition flex items-center justify-between cursor-pointer"
               >
                 <div>
                   <p class="font-bold text-slate-800">{{ p.full_name }}</p>
-                  <p class="text-[10px] text-slate-400">NIKC: <span class="font-bold text-slate-700">{{ p.nikc || p.nik }}</span> | {{ p.pangkat || '-' }} ({{ p.matra || '-' }})</p>
+                  <p class="text-[10px] text-slate-500">NIKC: <span class="font-bold text-slate-700">{{ p.nikc || p.nik }}</span> | {{ p.pangkat || '-' }} ({{ p.matra || '-' }})</p>
                 </div>
                 <div class="text-right">
                   <span class="text-[9px] font-bold px-2 py-0.5 rounded"
@@ -142,6 +142,9 @@
                   </span>
                 </div>
               </button>
+            </div>
+            <div v-else-if="personelSearchQuery.trim().length >= 2 && !isSearching && hasSearched" class="mt-1 p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-700 font-semibold">
+              ⚠️ Data tidak ditemukan di Master Personel maupun SKEP. Coba ketik sebagian Nama atau NIKC.
             </div>
           </div>
 
@@ -438,6 +441,7 @@ const personelSearchQuery = ref('');
 const searchResults = ref([]);
 const selectedPersonel = ref(null);
 const isSearching = ref(false);
+const hasSearched = ref(false);
 
 const addForm = useForm({
   personel_id: '',
@@ -465,6 +469,7 @@ const openAddModal = () => {
   personelSearchQuery.value = '';
   searchResults.value = [];
   selectedPersonel.value = null;
+  hasSearched.value = false;
   addForm.reset();
 };
 
@@ -475,6 +480,7 @@ const onSearchPersonelInput = () => {
   if (personelSearchQuery.value.trim().length < 2) {
     searchResults.value = [];
     isSearching.value = false;
+    hasSearched.value = false;
     return;
   }
 
@@ -490,6 +496,7 @@ const onSearchPersonelInput = () => {
       console.error('Search failed:', err);
     } finally {
       isSearching.value = false;
+      hasSearched.value = true;
     }
   }, 300);
 };
