@@ -54,8 +54,8 @@ Route::get('/', function () {
 Route::get('/verify-doc/{verify_code}', [\App\Http\Controllers\Public\DocumentVerificationController::class, 'show'])->name('public.verify-doc');
 
 // Rute Pengecekan NIKC & Pengajuan SKEP Publik (Digunakan Saat Form Registrasi)
-Route::post('/skep/check', [SkepPublicController::class, 'checkNikc'])->name('skep.check');
-Route::post('/skep/request', [SkepPublicController::class, 'submitRequest'])->name('skep.request');
+Route::match(['get', 'post'], '/skep/check', [SkepPublicController::class, 'checkNikc'])->name('skep.check');
+Route::match(['get', 'post'], '/skep/request', [SkepPublicController::class, 'submitRequest'])->name('skep.request');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
