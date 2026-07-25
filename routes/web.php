@@ -85,21 +85,32 @@ Route::middleware(['auth'])->group(function () {
     })->where('path', '.*')->name('personel.document.download');
 });
 
-// Rute Servis Berkas Storage Fallback (Pencarian Multi-Folder Otomatis di Public, Local, & Private)
+// Rute Servis Berkas Storage Fallback (Pencarian Multi-Folder & Sinkronisasi Format .jpeg / .jpg / .png)
 Route::get('/storage/{path}', function ($path) {
     $cleanPath = ltrim($path, '/');
     $cleanPath = preg_replace('/^(storage\/|public\/|private\/)+/', '', $cleanPath);
     $filename = basename($cleanPath);
+    $filenameWithoutExt = pathinfo($filename, PATHINFO_FILENAME);
 
-    $possibleSubpaths = [
-        $cleanPath,
-        'personel/photos/' . $filename,
-        'personel/documents/' . $filename,
-        'personel/pendidikan/' . $filename,
-        'personel/pekerjaan/' . $filename,
-        'personel/asn_sks/' . $filename,
-        'personel/skep_requests/' . $filename,
+    // Menangani perbedaan ekstensi berkas (.jpeg vs .jpg vs .png)
+    $extVariants = [
+        $filename,
+        $filenameWithoutExt . '.jpg',
+        $filenameWithoutExt . '.jpeg',
+        $filenameWithoutExt . '.png',
+        $filenameWithoutExt . '.pdf',
     ];
+
+    $possibleSubpaths = [];
+    foreach ($extVariants as $fileVar) {
+        $possibleSubpaths[] = $fileVar;
+        $possibleSubpaths[] = 'personel/photos/' . $fileVar;
+        $possibleSubpaths[] = 'personel/documents/' . $fileVar;
+        $possibleSubpaths[] = 'personel/pendidikan/' . $fileVar;
+        $possibleSubpaths[] = 'personel/pekerjaan/' . $fileVar;
+        $possibleSubpaths[] = 'personel/asn_sks/' . $fileVar;
+        $possibleSubpaths[] = 'personel/skep_requests/' . $fileVar;
+    }
 
     foreach (['public', 'local', 'private'] as $diskName) {
         foreach ($possibleSubpaths as $subPath) {
