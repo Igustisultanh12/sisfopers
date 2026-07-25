@@ -65,6 +65,7 @@ Route::middleware('guest')->group(function () {
 
 // Rute Global Pengguna Terautentikasi (Auth Group)
 Route::middleware(['auth'])->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     // Manajemen Profil & Pengaturan Akun
     Route::get('/account/settings', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::match(['post', 'put', 'patch'], '/account/settings', [ProfileController::class, 'update'])->name('profile.update');
