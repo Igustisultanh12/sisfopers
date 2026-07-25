@@ -141,7 +141,11 @@ class Personel extends Model
         $exists = $this->riwayatPendidikan()
             ->where(function ($q) {
                 $q->where('jenis', 'MILITER')
-                  ->orWhere('jenjang', 'DIKBATSIS_KOMCAD');
+                  ->orWhere('jenis', 'Militer')
+                  ->orWhere('jenjang', 'DIKBATSIS_KOMCAD')
+                  ->orWhere('jenjang', 'LIKE', '%Komcad%')
+                  ->orWhere('program_studi', 'LIKE', '%Komcad%')
+                  ->orWhere('nama_institusi', 'LIKE', '%Komcad%');
             })
             ->exists();
 
@@ -150,10 +154,10 @@ class Personel extends Model
             $namaSekolah = 'Latsar Militer Komcad ' . ($this->matra ? 'TNI ' . strtoupper($this->matra) : 'TNI');
 
             $this->riwayatPendidikan()->create([
-                'jenis'        => 'MILITER',
-                'jenjang'      => 'DIKBATSIS_KOMCAD',
-                'nama_sekolah' => $namaSekolah,
-                'tahun_lulus'  => (int) $year,
+                'jenis'          => 'MILITER',
+                'jenjang'        => 'DIKBATSIS_KOMCAD',
+                'nama_institusi' => $namaSekolah,
+                'tahun_lulus'    => (int) $year,
             ]);
         }
     }
