@@ -19,14 +19,16 @@ class PersonelRegionExport implements FromCollection, WithHeadings, WithMapping,
     protected string $signerPangkat;
     protected string $signerNikc;
     protected string $signerJabatan;
+    protected string $signerHeader;
     protected int $rowIndex = 0;
 
-    public function __construct(string $signerName, string $signerPangkat, string $signerNikc, string $signerJabatan)
+    public function __construct(string $signerName, string $signerPangkat, string $signerNikc, string $signerJabatan, string $signerHeader = 'a.n. Komandan Komponen Cadangan,')
     {
         $this->signerName = $signerName;
         $this->signerPangkat = $signerPangkat;
         $this->signerNikc = $signerNikc;
         $this->signerJabatan = $signerJabatan;
+        $this->signerHeader = $signerHeader;
     }
 
     public function collection()
@@ -120,7 +122,7 @@ class PersonelRegionExport implements FromCollection, WithHeadings, WithMapping,
                 $sigRow = $totalRow + 3;
                 $sheet->setCellValue('F' . $sigRow, 'Dikeluarkan di: Jakarta');
                 $sheet->setCellValue('F' . ($sigRow + 1), 'Pada tanggal: ' . date('d F Y'));
-                $sheet->setCellValue('F' . ($sigRow + 3), 'a.n. Komandan Komponen Cadangan');
+                $sheet->setCellValue('F' . ($sigRow + 3), $this->signerHeader);
                 $sheet->setCellValue('F' . ($sigRow + 4), $this->signerJabatan . ',');
                 
                 $sheet->setCellValue('F' . ($sigRow + 8), $this->signerName);
