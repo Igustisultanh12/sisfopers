@@ -69,6 +69,14 @@ Route::middleware('guest')->group(function () {
 
 // Rute Global Pengguna Terautentikasi (Auth Group)
 Route::middleware(['auth'])->group(function () {
+    Route::get('/maintenance', function () {
+        if (auth()->check() && !auth()->user()->hasRole('personel')) {
+            return redirect()->route('admin.dashboard');
+        }
+        return Inertia::render('Maintenance', [
+            'settings' => \App\Models\Setting::all()->pluck('value', 'key')
+        ]);
+    })->name('maintenance');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     // Manajemen Profil & Pengaturan Akun (dengan Alias Rute Ziggy Lengkap)
@@ -256,7 +264,7 @@ Route::middleware(['auth', 'role:komandan'])->prefix('komandan')->name('komandan
 | 3. Role: Personel Komponen Cadangan Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'role:personel,admin,kordinator_angkatan,kordinator_matra'])->prefix('personel')->name('personel.')->group(function () {
+Route::middleware(['auth', 'role:personel,admin,kordinator_angkatan,kordinator_matra', 'under_maintenance'])->prefix('personel')->name('personel.')->group(function () {
     
     // Gerbang Validasi Alur Pertama (Bebas dari profile_complete untuk mencegah infinite loop)
     Route::get('/face-verification', [FaceVerificationController::class, 'index'])->name('face-verification');
