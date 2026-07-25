@@ -136,13 +136,15 @@ class Personel extends Model
     public function ensureKomcadEducationExists()
     {
         $exists = $this->riwayatPendidikan()
-            ->where('jenis', 'PENDIDIKAN_KOMCAD')
+            ->where('jenis', 'MILITER')
+            ->where('jenjang', 'DIKBATSIS_KOMCAD')
             ->exists();
 
         if (!$exists && $this->angkatan) {
             $this->riwayatPendidikan()->create([
                 'uuid'           => (string) Str::uuid(),
-                'jenis'          => 'PENDIDIKAN_KOMCAD',
+                'jenis'          => 'MILITER',
+                'jenjang'        => 'DIKBATSIS_KOMCAD',
                 'nama_institusi' => 'Pusdiklat / Rindam TNI ' . ($this->matra ?: 'AD'),
                 'program_studi'  => 'Pendidikan Pembentukan Komponen Cadangan (Dikbatsis Komcad)',
                 'tahun_lulus'    => $this->angkatan ?: date('Y'),
