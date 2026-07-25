@@ -32,9 +32,10 @@ class ReportController extends Controller
         $defaultJabatan = $settings['app_signer_jabatan'] ?? 'KOMANDAN KOMPONEN CADANGAN';
 
         if ($user && $user->hasRole('komandan')) {
+            $rawPangkat = $personel ? $personel->pangkat : $defaultPangkat;
             return [
                 'name'    => $personel ? $personel->full_name : ($user->name ?? $defaultName),
-                'pangkat' => $personel ? $personel->pangkat : $defaultPangkat,
+                'pangkat' => Personel::formatLongRank($rawPangkat),
                 'nikc'    => $personel ? ($personel->nikc ?? $personel->nik ?? $defaultNikc) : $defaultNikc,
                 'jabatan' => 'KOMANDAN KOMPONEN CADANGAN',
                 'header'  => 'Komandan Komponen Cadangan,'
@@ -49,9 +50,11 @@ class ReportController extends Controller
                 $matraOrAngkatan = 'ANGKATAN ' . ($personel->angkatan ?? '');
             }
 
+            $rawPangkat = $personel ? $personel->pangkat : 'KOORDINATOR';
+
             return [
                 'name'    => $personel ? $personel->full_name : ($user->name ?? 'KOORDINATOR'),
-                'pangkat' => $personel ? $personel->pangkat : 'KOORDINATOR',
+                'pangkat' => Personel::formatLongRank($rawPangkat),
                 'nikc'    => $personel ? ($personel->nikc ?? $personel->nik ?? '-') : '-',
                 'jabatan' => 'KOORDINATOR ' . trim($matraOrAngkatan),
                 'header'  => 'a.n. Komandan Komponen Cadangan,'
@@ -59,9 +62,10 @@ class ReportController extends Controller
         }
 
         if ($user && $user->hasRole('admin')) {
+            $rawPangkat = $personel ? $personel->pangkat : $defaultPangkat;
             return [
                 'name'    => $personel ? $personel->full_name : ($user->name ?? $defaultName),
-                'pangkat' => $personel ? $personel->pangkat : $defaultPangkat,
+                'pangkat' => Personel::formatLongRank($rawPangkat),
                 'nikc'    => $personel ? ($personel->nikc ?? $personel->nik ?? $defaultNikc) : $defaultNikc,
                 'jabatan' => 'ADMINISTRATOR SISFOPERS',
                 'header'  => 'a.n. Komandan Komponen Cadangan,'
@@ -70,7 +74,7 @@ class ReportController extends Controller
 
         return [
             'name'    => $defaultName,
-            'pangkat' => $defaultPangkat,
+            'pangkat' => Personel::formatLongRank($defaultPangkat),
             'nikc'    => $defaultNikc,
             'jabatan' => $defaultJabatan,
             'header'  => 'a.n. Komandan Komponen Cadangan,'
