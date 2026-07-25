@@ -5,10 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\MasterKepangkatan;
 use App\Models\Personel;
-use App\Exports\PersonelExport;
+use App\Models\SystemSetting;
+
 use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\PersonelExport;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Http\Request;
 
 class ReportController extends Controller
 {
@@ -19,165 +20,161 @@ class ReportController extends Controller
 
     private function getSignerData()
     {
-        $currentUser = auth()->user();
-        $currentPersonel = $currentUser?->personel;
+         = SystemSetting::pluck('value', 'key')->all();
         
-        $signerName = $currentPersonel?->full_name;
-        $signerPangkat = $currentPersonel?->pangkat;
-        
-        $signerPangkatFull = \App\Models\Personel::formatLongRank($signerPangkat);
-        $signerNikc = $currentPersonel?->nikc;
-        
-        // Ambil display_name dari tabel role (misal: Administrator Sistem, Kordinator, dll.)
-        $signerJabatan = $currentUser?->role?->display_name;
+         = ['app_signer_name'] ?? 'HERMAN SUSILO, S.I.P.';
+         = ['app_signer_pangkat'] ?? 'KOLONEL INF';
+         = ['app_signer_nikc'] ?? '112233445566';
+         = ['app_signer_jabatan'] ?? 'KOMANDAN KOMPONEN CADANGAN';
 
         return [
-            'name' => $this->displayValue($signerName),
-            'pangkat' => $this->displayValue($signerPangkatFull),
-            'nikc' => $this->displayValue($signerNikc),
-            'jabatan' => $this->displayValue($signerJabatan)
+            'name' => ,
+            'pangkat' => ,
+            'nikc' => ,
+            'jabatan' => 
         ];
     }
 
-    private function displayValue($value): string
+    private function displayValue(): string
     {
-        $value = is_string($value) ? trim($value) : $value;
-
-        return $value ? (string) $value : '-';
+        if ( === null ||  === '') {
+            return '-';
+        }
+        return (string) ;
     }
 
-    private function formatRank($pangkat)
+    private function formatRank()
     {
-        return $pangkat ?: null;
+        return Personel::formatShortRank();
     }
 
     public function personelExcel()
     {
-        $signer = $this->getSignerData();
+         = ->getSignerData();
         return Excel::download(
-            new PersonelExport($signer['name'], $signer['pangkat'], $signer['nikc'], $signer['jabatan']), 
-            'Master_Data_Personel_KC_' . date('YmdHis') . '.xlsx'
+            new PersonelExport(['name'], ['pangkat'], ['nikc'], ['jabatan']), 
+            'Laporan_Instansial_Personel_KC_' . date('YmdHis') . '.xlsx'
         );
     }
 
     public function personelPdf()
     {
-        $rankOrder = MasterKepangkatan::where('is_active', true)
+         = MasterKepangkatan::where('is_active', true)
             ->get()
-            ->mapWithKeys(function ($item) {
-                return [strtolower($item->nama) => $item->urutan];
+            ->mapWithKeys(function () {
+                return [strtolower(->nama) => ->urutan];
             })
             ->all();
 
-        $data['personels'] = Personel::where(function ($query) {
-                $query->whereDoesntHave('registration')
-                      ->orWhereHas('registration', function ($q) {
-                          $q->where('status_verification', 'APPROVED');
+        ['personels'] = Personel::where(function () {
+                ->whereDoesntHave('registration')
+                      ->orWhereHas('registration', function () {
+                          ->where('status_verification', 'APPROVED');
                       });
             })
             ->with(['user'])
             ->get()
-            ->sortByDesc(function($personel) use ($rankOrder) {
-                $parts = explode(' ', trim($personel->pangkat));
-                $pangkatLower = strtolower($parts[0] ?? '');
-                return $rankOrder[$pangkatLower] ?? 0;
+            ->sortByDesc(function() use () {
+                 = explode(' ', trim(->pangkat));
+                 = strtolower([0] ?? '');
+                return [] ?? 0;
             });
         
-        $signer = $this->getSignerData();
-        $data['signerName'] = $signer['name'];
-        $data['signerPangkat'] = $signer['pangkat'];
-        $data['signerNikc'] = $signer['nikc'];
-        $data['signerJabatan'] = $signer['jabatan'];
+         = ->getSignerData();
+        ['signerName'] = ['name'];
+        ['signerPangkat'] = ['pangkat'];
+        ['signerNikc'] = ['nikc'];
+        ['signerJabatan'] = ['jabatan'];
 
         // Format Roman month
-        $romans = [1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI', 7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'];
-        $data['nomorSurat'] = 'R/001/PERS/' . $romans[date('n')] . '/' . date('Y');
+         = [1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI', 7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'];
+        ['nomorSurat'] = 'R/001/PERS/' . [date('n')] . '/' . date('Y');
 
-        $docVerif = \App\Models\DocumentVerification::createRecord(
+         = \App\Models\DocumentVerification::createRecord(
             'PERS_REPORT',
             'LAPORAN DATA KEKUATAN MASTER PERSONEL',
-            'Seluruh Anggota Komcad (' . $data['personels']->count() . ' Personel)',
+            'Seluruh Anggota Komcad (' . ['personels']->count() . ' Personel)',
             'Laporan Rekapitulasi Terpusat',
-            $signer['name'],
-            $signer['pangkat'],
-            ['nomor_surat' => $data['nomorSurat']]
+            ['name'],
+            ['pangkat'],
+            ['nomor_surat' => ['nomorSurat']]
         );
 
-        $verifyUrl = route('public.verify-doc', $docVerif->verify_code);
-        $data['verifyCode'] = $docVerif->verify_code;
-        $data['verifyUrl']  = $verifyUrl;
-        $data['qrCodeBase64'] = \App\Services\QrCodeService::generateBase64($verifyUrl);
+         = route('public.verify-doc', ->verify_code);
+        ['verifyCode'] = ->verify_code;
+        ['verifyUrl']  = ;
+        ['qrCodeBase64'] = \App\Services\QrCodeService::generateBase64();
 
         // Load HTML Raw View tanpa CSS eksternal berat demi compliance DomPDF render engine
-        $pdf = Pdf::loadView('reports.personel_pdf', $data)->setPaper('a4', 'landscape');
-        return $pdf->download('Laporan_Instansial_Personel_KC.pdf');
+         = Pdf::loadView('reports.personel_pdf', )->setPaper('a4', 'landscape');
+        return ->download('Laporan_Instansial_Personel_KC.pdf');
     }
 
-    public function broadcastExcel($uuid)
+    public function broadcastExcel()
     {
-        $broadcast = \App\Models\Broadcast::where('uuid', $uuid)->firstOrFail();
-        $signer = $this->getSignerData();
+         = \App\Models\Broadcast::where('uuid', )->firstOrFail();
+         = ->getSignerData();
         
         return Excel::download(
             new \App\Exports\BroadcastResponseExport(
-                $broadcast->id, 
-                $signer['name'], 
-                $signer['pangkat'], 
-                $signer['nikc'], 
-                $signer['jabatan']
+                ->id, 
+                ['name'], 
+                ['pangkat'], 
+                ['nikc'], 
+                ['jabatan']
             ), 
-            'Laporan_Presensi_' . str_replace(' ', '_', $broadcast->title) . '_' . date('YmdHis') . '.xlsx'
+            'Laporan_Presensi_' . str_replace(' ', '_', ->title) . '_' . date('YmdHis') . '.xlsx'
         );
     }
 
-    public function broadcastPdf($uuid)
+    public function broadcastPdf()
     {
-        $broadcast = \App\Models\Broadcast::where('uuid', $uuid)->firstOrFail();
+         = \App\Models\Broadcast::where('uuid', )->firstOrFail();
         
-        $rankOrder = MasterKepangkatan::where('is_active', true)
+         = MasterKepangkatan::where('is_active', true)
             ->pluck('urutan', 'nama')
             ->all();
 
-        $responses = \App\Models\BroadcastResponse::where('broadcast_id', $broadcast->id)
+         = \App\Models\BroadcastResponse::where('broadcast_id', ->id)
             ->with('personel')
             ->get()
-            ->sortBy(function($response) use ($rankOrder) {
-                $rank = $response->personel?->pangkat;
-                return $rankOrder[$rank] ?? 99;
+            ->sortBy(function() use () {
+                 = ->personel?->pangkat;
+                return [] ?? 99;
             });
 
-        $signer = $this->getSignerData();
+         = ->getSignerData();
         
-        $romans = [1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI', 7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'];
-        $nomorSurat = 'R/' . str_pad($broadcast->id, 3, '0', STR_PAD_LEFT) . '/PERS/' . $romans[date('n')] . '/' . date('Y');
+         = [1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI', 7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'];
+         = 'R/' . str_pad(->id, 3, '0', STR_PAD_LEFT) . '/PERS/' . [date('n')] . '/' . date('Y');
 
-        $docVerif = \App\Models\DocumentVerification::createRecord(
+         = \App\Models\DocumentVerification::createRecord(
             'BROADCAST_PRESENSI',
-            'LAPORAN PRESENSI & MONITORING: ' . strtoupper($broadcast->title),
-            'Rekapitulasi Respon Personel (' . $responses->count() . ' Anggota)',
-            'Kegiatan ' . $broadcast->title,
-            $signer['name'],
-            $signer['pangkat'],
-            ['nomor_surat' => $nomorSurat]
+            'LAPORAN PRESENSI & MONITORING: ' . strtoupper(->title),
+            'Rekapitulasi Respon Personel (' . ->count() . ' Anggota)',
+            'Kegiatan ' . ->title,
+            ['name'],
+            ['pangkat'],
+            ['nomor_surat' => ]
         );
 
-        $verifyUrl = route('public.verify-doc', $docVerif->verify_code);
-        $qrCodeBase64 = \App\Services\QrCodeService::generateBase64($verifyUrl);
+         = route('public.verify-doc', ->verify_code);
+         = \App\Services\QrCodeService::generateBase64();
 
-        $pdf = Pdf::loadView('reports.broadcast_pdf', [
-            'broadcast' => $broadcast,
-            'responses' => $responses,
-            'signerName' => $signer['name'],
-            'signerPangkat' => $signer['pangkat'],
-            'signerNikc' => $signer['nikc'],
-            'signerJabatan' => $signer['jabatan'],
-            'nomorSurat' => $nomorSurat,
-            'verifyCode' => $docVerif->verify_code,
-            'verifyUrl'  => $verifyUrl,
-            'qrCodeBase64' => $qrCodeBase64
+         = Pdf::loadView('reports.broadcast_pdf', [
+            'broadcast' => ,
+            'responses' => ,
+            'signerName' => ['name'],
+            'signerPangkat' => ['pangkat'],
+            'signerNikc' => ['nikc'],
+            'signerJabatan' => ['jabatan'],
+            'nomorSurat' => ,
+            'verifyCode' => ->verify_code,
+            'verifyUrl'  => ,
+            'qrCodeBase64' => 
         ])->setPaper('a4', 'landscape');
 
-        return $pdf->download('Laporan_Presensi_' . str_replace(' ', '_', $broadcast->title) . '.pdf');
+        return ->download('Laporan_Presensi_' . str_replace(' ', '_', ->title) . '.pdf');
     }
 
     public function regionPdf()
