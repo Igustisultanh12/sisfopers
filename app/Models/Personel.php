@@ -89,8 +89,9 @@ class Personel extends Model
 
     protected $fillable = [
         'uuid', 'user_id', 'full_name', 'dob', 'pangkat', 'nik', 'nikc', 'phone_number',
-        'subdistrict', 'city', 'province', 'zip_code', 'face_verified', 'status_keaktifan',
-        'status_verification', 'catatan_pembinaan', 'sumber_rekrutmen', 'angkatan', 'matra', 'gender'
+        'district', 'subdistrict', 'city', 'province', 'zip_code', 'postal_code', 'address', 'pob',
+        'face_verified', 'status_keaktifan', 'status_verification', 'catatan_pembinaan',
+        'sumber_rekrutmen', 'angkatan', 'matra', 'gender'
     ];
 
     public function user(): BelongsTo
@@ -133,22 +134,24 @@ class Personel extends Model
         return $this->hasMany(BroadcastResponse::class, 'personel_id');
     }
 
-    public function ensureKomcadEducationExists()
+    public function ensureKomcadEducationExists(): void
     {
         $exists = $this->riwayatPendidikan()
-            ->where('jenis', 'MILITER')
-            ->where('jenjang', 'DIKBATSIS_KOMCAD')
+            ->where(function ($q) {
+                $q->where('jenis', 'MILITER')
+                  ->orWhere('jenjang', 'DIKBATSIS_KOMCAD');
+            })
             ->exists();
 
-        if (!$exists && $this->angkatan) {
+        if (!$exists) {
+            $year = $this->angkatan ?: date('Y');
+            $namaSekolah = 'Latsar Militer Komcad ' . ($this->matra ? 'TNI ' . strtoupper($this->matra) : 'TNI');
+
             $this->riwayatPendidikan()->create([
-                'uuid'           => (string) Str::uuid(),
-                'jenis'          => 'MILITER',
-                'jenjang'        => 'DIKBATSIS_KOMCAD',
-                'nama_institusi' => 'Pusdiklat / Rindam TNI ' . ($this->matra ?: 'AD'),
-                'program_studi'  => 'Pendidikan Pembentukan Komponen Cadangan (Dikbatsis Komcad)',
-                'tahun_lulus'    => $this->angkatan ?: date('Y'),
-                'verified_at'    => now(),
+                'jenis'        => 'MILITER',
+                'jenjang'      => 'DIKBATSIS_KOMCAD',
+                'nama_sekolah' => $namaSekolah,
+                'tahun_lulus'  => (int) $year,
             ]);
         }
     }
