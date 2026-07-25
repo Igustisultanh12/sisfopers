@@ -236,11 +236,9 @@ const submitVerification = () => {
 const getDocumentUrl = (path) => {
   if (!path) return '';
   if (path.startsWith('http://') || path.startsWith('https://')) return path;
-  let cleanPath = path;
-  if (cleanPath.startsWith('/documents/private/')) cleanPath = cleanPath.replace('/documents/private/', '');
-  if (cleanPath.startsWith('documents/private/')) cleanPath = cleanPath.replace('documents/private/', '');
-  if (cleanPath.startsWith('/')) cleanPath = cleanPath.substring(1);
-  return `/documents/private/${cleanPath}`;
+
+  let cleanPath = path.replace(/^(storage\/|public\/)+/, '');
+  return `/storage/${cleanPath}`;
 };
 
 
