@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 
 class PengkinianDataController extends Controller
@@ -146,7 +147,7 @@ class PengkinianDataController extends Controller
                     }
                 })
                 ->limit(10)
-                ->get(['id', 'full_name', 'nikc', 'nik', 'pangkat', 'matra', 'angkatan', 'phone_number', 'province', 'city', 'district', 'status_keaktifan']);
+                ->get();
 
             foreach ($personels as $p) {
                 $addedIds[] = $p->id;
@@ -161,8 +162,8 @@ class PengkinianDataController extends Controller
                     'phone_number'     => $p->phone_number,
                     'province'         => $p->province,
                     'city'             => $p->city,
-                    'district'         => $p->district,
-                    'status_keaktifan' => $p->status_keaktifan ?: 'AKTIF',
+                    'district'         => $p->district ?? $p->subdistrict ?? null,
+                    'status_keaktifan' => $p->status_keaktifan ?? 'AKTIF',
                     'source'           => 'MASTER_PERSONEL',
                 ];
             }
@@ -208,8 +209,8 @@ class PengkinianDataController extends Controller
                         'phone_number'     => $existing->phone_number,
                         'province'         => $existing->province,
                         'city'             => $existing->city,
-                        'district'         => $existing->district,
-                        'status_keaktifan' => $existing->status_keaktifan ?: 'AKTIF',
+                        'district'         => $existing->district ?? $existing->subdistrict ?? null,
+                        'status_keaktifan' => $existing->status_keaktifan ?? 'AKTIF',
                         'source'           => 'MASTER_PERSONEL',
                     ];
                 } else {
@@ -274,8 +275,8 @@ class PengkinianDataController extends Controller
                         'phone_number'     => $existing->phone_number,
                         'province'         => $existing->province,
                         'city'             => $existing->city,
-                        'district'         => $existing->district,
-                        'status_keaktifan' => $existing->status_keaktifan ?: 'AKTIF',
+                        'district'         => $existing->district ?? $existing->subdistrict ?? null,
+                        'status_keaktifan' => $existing->status_keaktifan ?? 'AKTIF',
                         'source'           => 'MASTER_PERSONEL',
                     ];
                 } else {
@@ -343,7 +344,8 @@ class PengkinianDataController extends Controller
 
         if (!$personel) {
             $skep = SkepData::where('nikc', $request->nikc)->first();
-            $personel = Personel::create([
+            
+            $personelData = [
                 'uuid'                => Str::uuid(),
                 'full_name'           => $request->full_name,
                 'nikc'                => $request->nikc,
@@ -356,12 +358,19 @@ class PengkinianDataController extends Controller
                 'province'            => $request->province ?: 'Jawa Timur',
                 'city'                => $request->city ?: 'Surabaya',
                 'district'            => $districtValue ?: 'Tegalsari',
+                'village'             => 'Indonesia',
+                'postal_code'         => '00000',
                 'pob'                 => 'Indonesia',
                 'address'             => 'Indonesia',
                 'gender'              => 'L',
-                'status_keaktifan'    => $request->jenis_pengkinian,
-                'status_verification' => 'APPROVED',
-            ]);
+                'status_profile'      => 'LENGKAP',
+            ];
+
+            if (Schema::hasColumn('personels', 'status_keaktifan')) {
+                $personelData['status_keaktifan'] = $request->jenis_pengkinian;
+            }
+
+            $personel = Personel::create($personelData);
         } else {
             $updateData = [];
             if (!$personel->pangkat && $request->filled('pangkat')) {
@@ -382,8 +391,11 @@ class PengkinianDataController extends Controller
             if (!$personel->city && $request->filled('city')) {
                 $updateData['city'] = $request->city;
             }
-            if ((!$personel->district && !$personel->subdistrict) && $districtValue) {
+            if (!$personel->district && $districtValue) {
                 $updateData['district'] = $districtValue;
+            }
+            if (Schema::hasColumn('personels', 'status_keaktifan')) {
+                $updateData['status_keaktifan'] = $request->jenis_pengkinian;
             }
             if (!empty($updateData)) {
                 $personel->update($updateData);
@@ -409,10 +421,6 @@ class PengkinianDataController extends Controller
             'status'           => 'APPROVED',
             'verified_by'      => $user->id,
             'verified_at'      => now(),
-        ]);
-
-        $personel->update([
-            'status_keaktifan' => $request->jenis_pengkinian
         ]);
 
         if ($request->jenis_pengkinian === 'MENINGGAL' && $personel->user) {
@@ -474,9 +482,11 @@ class PengkinianDataController extends Controller
         ]);
 
         if ($item->personel) {
-            $item->personel->update([
-                'status_keaktifan' => $item->jenis_pengkinian
-            ]);
+            if (Schema::hasColumn('personels', 'status_keaktifan')) {
+                $item->personel->update([
+                    'status_keaktifan' => $item->jenis_pengkinian
+                ]);
+            }
 
             if ($item->jenis_pengkinian === 'MENINGGAL' && $item->personel->user) {
                 $item->personel->user->update([
