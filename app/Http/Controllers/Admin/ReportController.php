@@ -5,7 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\MasterKepangkatan;
 use App\Models\Personel;
-use App\Models\SystemSetting;
+use App\Models\Setting;
+use App\Models\DocumentVerification;
 
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\PersonelExport;
@@ -20,7 +21,7 @@ class ReportController extends Controller
 
     private function getSignerData()
     {
-        $settings = SystemSetting::pluck('value', 'key')->all();
+        $settings = Setting::pluck('value', 'key')->all();
         
         $signerName = $settings['app_signer_name'] ?? 'HERMAN SUSILO, S.I.P.';
         $signerPangkat = $settings['app_signer_pangkat'] ?? 'KOLONEL INF';
@@ -90,7 +91,7 @@ class ReportController extends Controller
         $romans = [1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI', 7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'];
         $data['nomorSurat'] = 'R/001/PERS/' . $romans[date('n')] . '/' . date('Y');
 
-        $docVerif = \App\Models\DocumentVerification::createRecord(
+        $docVerif = DocumentVerification::createRecord(
             'PERS_REPORT',
             'LAPORAN DATA KEKUATAN MASTER PERSONEL',
             'Seluruh Anggota Komcad (' . $data['personels']->count() . ' Personel)',
@@ -148,7 +149,7 @@ class ReportController extends Controller
         $romans = [1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI', 7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'];
         $nomorSurat = 'R/' . str_pad($broadcast->id, 3, '0', STR_PAD_LEFT) . '/PERS/' . $romans[date('n')] . '/' . date('Y');
 
-        $docVerif = \App\Models\DocumentVerification::createRecord(
+        $docVerif = DocumentVerification::createRecord(
             'BROADCAST_PRESENSI',
             'LAPORAN PRESENSI & MONITORING: ' . strtoupper($broadcast->title),
             'Rekapitulasi Respon Personel (' . $responses->count() . ' Anggota)',
@@ -203,7 +204,7 @@ class ReportController extends Controller
         $romans = [1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI', 7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'];
         $nomorSurat = 'R/002/PERS/REGIONAL/' . $romans[date('n')] . '/' . date('Y');
 
-        $docVerif = \App\Models\DocumentVerification::createRecord(
+        $docVerif = DocumentVerification::createRecord(
             'PERS_REGION_REPORT',
             'LAPORAN REKAPITULASI KEKUATAN PERSONEL BERBASIS WILAYAH',
             'Seluruh Anggota Komcad (' . $totalCount . ' Personel)',
