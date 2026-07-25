@@ -149,11 +149,7 @@ class VerificationController extends Controller
         $type = $request->type;
         $folder = $type === 'photo_profile' ? 'personel/photos' : 'personel/documents';
 
-        try {
-            $path = $request->file('file')->store($folder, 'private');
-        } catch (\Exception $e) {
-            $path = $request->file('file')->store($folder, 'local');
-        }
+$path = $request->file('file')->store($folder, 'local');
 
         $personel->update([$type => $path]);
 
