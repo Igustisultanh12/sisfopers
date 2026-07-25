@@ -60,7 +60,7 @@
     <div class="signature-block">
         <div>Dikeluarkan di: Surabaya</div>
         <div>Pada tanggal: @tanggalId</div>
-        <div style="margin-top: 10px;">a.n. Komandan Komponen Cadangan</div>
+        <div style="margin-top: 10px;">{{ $signerHeader }}</div>
         <div style="font-weight: bold; margin-bottom: 6px;">{{ $signerJabatan }},</div>
 
         @if(isset($qrCodeBase64) && $qrCodeBase64)
