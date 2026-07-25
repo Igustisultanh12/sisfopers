@@ -244,7 +244,6 @@ const getDocumentUrl = (path) => {
 };
 
 
-import { router } from '@inertiajs/vue3';
 
 const isUploading = ref(false);
 
