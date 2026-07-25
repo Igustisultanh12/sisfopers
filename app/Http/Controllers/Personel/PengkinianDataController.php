@@ -8,12 +8,14 @@ use App\Models\Personel;
 use App\Models\SkepData;
 use App\Models\SkepRequest;
 use App\Models\User;
+use App\Models\Role;
 use App\Mail\SystemNotificationMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 
 class PengkinianDataController extends Controller
@@ -345,8 +347,24 @@ class PengkinianDataController extends Controller
         if (!$personel) {
             $skep = SkepData::where('nikc', $request->nikc)->first();
             
+            // Auto create or find user account
+            $personelRole = Role::where('name', 'personel')->first();
+            $email = $request->nikc . '@sisfopers.id';
+            $userAccount = User::where('email', $email)->orWhere('username', $request->nikc)->first();
+            if (!$userAccount) {
+                $userAccount = User::create([
+                    'uuid'      => Str::uuid(),
+                    'role_id'   => $personelRole ? $personelRole->id : 2,
+                    'username'  => $request->nikc,
+                    'email'     => $email,
+                    'password'  => Hash::make('Password123!'),
+                    'is_active' => $request->jenis_pengkinian !== 'MENINGGAL',
+                ]);
+            }
+
             $personelData = [
                 'uuid'                => Str::uuid(),
+                'user_id'             => $userAccount ? $userAccount->id : null,
                 'full_name'           => $request->full_name,
                 'nikc'                => $request->nikc,
                 'nik'                 => Str::random(16),
