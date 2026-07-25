@@ -236,7 +236,7 @@
               <div class="col-span-2 md:col-span-1">
                 <p class="text-[9px] font-bold text-slate-400 uppercase">Alamat Domisili</p>
                 <p v-if="selectedPersonel.province || selectedPersonel.city" class="font-bold text-slate-800 mt-0.5 text-xs">
-                  {{ [selectedPersonel.subdistrict, selectedPersonel.city, selectedPersonel.province].filter(Boolean).join(', ') }}
+                  {{ [selectedPersonel.district || selectedPersonel.subdistrict, selectedPersonel.city, selectedPersonel.province].filter(Boolean).join(', ') }}
                 </p>
                 <div v-else class="mt-1 space-y-1.5">
                   <select v-model="addForm.province" @change="handleProvinceChange" class="w-full rounded-lg border-[#E2E8F0] text-xs px-2 py-1 outline-none focus:border-[#2563EB] bg-white">
@@ -249,7 +249,7 @@
                     <option v-for="reg in regencies" :key="reg.code" :value="reg.name">{{ reg.name }}</option>
                   </select>
 
-                  <select v-model="addForm.subdistrict" :disabled="!addForm.city || loadingDistricts" class="w-full rounded-lg border-[#E2E8F0] text-xs px-2 py-1 outline-none focus:border-[#2563EB] bg-white disabled:opacity-50">
+                  <select v-model="addForm.district" :disabled="!addForm.city || loadingDistricts" class="w-full rounded-lg border-[#E2E8F0] text-xs px-2 py-1 outline-none focus:border-[#2563EB] bg-white disabled:opacity-50">
                     <option value="">{{ loadingDistricts ? 'Memuat Kecamatan...' : 'Pilih Kecamatan...' }}</option>
                     <option v-for="dist in districts" :key="dist.code" :value="dist.name">{{ dist.name }}</option>
                   </select>
@@ -443,7 +443,7 @@
 
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import { useSwal } from '@/Composables/useSwal';
 
@@ -488,7 +488,7 @@ const fetchProvinces = () => {
 
 const handleProvinceChange = () => {
   addForm.city = '';
-  addForm.subdistrict = '';
+  addForm.district = '';
   regencies.value = [];
   districts.value = [];
   
@@ -511,7 +511,7 @@ const handleProvinceChange = () => {
 };
 
 const handleRegencyChange = () => {
-  addForm.subdistrict = '';
+  addForm.district = '';
   districts.value = [];
   
   if (!addForm.city) return;
@@ -542,7 +542,7 @@ const addForm = useForm({
   phone_number: '',
   province: '',
   city: '',
-  subdistrict: '',
+  district: '',
   jenis_pengkinian: 'MENINGGAL',
   document: null,
   nrp: '',
@@ -602,7 +602,7 @@ const selectPersonel = (p) => {
   addForm.phone_number = p.phone_number || '';
   addForm.province = p.province || '';
   addForm.city = p.city || '';
-  addForm.subdistrict = p.subdistrict || '';
+  addForm.district = p.district || p.subdistrict || '';
   personelSearchQuery.value = p.full_name + ' (' + (p.nikc || p.nik) + ')';
   searchResults.value = [];
 
@@ -625,7 +625,7 @@ const useManualInput = () => {
     phone_number: '',
     province: '',
     city: '',
-    subdistrict: '',
+    district: '',
     source: 'MANUAL_ENTRY'
   };
 
