@@ -222,7 +222,7 @@ Catatan: Akun personel terkait telah dinonaktifkan secara otomatis oleh sistem."
             if ($item->personel->user) {
                 $item->personel->user->notify(new \App\Notifications\SystemNotification(
                     'Pengkinian Data Ditolak',
-                    "Pengajuan pengkinian data ({$item->jenis_pengkinian}) Anda DITOLAK dengan alasan: "{$request->reason}".",
+                    "Pengajuan pengkinian data ({$item->jenis_pengkinian}) Anda DITOLAK dengan alasan: \"{$request->reason}\"."",
                     'pengkinian_data',
                     route('personel.pengkinian-data.index')
                 ));
@@ -230,7 +230,7 @@ Catatan: Akun personel terkait telah dinonaktifkan secara otomatis oleh sistem."
 
             // Send WhatsApp Notification
             if ($item->personel->phone_number) {
-                $msg = "Halo *{$item->personel->full_name}*, pengajuan pengkinian data ({$item->jenis_pengkinian}) Anda *DITOLAK* dengan alasan: "{$request->reason}". Silakan ajukan ulang dengan berkas yang sesuai.";
+                $msg = "Halo *{$item->personel->full_name}*, pengajuan pengkinian data ({$item->jenis_pengkinian}) Anda *DITOLAK* dengan alasan: \"{$request->reason}\". Silakan ajukan ulang dengan berkas yang sesuai.";
                 \App\Services\WhatsappService::sendMessage($item->personel->phone_number, $msg);
             }
 
