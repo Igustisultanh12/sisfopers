@@ -232,17 +232,29 @@
                 </div>
               </div>
 
-              <!-- Alamat Domisili -->
+              <!-- Alamat Domisili (Dropdown Cascading API Wilayah) -->
               <div class="col-span-2 md:col-span-1">
                 <p class="text-[9px] font-bold text-slate-400 uppercase">Alamat Domisili</p>
                 <p v-if="selectedPersonel.province || selectedPersonel.city" class="font-bold text-slate-800 mt-0.5 text-xs">
                   {{ [selectedPersonel.subdistrict, selectedPersonel.city, selectedPersonel.province].filter(Boolean).join(', ') }}
                 </p>
-                <div v-else class="mt-1 space-y-1">
-                  <input v-model="addForm.province" type="text" placeholder="Provinsi..." class="w-full rounded-lg border-[#E2E8F0] text-xs px-2 py-1 outline-none focus:border-[#2563EB]" />
-                  <input v-model="addForm.city" type="text" placeholder="Kota / Kabupaten..." class="w-full rounded-lg border-[#E2E8F0] text-xs px-2 py-1 outline-none focus:border-[#2563EB]" />
-                  <input v-model="addForm.subdistrict" type="text" placeholder="Kecamatan..." class="w-full rounded-lg border-[#E2E8F0] text-xs px-2 py-1 outline-none focus:border-[#2563EB]" />
-                  <span class="text-[9px] text-amber-600 font-semibold">*Kosong, silakan lengkapi</span>
+                <div v-else class="mt-1 space-y-1.5">
+                  <select v-model="addForm.province" @change="handleProvinceChange" class="w-full rounded-lg border-[#E2E8F0] text-xs px-2 py-1 outline-none focus:border-[#2563EB] bg-white">
+                    <option value="">Pilih Provinsi...</option>
+                    <option v-for="prov in provinces" :key="prov.code" :value="prov.name">{{ prov.name }}</option>
+                  </select>
+
+                  <select v-model="addForm.city" @change="handleRegencyChange" :disabled="!addForm.province || loadingRegencies" class="w-full rounded-lg border-[#E2E8F0] text-xs px-2 py-1 outline-none focus:border-[#2563EB] bg-white disabled:opacity-50">
+                    <option value="">{{ loadingRegencies ? 'Memuat Kota/Kab...' : 'Pilih Kota / Kabupaten...' }}</option>
+                    <option v-for="reg in regencies" :key="reg.code" :value="reg.name">{{ reg.name }}</option>
+                  </select>
+
+                  <select v-model="addForm.subdistrict" :disabled="!addForm.city || loadingDistricts" class="w-full rounded-lg border-[#E2E8F0] text-xs px-2 py-1 outline-none focus:border-[#2563EB] bg-white disabled:opacity-50">
+                    <option value="">{{ loadingDistricts ? 'Memuat Kecamatan...' : 'Pilih Kecamatan...' }}</option>
+                    <option v-for="dist in districts" :key="dist.code" :value="dist.name">{{ dist.name }}</option>
+                  </select>
+
+                  <span class="text-[9px] text-amber-600 font-semibold">*Kosong, silakan lengkapi via pilihan wilayah</span>
                 </div>
               </div>
             </div>
@@ -431,7 +443,7 @@
 
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import { useSwal } from '@/Composables/useSwal';
 
@@ -456,6 +468,69 @@ const searchResults = ref([]);
 const selectedPersonel = ref(null);
 const isSearching = ref(false);
 const hasSearched = ref(false);
+
+// State API Wilayah
+const provinces = ref([]);
+const regencies = ref([]);
+const districts = ref([]);
+const loadingRegencies = ref(false);
+const loadingDistricts = ref(false);
+
+const fetchProvinces = () => {
+  if (provinces.value.length > 0) return;
+  fetch('/api/wilayah/provinces')
+    .then(res => res.json())
+    .then(data => {
+      provinces.value = data;
+    })
+    .catch(err => console.error('Gagal mengambil data provinsi:', err));
+};
+
+const handleProvinceChange = () => {
+  addForm.city = '';
+  addForm.subdistrict = '';
+  regencies.value = [];
+  districts.value = [];
+  
+  if (!addForm.province) return;
+  
+  const selectedProvince = provinces.value.find(p => p.name === addForm.province);
+  if (!selectedProvince) return;
+  
+  loadingRegencies.value = true;
+  fetch(`/api/wilayah/regencies/${selectedProvince.code}`)
+    .then(res => res.json())
+    .then(data => {
+      regencies.value = data;
+      loadingRegencies.value = false;
+    })
+    .catch(err => {
+      console.error('Gagal mengambil data kabupaten:', err);
+      loadingRegencies.value = false;
+    });
+};
+
+const handleRegencyChange = () => {
+  addForm.subdistrict = '';
+  districts.value = [];
+  
+  if (!addForm.city) return;
+  
+  const selectedRegency = regencies.value.find(r => r.name === addForm.city);
+  if (!selectedRegency) return;
+  
+  loadingDistricts.value = true;
+  fetch(`/api/wilayah/districts/${selectedRegency.code}`)
+    .then(res => res.json())
+    .then(data => {
+      districts.value = data;
+      loadingDistricts.value = false;
+    })
+    .catch(err => {
+      console.error('Gagal mengambil data kecamatan:', err);
+      loadingDistricts.value = false;
+    });
+};
 
 const addForm = useForm({
   personel_id: '',
@@ -485,6 +560,7 @@ const openAddModal = () => {
   selectedPersonel.value = null;
   hasSearched.value = false;
   addForm.reset();
+  fetchProvinces();
 };
 
 let searchTimeout = null;
@@ -529,6 +605,10 @@ const selectPersonel = (p) => {
   addForm.subdistrict = p.subdistrict || '';
   personelSearchQuery.value = p.full_name + ' (' + (p.nikc || p.nik) + ')';
   searchResults.value = [];
+
+  if (!p.province) {
+    fetchProvinces();
+  }
 };
 
 const useManualInput = () => {
@@ -557,6 +637,8 @@ const useManualInput = () => {
   addForm.matra = '';
   addForm.angkatan = '2024';
   searchResults.value = [];
+
+  fetchProvinces();
 };
 
 const submitAddForm = () => {
