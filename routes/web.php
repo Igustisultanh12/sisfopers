@@ -136,7 +136,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/pendidikan/{education}/reject', [EducationController::class, 'reject'])->name('education.reject');
     Route::match(['POST', 'PUT'], '/pendidikan/{education}', [EducationController::class, 'update'])->name('education.update');
     Route::delete('/pendidikan/{education}', [EducationController::class, 'destroy'])->name('education.destroy');
-        Route::get('/pengkinian-data', [\App\Http\Controllers\Personel\PengkinianDataController::class, 'index'])->name('pengkinian-data.index');
+        Route::get('/pengkinian-data', [\App\Http\Controllers\Personel\PengkinianDataController::class, 'adminIndex'])->name('pengkinian-data.index');
         Route::post('/pengkinian-data', [\App\Http\Controllers\Personel\PengkinianDataController::class, 'store'])->name('pengkinian-data.store');
 
     // Verifikasi Pendidikan — Halaman khusus admin untuk verifikasi semua riwayat pendidikan
