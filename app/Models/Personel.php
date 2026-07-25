@@ -96,4 +96,34 @@ class Personel extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function riwayatPendidikan(): HasMany
+    {
+        return $this->hasMany(RiwayatPendidikan::class, 'personel_id');
+    }
+
+    public function registration(): HasOne
+    {
+        return $this->hasOne(Registration::class, 'personel_id');
+    }
+
+    public function pengkinianData(): HasMany
+    {
+        return $this->hasMany(PengkinianData::class, 'personel_id');
+    }
+
+    public function jobHistories(): HasMany
+    {
+        return $this->hasMany(JobHistory::class, 'personel_id');
+    }
+
+    public function faceVerifications(): HasMany
+    {
+        return $this->hasMany(FaceVerification::class, 'personel_id');
+    }
+
+    public function sinyalmen(): HasOne
+    {
+        return $this->hasOne(Sinyalmen::class, 'personel_id');
+    }
 }
