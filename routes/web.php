@@ -136,6 +136,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/pendidikan/{education}/reject', [EducationController::class, 'reject'])->name('education.reject');
     Route::match(['POST', 'PUT'], '/pendidikan/{education}', [EducationController::class, 'update'])->name('education.update');
     Route::delete('/pendidikan/{education}', [EducationController::class, 'destroy'])->name('education.destroy');
+        Route::get('/pengkinian-data', [\App\Http\Controllers\Personel\PengkinianDataController::class, 'index'])->name('pengkinian-data.index');
+        Route::post('/pengkinian-data', [\App\Http\Controllers\Personel\PengkinianDataController::class, 'store'])->name('pengkinian-data.store');
 
     // Verifikasi Pendidikan — Halaman khusus admin untuk verifikasi semua riwayat pendidikan
     Route::get('/verifikasi-pendidikan', [EducationController::class, 'adminVerifList'])->name('education.verif-list');
@@ -242,6 +244,8 @@ Route::middleware(['auth', 'role:personel,admin,kordinator_angkatan,kordinator_m
         Route::post('/pendidikan', [EducationController::class, 'store'])->name('education.store');
         Route::match(['POST', 'PUT'], '/pendidikan/{education}', [EducationController::class, 'update'])->name('education.update');
         Route::delete('/pendidikan/{education}', [EducationController::class, 'destroy'])->name('education.destroy');
+        Route::get('/pengkinian-data', [\App\Http\Controllers\Personel\PengkinianDataController::class, 'index'])->name('pengkinian-data.index');
+        Route::post('/pengkinian-data', [\App\Http\Controllers\Personel\PengkinianDataController::class, 'store'])->name('pengkinian-data.store');
 
         // Modul Riwayat Pekerjaan (ASN / Non-ASN) Terverifikasi OTP WA & wilayah.id
         Route::get('/pekerjaan', [JobHistoryController::class, 'index'])->name('job.index');
