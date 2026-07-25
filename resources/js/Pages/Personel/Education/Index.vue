@@ -315,16 +315,18 @@ const closeModal = () => {
 };
 
 const processVerify = () => {
-  if (!selectedItem.value || !props.routes?.verify) return;
+  if (!selectedItem.value) return;
   processing.value = true;
 
-  router.post(route(props.routes.verify, selectedItem.value.id), {}, {
+  const targetUrl = route('admin.education.verify', { education: selectedItem.value.id });
+
+  router.post(targetUrl, {}, {
     preserveScroll: true,
     onSuccess: () => {
       alertSuccess('Berhasil', 'Riwayat pendidikan telah disetujui & diverifikasi.');
       closeModal();
     },
-    onError: () => {
+    onError: (err) => {
       alertError('Gagal', 'Terjadi kesalahan saat memverifikasi.');
     },
     onFinish: () => {
@@ -334,10 +336,12 @@ const processVerify = () => {
 };
 
 const processReject = () => {
-  if (!selectedItem.value || !rejectReason.value.trim() || !props.routes?.reject) return;
+  if (!selectedItem.value || !rejectReason.value.trim()) return;
   processing.value = true;
 
-  router.post(route(props.routes.reject, selectedItem.value.id), {
+  const targetUrl = route('admin.education.reject', { education: selectedItem.value.id });
+
+  router.post(targetUrl, {
     reason: rejectReason.value
   }, {
     preserveScroll: true,
@@ -345,7 +349,7 @@ const processReject = () => {
       alertSuccess('Berhasil Ditolak', 'Pengajuan pendidikan telah ditolak dan notifikasi telah dikirim.');
       closeModal();
     },
-    onError: () => {
+    onError: (err) => {
       alertError('Gagal', 'Terjadi kesalahan saat menolak pengajuan.');
     },
     onFinish: () => {
