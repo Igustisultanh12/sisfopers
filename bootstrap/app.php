@@ -24,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'face_verified' => EnsureFaceVerified::class,
             'profile_complete' => EnsureProfileComplete::class,
+            'under_maintenance' => \App\Http\Middleware\CheckMaintenanceMode::class,
         ]);
 
         // Append middleware global untuk kebutuhan response Inertia.js
