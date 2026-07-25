@@ -68,15 +68,23 @@ Route::middleware('guest')->group(function () {
 });
 
 // Rute Global Pengguna Terautentikasi (Auth Group)
+// Rute Tampilan Under Maintenance (Bisa diakses publik/guest agar register juga bisa dialihkan ke sini)
+Route::get('/maintenance', function () {
+    if (auth()->check() && !auth()->user()->hasRole('personel')) {
+        return redirect()->route('admin.dashboard');
+    }
+    
+    $isMaintenance = \App\Models\Setting::where('key', 'under_maintenance')->value('value') === '1';
+    if (!$isMaintenance) {
+        return redirect()->route('login');
+    }
+
+    return Inertia::render('Maintenance', [
+        'settings' => \App\Models\Setting::all()->pluck('value', 'key')
+    ]);
+})->name('maintenance');
+
 Route::middleware(['auth'])->group(function () {
-    Route::get('/maintenance', function () {
-        if (auth()->check() && !auth()->user()->hasRole('personel')) {
-            return redirect()->route('admin.dashboard');
-        }
-        return Inertia::render('Maintenance', [
-            'settings' => \App\Models\Setting::all()->pluck('value', 'key')
-        ]);
-    })->name('maintenance');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     // Manajemen Profil & Pengaturan Akun (dengan Alias Rute Ziggy Lengkap)
