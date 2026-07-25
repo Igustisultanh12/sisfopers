@@ -27,19 +27,19 @@
     <div class="title-block">
         <div class="title">LAPORAN REKAPITULASI KEKUATAN PERSONEL BERBASIS WILAYAH</div>
         <div class="subtitle">PENGELOMPOKAN BERDASARKAN PROVINSI DAN KOTA/KABUPATEN DOMISILI</div>
-        <div style="font-size: 9px; margin-top: 2px;">NOMOR: {{  }}</div>
+        <div style="font-size: 9px; margin-top: 2px;">NOMOR: {{ $nomorSurat }}</div>
     </div>
 
-    @php  = 1; @endphp
-    @foreach( as  => )
+    @php $globalNo = 1; @endphp
+    @foreach($groupedData as $provinceName => $cities)
         <div class="province-header">
-            PROVINSI: {{  }}
-            <span style="float: right; font-weight: normal; font-size: 9px;">Total Personel: {{ ->flatten(1)->count() }}</span>
+            PROVINSI: {{ $provinceName }}
+            <span style="float: right; font-weight: normal; font-size: 9px;">Total Personel: {{ $cities->flatten(1)->count() }}</span>
         </div>
 
-        @foreach( as  => )
+        @foreach($cities as $cityName => $personels)
             <div class="city-header">
-                📍 KOTA / KABUPATEN: {{  }} ({{ ->count() }} Personel)
+                📍 KOTA / KABUPATEN: {{ $cityName }} ({{ $personels->count() }} Personel)
             </div>
 
             <table>
@@ -56,16 +56,16 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach( as )
+                    @foreach($personels as $p)
                     <tr>
-                        <td class="text-center">{{ ++ }}</td>
-                        <td class="text-center">{{ ->nikc ?? '-' }}</td>
-                        <td><strong>{{ ->full_name }}</strong></td>
-                        <td class="text-center">{{ \App\Models\Personel::formatShortRank(->pangkat) }} ({{ ->matra }})</td>
-                        <td class="text-center">{{ ->angkatan ? 'Angkatan ' . ->angkatan : '-' }}</td>
-                        <td class="text-center">{{ ->sumber_rekrutmen ?? 'Reguler' }}</td>
-                        <td class="text-center">{{ ->phone_number }}</td>
-                        <td class="text-center">{{ ->face_verified ? 'VERIFIED' : 'PENDING' }}</td>
+                        <td class="text-center">{{ $globalNo++ }}</td>
+                        <td class="text-center">{{ $p->nikc ?? '-' }}</td>
+                        <td><strong>{{ $p->full_name }}</strong></td>
+                        <td class="text-center">{{ \App\Models\Personel::formatShortRank($p->pangkat) }} ({{ $p->matra }})</td>
+                        <td class="text-center">{{ $p->angkatan ? 'Angkatan ' . $p->angkatan : '-' }}</td>
+                        <td class="text-center">{{ $p->sumber_rekrutmen ?? 'Reguler' }}</td>
+                        <td class="text-center">{{ $p->phone_number }}</td>
+                        <td class="text-center">{{ $p->face_verified ? 'VERIFIED' : 'PENDING' }}</td>
                     </tr>
                     @endforeach
                 </tbody>
@@ -74,7 +74,7 @@
     @endforeach
 
     <div style="margin-top: 20px; font-size: 9px; font-weight: bold;">
-        TOTAL KESELURUHAN PERSONEL TERDAPAT PADA DOKUMEN: {{  }} PERSONEL
+        TOTAL KESELURUHAN PERSONEL TERDAPAT PADA DOKUMEN: {{ $totalCount }} PERSONEL
     </div>
 
     <!-- Blok Tanda Tangan & QR Code -->
@@ -82,15 +82,15 @@
         <div>Dikeluarkan di: Jakarta</div>
         <div>Pada tanggal: {{ date('d F Y') }}</div>
         <div style="margin-top: 8px;">a.n. Komandan Komponen Cadangan</div>
-        <div>{{  }},</div>
+        <div>{{ $signerJabatan }},</div>
         
         <div style="margin-top: 15px; margin-bottom: 10px;">
-            <img src="{{  }}" style="width: 80px; height: 80px;" /><br>
-            <span style="font-size: 8px; color: #475569;">Kode Verifikasi Legalitas: {{  }}</span>
+            <img src="{{ $qrCodeBase64 }}" style="width: 80px; height: 80px;" /><br>
+            <span style="font-size: 8px; color: #475569;">Kode Verifikasi Legalitas: {{ $verifyCode }}</span>
         </div>
         
-        <div style="font-weight: bold; text-decoration: underline;">{{  }}</div>
-        <div>{{  }} NIKC. {{  }}</div>
+        <div style="font-weight: bold; text-decoration: underline;">{{ $signerName }}</div>
+        <div>{{ $signerPangkat }} NIKC. {{ $signerNikc }}</div>
     </div>
 </body>
 </html>
