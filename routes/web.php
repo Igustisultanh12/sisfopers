@@ -85,17 +85,30 @@ Route::middleware(['auth'])->group(function () {
     })->where('path', '.*')->name('personel.document.download');
 });
 
-// Rute Servis Berkas Storage Fallback (Penjamin Gambar Selalu Tampil 100% Meskipun Symlink Bermasalah)
+// Rute Servis Berkas Storage Fallback (Pencarian Multi-Folder Otomatis di Public, Local, & Private)
 Route::get('/storage/{path}', function ($path) {
     $cleanPath = ltrim($path, '/');
-    $cleanPath = preg_replace('/^(storage\/|public\/)+/', '', $cleanPath);
+    $cleanPath = preg_replace('/^(storage\/|public\/|private\/)+/', '', $cleanPath);
+    $filename = basename($cleanPath);
+
+    $possibleSubpaths = [
+        $cleanPath,
+        'personel/photos/' . $filename,
+        'personel/documents/' . $filename,
+        'personel/pendidikan/' . $filename,
+        'personel/pekerjaan/' . $filename,
+        'personel/asn_sks/' . $filename,
+        'personel/skep_requests/' . $filename,
+    ];
 
     foreach (['public', 'local', 'private'] as $diskName) {
-        if (Storage::disk($diskName)->exists($cleanPath)) {
-            $fullPath = Storage::disk($diskName)->path($cleanPath);
-            if (file_exists($fullPath) && is_readable($fullPath)) {
-                $mime = mime_content_type($fullPath) ?: 'image/jpeg';
-                return response()->file($fullPath, ['Content-Type' => $mime]);
+        foreach ($possibleSubpaths as $subPath) {
+            if (Storage::disk($diskName)->exists($subPath)) {
+                $fullPath = Storage::disk($diskName)->path($subPath);
+                if (file_exists($fullPath) && is_readable($fullPath)) {
+                    $mime = mime_content_type($fullPath) ?: 'image/jpeg';
+                    return response()->file($fullPath, ['Content-Type' => $mime]);
+                }
             }
         }
     }
