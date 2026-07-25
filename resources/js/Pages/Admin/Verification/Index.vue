@@ -223,11 +223,10 @@ const submitVerification = () => {
 const getDocumentUrl = (path) => {
   if (!path) return '';
   if (path.startsWith('http://') || path.startsWith('https://')) return path;
-  if (path.startsWith('/documents/private/')) return path;
-  if (path.startsWith('documents/private/')) return '/' + path;
-  if (path.startsWith('/storage/')) return path;
-  if (path.startsWith('storage/')) return '/' + path;
-  const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+  let cleanPath = path;
+  if (cleanPath.startsWith('/documents/private/')) cleanPath = cleanPath.replace('/documents/private/', '');
+  if (cleanPath.startsWith('documents/private/')) cleanPath = cleanPath.replace('documents/private/', '');
+  if (cleanPath.startsWith('/')) cleanPath = cleanPath.substring(1);
   return `/documents/private/${cleanPath}`;
 };
 
