@@ -114,19 +114,39 @@ class PengkinianDataController extends Controller
 
         $cleanQ = preg_replace('/[^A-Za-z0-9]/', '', $q);
 
+        // Generate 16 & 17 digit NIKC variations
+        $nikc16 = null;
+        $nikc17 = null;
+        if (strlen($cleanQ) === 17 && substr($cleanQ, 9, 1) === '0') {
+            $nikc17 = $cleanQ;
+            $nikc16 = substr($cleanQ, 0, 9) . substr($cleanQ, 10);
+        } else if (strlen($cleanQ) === 16) {
+            $nikc16 = $cleanQ;
+            $nikc17 = substr($cleanQ, 0, 9) . '0' . substr($cleanQ, 9);
+        }
+
         $results = [];
         $addedIds = [];
 
         try {
-            // 1. Cari dari Database Master Personel (Gunakan strip titik/spasi agar selalu ketemu)
-            $personels = Personel::where(function($sub) use ($q, $cleanQ) {
+            // 1. Cari dari Database Master Personel
+            $personels = Personel::where(function($sub) use ($q, $cleanQ, $nikc16, $nikc17) {
                     $sub->where('full_name', 'like', "%{$q}%")
                         ->orWhere('nikc', 'like', "%{$q}%")
                         ->orWhere('nik', 'like', "%{$q}%");
-                    
+
                     if (!empty($cleanQ)) {
                         $sub->orWhereRaw("REPLACE(REPLACE(REPLACE(nikc, '.', ''), '-', ''), ' ', '') LIKE ?", ["%{$cleanQ}%"])
                             ->orWhereRaw("REPLACE(REPLACE(REPLACE(nik, '.', ''), '-', ''), ' ', '') LIKE ?", ["%{$cleanQ}%"]);
+                    }
+
+                    if ($nikc16) {
+                        $sub->orWhere('nikc', 'like', "%{$nikc16}%")
+                            ->orWhereRaw("REPLACE(REPLACE(REPLACE(nikc, '.', ''), '-', ''), ' ', '') LIKE ?", ["%{$nikc16}%"]);
+                    }
+                    if ($nikc17) {
+                        $sub->orWhere('nikc', 'like', "%{$nikc17}%")
+                            ->orWhereRaw("REPLACE(REPLACE(REPLACE(nikc, '.', ''), '-', ''), ' ', '') LIKE ?", ["%{$nikc17}%"]);
                     }
                 })
                 ->limit(10)
@@ -152,12 +172,21 @@ class PengkinianDataController extends Controller
             }
 
             // 2. Cari dari Database Master SKEP
-            $skepItems = SkepData::where(function($sub) use ($q, $cleanQ) {
+            $skepItems = SkepData::where(function($sub) use ($q, $cleanQ, $nikc16, $nikc17) {
                     $sub->where('nama_lengkap', 'like', "%{$q}%")
                         ->orWhere('nikc', 'like', "%{$q}%");
 
                     if (!empty($cleanQ)) {
                         $sub->orWhereRaw("REPLACE(REPLACE(REPLACE(nikc, '.', ''), '-', ''), ' ', '') LIKE ?", ["%{$cleanQ}%"]);
+                    }
+
+                    if ($nikc16) {
+                        $sub->orWhere('nikc', 'like', "%{$nikc16}%")
+                            ->orWhereRaw("REPLACE(REPLACE(REPLACE(nikc, '.', ''), '-', ''), ' ', '') LIKE ?", ["%{$nikc16}%"]);
+                    }
+                    if ($nikc17) {
+                        $sub->orWhere('nikc', 'like', "%{$nikc17}%")
+                            ->orWhereRaw("REPLACE(REPLACE(REPLACE(nikc, '.', ''), '-', ''), ' ', '') LIKE ?", ["%{$nikc17}%"]);
                     }
                 })
                 ->limit(10)
