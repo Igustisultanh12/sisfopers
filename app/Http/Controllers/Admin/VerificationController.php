@@ -136,3 +136,29 @@ class VerificationController extends Controller
         }
     }
 }
+    /**
+     * Unggah / Update Berkas Foto Profil atau KTP Pendaftar oleh Admin
+     */
+    public function uploadDocument(Request $request, $uuid)
+    {
+        $personel = Personel::where('uuid', $uuid)->firstOrFail();
+        
+        $request->validate([
+            'type' => 'required|in:photo_profile,ktp_document',
+            'file' => 'required|file|mimes:jpeg,jpg,png,pdf|max:5120',
+        ]);
+
+        $type = $request->type;
+        $folder = $type === 'photo_profile' ? 'personel/photos' : 'personel/documents';
+
+        try {
+            $path = $request->file('file')->store($folder, 'private');
+        } catch (\Exception $e) {
+            $path = $request->file('file')->store($folder, 'local');
+        }
+
+        $personel->update([$type => $path]);
+
+        return back()->with('success', 'Berkas pendaftar berhasil diunggah.');
+    }
+}
