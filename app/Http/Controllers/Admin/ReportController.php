@@ -7,6 +7,7 @@ use App\Models\MasterKepangkatan;
 use App\Models\Personel;
 use App\Models\Setting;
 use App\Models\DocumentVerification;
+use Illuminate\Support\Facades\DB;
 
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\PersonelExport;
@@ -87,7 +88,6 @@ class ReportController extends Controller
         $data['signerNikc'] = $signer['nikc'];
         $data['signerJabatan'] = $signer['jabatan'];
 
-        // Format Roman month
         $romans = [1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI', 7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'];
         $data['nomorSurat'] = 'R/001/PERS/' . $romans[date('n')] . '/' . date('Y');
 
@@ -106,7 +106,6 @@ class ReportController extends Controller
         $data['verifyUrl']  = $verifyUrl;
         $data['qrCodeBase64'] = \App\Services\QrCodeService::generateBase64($verifyUrl);
 
-        // Load HTML Raw View tanpa CSS eksternal berat demi compliance DomPDF render engine
         $pdf = Pdf::loadView('reports.personel_pdf', $data)->setPaper('a4', 'landscape');
         return $pdf->download('Laporan_Instansial_Personel_KC.pdf');
     }
@@ -180,24 +179,17 @@ class ReportController extends Controller
 
     public function regionPdf()
     {
-        $personels = Personel::where(function ($query) {
-                $query->whereDoesntHave('registration')
-                      ->orWhereHas('registration', function ($q) {
-                          $q->where('status_verification', 'APPROVED');
-                      });
-            })
-            ->with(['user', 'sinyalmen'])
+        $rekapData = Personel::select(
+                DB::raw("UPPER(COALESCE(NULLIF(sumber_rekrutmen, ''), 'REGULER')) as sumber"),
+                DB::raw("UPPER(COALESCE(NULLIF(city, ''), 'UNASSIGNED')) as kabupaten_kota"),
+                DB::raw("CASE WHEN gender = 'P' THEN 'PEREMPUAN' ELSE 'LAKI-LAKI' END as ket"),
+                DB::raw("COUNT(*) as total_jumlah"),
+                DB::raw("SUM(CASE WHEN face_verified = 1 THEN 1 ELSE 0 END) as total_nyata")
+            )
+            ->groupBy('sumber', 'kabupaten_kota', 'ket')
+            ->orderBy('sumber')
+            ->orderBy('kabupaten_kota')
             ->get();
-
-        $totalCount = $personels->count();
-
-        $groupedData = $personels->groupBy(function ($item) {
-            return strtoupper(trim($item->province ?: 'LAINNYA / UNASSIGNED'));
-        })->map(function ($cityGroup) {
-            return $cityGroup->groupBy(function ($item) {
-                return strtoupper(trim($item->city ?: 'UNASSIGNED'));
-            });
-        });
 
         $signer = $this->getSignerData();
         
@@ -206,9 +198,9 @@ class ReportController extends Controller
 
         $docVerif = DocumentVerification::createRecord(
             'PERS_REGION_REPORT',
-            'LAPORAN REKAPITULASI KEKUATAN PERSONEL BERBASIS WILAYAH',
-            'Seluruh Anggota Komcad (' . $totalCount . ' Personel)',
-            'Laporan Rekapitulasi Provinsi & Kota/Kabupaten',
+            'LAPORAN REKAPITULASI KEKUATAN PERSONEL DOMISILI',
+            'Rekapitulasi Wilayah (' . $rekapData->sum('total_jumlah') . ' Personel)',
+            'Laporan Rekapitulasi Sumber & Kota/Kabupaten',
             $signer['name'],
             $signer['pangkat'],
             ['nomor_surat' => $nomorSurat]
@@ -218,8 +210,7 @@ class ReportController extends Controller
         $qrCodeBase64 = \App\Services\QrCodeService::generateBase64($verifyUrl);
 
         $pdf = Pdf::loadView('reports.region_pdf', [
-            'groupedData'   => $groupedData,
-            'totalCount'    => $totalCount,
+            'rekapData'     => $rekapData,
             'signerName'    => $signer['name'],
             'signerPangkat' => $signer['pangkat'],
             'signerNikc'    => $signer['nikc'],
@@ -228,7 +219,7 @@ class ReportController extends Controller
             'verifyCode'    => $docVerif->verify_code,
             'verifyUrl'     => $verifyUrl,
             'qrCodeBase64'  => $qrCodeBase64
-        ])->setPaper('a4', 'landscape');
+        ])->setPaper('a4', 'portrait');
 
         return $pdf->download('Laporan_Rekapitulasi_Wilayah_Personel_KC.pdf');
     }
