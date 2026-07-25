@@ -137,7 +137,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::match(['POST', 'PUT'], '/pendidikan/{education}', [EducationController::class, 'update'])->name('education.update');
     Route::delete('/pendidikan/{education}', [EducationController::class, 'destroy'])->name('education.destroy');
         Route::get('/pengkinian-data', [\App\Http\Controllers\Personel\PengkinianDataController::class, 'adminIndex'])->name('pengkinian-data.index');
-        Route::post('/pengkinian-data', [\App\Http\Controllers\Personel\PengkinianDataController::class, 'store'])->name('pengkinian-data.store');
+        Route::get('/verifikasi-pengkinian/search-personel', [\App\Http\Controllers\Personel\PengkinianDataController::class, 'searchPersonel'])->name('pengkinian-data.search-personel');
+        Route::post('/verifikasi-pengkinian/store', [\App\Http\Controllers\Personel\PengkinianDataController::class, 'adminStore'])->name('pengkinian-data.store');
+        Route::post('/verifikasi-pengkinian/{id}/verify', [\App\Http\Controllers\Personel\PengkinianDataController::class, 'verify'])->name('pengkinian-data.verify');
+        Route::post('/verifikasi-pengkinian/{id}/reject', [\App\Http\Controllers\Personel\PengkinianDataController::class, 'reject'])->name('pengkinian-data.reject');
 
     // Verifikasi Pendidikan — Halaman khusus admin untuk verifikasi semua riwayat pendidikan
     Route::get('/verifikasi-pendidikan', [EducationController::class, 'adminVerifList'])->name('education.verif-list');
