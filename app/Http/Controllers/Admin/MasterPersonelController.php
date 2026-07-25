@@ -235,12 +235,17 @@ class MasterPersonelController extends Controller
             // Standard Laravel upload
             $fileName = $request->file('photo_profile')->store('personel/photos', 'public');
 
+            $otpCode   = str_pad(strval(rand(0, 999999)), 6, '0', STR_PAD_LEFT);
+            $expiredAt = now()->addHours(72);
+
             $personel = Personel::create(array_merge($validated, [
                 'uuid' => Str::uuid(),
                 'user_id' => $user->id,
                 'photo_profile' => $fileName,
                 'status_profile' => 'BELUM_LENGKAP',
                 'face_verified' => false,
+                'manual_otp' => $otpCode,
+                'manual_otp_expired_at' => $expiredAt,
                 'pob' => '-', 
                 'address' => '-', 'city' => '-', 'district' => '-', 'village' => '-', 'postal_code' => '-'
             ]));
