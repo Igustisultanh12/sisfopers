@@ -79,6 +79,8 @@ class SkepPublicController extends Controller
      */
     public function submitRequest(Request $request)
     {
+        $rateLimitKey = 'skep-submit:' . $request->ip();
+
         if ($request->has('nikc')) {
             $request->merge(['nikc' => SkepData::reconstructNikc($request->nikc)]);
         }
