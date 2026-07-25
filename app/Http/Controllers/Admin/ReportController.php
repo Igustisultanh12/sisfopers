@@ -180,27 +180,32 @@ class ReportController extends Controller
     public function regionPdf()
     {
         $rekapData = Personel::select(
+                DB::raw("UPPER(COALESCE(NULLIF(province, ''), 'LAINNYA / UNASSIGNED')) as provinsi"),
                 DB::raw("UPPER(COALESCE(NULLIF(sumber_rekrutmen, ''), 'REGULER')) as sumber"),
                 DB::raw("UPPER(COALESCE(NULLIF(city, ''), 'UNASSIGNED')) as kabupaten_kota"),
                 DB::raw("CASE WHEN gender = 'P' THEN 'PEREMPUAN' ELSE 'LAKI-LAKI' END as ket"),
                 DB::raw("COUNT(*) as total_jumlah"),
                 DB::raw("SUM(CASE WHEN face_verified = 1 THEN 1 ELSE 0 END) as total_nyata")
             )
-            ->groupBy('sumber', 'kabupaten_kota', 'ket')
+            ->groupBy('provinsi', 'sumber', 'kabupaten_kota', 'ket')
+            ->orderBy('provinsi')
             ->orderBy('sumber')
             ->orderBy('kabupaten_kota')
-            ->get();
+            ->get()
+            ->groupBy('provinsi');
 
         $signer = $this->getSignerData();
         
         $romans = [1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI', 7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'];
         $nomorSurat = 'R/002/PERS/REGIONAL/' . $romans[date('n')] . '/' . date('Y');
 
+        $totalPersonelCount = Personel::count();
+
         $docVerif = DocumentVerification::createRecord(
             'PERS_REGION_REPORT',
-            'LAPORAN REKAPITULASI KEKUATAN PERSONEL DOMISILI',
-            'Rekapitulasi Wilayah (' . $rekapData->sum('total_jumlah') . ' Personel)',
-            'Laporan Rekapitulasi Sumber & Kota/Kabupaten',
+            'LAPORAN REKAPITULASI KEKUATAN PERSONEL DOMISILI PER PROVINSI',
+            'Rekapitulasi Wilayah (' . $totalPersonelCount . ' Personel)',
+            'Laporan Rekapitulasi Provinsi & Kota/Kabupaten',
             $signer['name'],
             $signer['pangkat'],
             ['nomor_surat' => $nomorSurat]
