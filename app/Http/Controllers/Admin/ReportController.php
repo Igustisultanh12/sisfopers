@@ -22,18 +22,58 @@ class ReportController extends Controller
 
     private function getSignerData()
     {
+        $user = auth()->user();
+        $personel = $user?->personel;
         $settings = Setting::pluck('value', 'key')->all();
-        
-        $signerName = $settings['app_signer_name'] ?? 'HERMAN SUSILO, S.I.P.';
-        $signerPangkat = $settings['app_signer_pangkat'] ?? 'KOLONEL INF';
-        $signerNikc = $settings['app_signer_nikc'] ?? '112233445566';
-        $signerJabatan = $settings['app_signer_jabatan'] ?? 'KOMANDAN KOMPONEN CADANGAN';
+
+        $defaultName    = $settings['app_signer_name'] ?? 'HERMAN SUSILO, S.I.P.';
+        $defaultPangkat = $settings['app_signer_pangkat'] ?? 'KOLONEL INF';
+        $defaultNikc    = $settings['app_signer_nikc'] ?? '112233445566';
+        $defaultJabatan = $settings['app_signer_jabatan'] ?? 'KOMANDAN KOMPONEN CADANGAN';
+
+        if ($user && $user->hasRole('komandan')) {
+            return [
+                'name'    => $personel ? $personel->full_name : ($user->name ?? $defaultName),
+                'pangkat' => $personel ? $personel->pangkat : $defaultPangkat,
+                'nikc'    => $personel ? ($personel->nikc ?? $personel->nik ?? $defaultNikc) : $defaultNikc,
+                'jabatan' => 'KOMANDAN KOMPONEN CADANGAN',
+                'header'  => 'Komandan Komponen Cadangan,'
+            ];
+        }
+
+        if ($user && ($user->hasRole('kordinator_matra') || $user->hasRole('kordinator_angkatan'))) {
+            $matraOrAngkatan = '';
+            if ($user->hasRole('kordinator_matra') && $personel) {
+                $matraOrAngkatan = 'MATRA ' . strtoupper($personel->matra ?? '');
+            } elseif ($user->hasRole('kordinator_angkatan') && $personel) {
+                $matraOrAngkatan = 'ANGKATAN ' . ($personel->angkatan ?? '');
+            }
+
+            return [
+                'name'    => $personel ? $personel->full_name : ($user->name ?? 'KOORDINATOR'),
+                'pangkat' => $personel ? $personel->pangkat : 'KOORDINATOR',
+                'nikc'    => $personel ? ($personel->nikc ?? $personel->nik ?? '-') : '-',
+                'jabatan' => 'KOORDINATOR ' . trim($matraOrAngkatan),
+                'header'  => 'a.n. Komandan Komponen Cadangan,'
+            ];
+        }
+
+        if ($user && $user->hasRole('admin')) {
+            return [
+                'name'    => $personel ? $personel->full_name : ($user->name ?? $defaultName),
+                'pangkat' => $personel ? $personel->pangkat : $defaultPangkat,
+                'nikc'    => $personel ? ($personel->nikc ?? $personel->nik ?? $defaultNikc) : $defaultNikc,
+                'jabatan' => 'ADMINISTRATOR SISFOPERS',
+                'header'  => 'a.n. Komandan Komponen Cadangan,'
+            ];
+        }
 
         return [
-            'name' => $signerName,
-            'pangkat' => $signerPangkat,
-            'nikc' => $signerNikc,
-            'jabatan' => $signerJabatan
+            'name'    => $defaultName,
+            'pangkat' => $defaultPangkat,
+            'nikc'    => $defaultNikc,
+            'jabatan' => $defaultJabatan,
+            'header'  => 'a.n. Komandan Komponen Cadangan,'
         ];
     }
 
@@ -54,7 +94,7 @@ class ReportController extends Controller
     {
         $signer = $this->getSignerData();
         return Excel::download(
-            new PersonelExport($signer['name'], $signer['pangkat'], $signer['nikc'], $signer['jabatan']), 
+            new PersonelExport($signer['name'], $signer['pangkat'], $signer['nikc'], $signer['jabatan'], $signer['header']), 
             'Laporan_Instansial_Personel_KC_' . date('YmdHis') . '.xlsx'
         );
     }
@@ -83,10 +123,11 @@ class ReportController extends Controller
             });
         
         $signer = $this->getSignerData();
-        $data['signerName'] = $signer['name'];
+        $data['signerName']    = $signer['name'];
         $data['signerPangkat'] = $signer['pangkat'];
-        $data['signerNikc'] = $signer['nikc'];
+        $data['signerNikc']    = $signer['nikc'];
         $data['signerJabatan'] = $signer['jabatan'];
+        $data['signerHeader']  = $signer['header'];
 
         $romans = [1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI', 7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'];
         $data['nomorSurat'] = 'R/001/PERS/' . $romans[date('n')] . '/' . date('Y');
@@ -100,33 +141,6 @@ class ReportController extends Controller
             $signer['pangkat'],
             ['nomor_surat' => $data['nomorSurat']]
         );
-
-        $statusCounts = Personel::select('status_keaktifan', DB::raw('COUNT(*) as total'))
-            ->whereIn('status_keaktifan', ['MENINGGAL', 'TNI_AD', 'TNI_AL', 'TNI_AU', 'POLRI'])
-            ->groupBy('status_keaktifan')
-            ->pluck('total', 'status_keaktifan')
-            ->all();
-
-        $keteranganList = [];
-        if (!empty($statusCounts['MENINGGAL'])) {
-            $keteranganList[] = "{$statusCounts['MENINGGAL']} ORANG MENINGGAL DUNIA";
-        }
-        if (!empty($statusCounts['TNI_AD'])) {
-            $keteranganList[] = "{$statusCounts['TNI_AD']} ORANG MASUK TNI AD";
-        }
-        if (!empty($statusCounts['TNI_AL'])) {
-            $keteranganList[] = "{$statusCounts['TNI_AL']} ORANG MASUK TNI AL";
-        }
-        if (!empty($statusCounts['TNI_AU'])) {
-            $keteranganList[] = "{$statusCounts['TNI_AU']} ORANG MASUK TNI AU";
-        }
-        if (!empty($statusCounts['POLRI'])) {
-            $keteranganList[] = "{$statusCounts['POLRI']} ORANG MASUK POLRI";
-        }
-
-        if (empty($keteranganList)) {
-            $keteranganList[] = "NIHIL / SELURUH PERSONEL AKTIF";
-        }
 
         $verifyUrl = route('public.verify-doc', $docVerif->verify_code);
         $data['verifyCode'] = $docVerif->verify_code;
@@ -148,7 +162,8 @@ class ReportController extends Controller
                 $signer['name'], 
                 $signer['pangkat'], 
                 $signer['nikc'], 
-                $signer['jabatan']
+                $signer['jabatan'],
+                $signer['header']
             ), 
             'Laporan_Presensi_' . str_replace(' ', '_', $broadcast->title) . '_' . date('YmdHis') . '.xlsx'
         );
@@ -185,47 +200,21 @@ class ReportController extends Controller
             ['nomor_surat' => $nomorSurat]
         );
 
-        $statusCounts = Personel::select('status_keaktifan', DB::raw('COUNT(*) as total'))
-            ->whereIn('status_keaktifan', ['MENINGGAL', 'TNI_AD', 'TNI_AL', 'TNI_AU', 'POLRI'])
-            ->groupBy('status_keaktifan')
-            ->pluck('total', 'status_keaktifan')
-            ->all();
-
-        $keteranganList = [];
-        if (!empty($statusCounts['MENINGGAL'])) {
-            $keteranganList[] = "{$statusCounts['MENINGGAL']} ORANG MENINGGAL DUNIA";
-        }
-        if (!empty($statusCounts['TNI_AD'])) {
-            $keteranganList[] = "{$statusCounts['TNI_AD']} ORANG MASUK TNI AD";
-        }
-        if (!empty($statusCounts['TNI_AL'])) {
-            $keteranganList[] = "{$statusCounts['TNI_AL']} ORANG MASUK TNI AL";
-        }
-        if (!empty($statusCounts['TNI_AU'])) {
-            $keteranganList[] = "{$statusCounts['TNI_AU']} ORANG MASUK TNI AU";
-        }
-        if (!empty($statusCounts['POLRI'])) {
-            $keteranganList[] = "{$statusCounts['POLRI']} ORANG MASUK POLRI";
-        }
-
-        if (empty($keteranganList)) {
-            $keteranganList[] = "NIHIL / SELURUH PERSONEL AKTIF";
-        }
-
         $verifyUrl = route('public.verify-doc', $docVerif->verify_code);
         $qrCodeBase64 = \App\Services\QrCodeService::generateBase64($verifyUrl);
 
         $pdf = Pdf::loadView('reports.broadcast_pdf', [
-            'broadcast' => $broadcast,
-            'responses' => $responses,
-            'signerName' => $signer['name'],
+            'broadcast'     => $broadcast,
+            'responses'     => $responses,
+            'signerName'    => $signer['name'],
             'signerPangkat' => $signer['pangkat'],
-            'signerNikc' => $signer['nikc'],
+            'signerNikc'    => $signer['nikc'],
             'signerJabatan' => $signer['jabatan'],
-            'nomorSurat' => $nomorSurat,
-            'verifyCode' => $docVerif->verify_code,
-            'verifyUrl'  => $verifyUrl,
-            'qrCodeBase64' => $qrCodeBase64
+            'signerHeader'  => $signer['header'],
+            'nomorSurat'    => $nomorSurat,
+            'verifyCode'    => $docVerif->verify_code,
+            'verifyUrl'     => $verifyUrl,
+            'qrCodeBase64'  => $qrCodeBase64
         ])->setPaper('a4', 'landscape');
 
         return $pdf->download('Laporan_Presensi_' . str_replace(' ', '_', $broadcast->title) . '.pdf');
@@ -296,16 +285,17 @@ class ReportController extends Controller
         $qrCodeBase64 = \App\Services\QrCodeService::generateBase64($verifyUrl);
 
         $pdf = Pdf::loadView('reports.region_pdf', [
-            'rekapData'     => $rekapData,
-            'signerName'    => $signer['name'],
-            'signerPangkat' => $signer['pangkat'],
-            'signerNikc'    => $signer['nikc'],
-            'signerJabatan' => $signer['jabatan'],
-            'nomorSurat'    => $nomorSurat,
-            'verifyCode'    => $docVerif->verify_code,
-            'verifyUrl'     => $verifyUrl,
-            'qrCodeBase64'  => $qrCodeBase64,
-            'keteranganList' => $keteranganList
+            'rekapData'      => $rekapData,
+            'signerName'     => $signer['name'],
+            'signerPangkat'  => $signer['pangkat'],
+            'signerNikc'     => $signer['nikc'],
+            'signerJabatan'  => $signer['jabatan'],
+            'signerHeader'   => $signer['header'],
+            'nomorSurat'     => $nomorSurat,
+            'keteranganList' => $keteranganList,
+            'verifyCode'     => $docVerif->verify_code,
+            'verifyUrl'      => $verifyUrl,
+            'qrCodeBase64'   => $qrCodeBase64
         ])->setPaper('a4', 'portrait');
 
         return $pdf->download('Laporan_Rekapitulasi_Wilayah_Personel_KC.pdf');
@@ -319,7 +309,8 @@ class ReportController extends Controller
                 $signer['name'], 
                 $signer['pangkat'], 
                 $signer['nikc'], 
-                $signer['jabatan']
+                $signer['jabatan'],
+                $signer['header']
             ), 
             'Laporan_Rekapitulasi_Wilayah_Personel_KC_' . date('YmdHis') . '.xlsx'
         );
