@@ -30,7 +30,8 @@ class SettingController extends Controller
             'logo_ad' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
             'logo_al' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
             'logo_au' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
-            'disable_whatsapp_otp' => 'nullable'
+            'disable_whatsapp_otp' => 'nullable',
+            'under_maintenance' => 'nullable'
         ]);
 
         foreach ($validated as $key => $value) {
@@ -46,6 +47,9 @@ class SettingController extends Controller
             } elseif ($key === 'disable_whatsapp_otp') {
                 $isDisabled = ($value === '1' || $value === 1 || $value === 'true' || $value === true || $request->input('disable_whatsapp_otp') === '1');
                 Setting::updateOrCreate(['key' => 'disable_whatsapp_otp'], ['value' => $isDisabled ? '1' : '0']);
+            } elseif ($key === 'under_maintenance') {
+                $isMaint = ($value === '1' || $value === 1 || $value === 'true' || $value === true || $request->input('under_maintenance') === '1');
+                Setting::updateOrCreate(['key' => 'under_maintenance'], ['value' => $isMaint ? '1' : '0']);
             } else {
                 Setting::updateOrCreate(['key' => $key], ['value' => (string)($value ?? '0')]);
             }
@@ -56,6 +60,13 @@ class SettingController extends Controller
         Setting::updateOrCreate(
             ['key' => 'disable_whatsapp_otp'],
             ['value' => $isDisabled ? '1' : '0']
+        );
+
+        // Tentukan secara eksplisit status sakelar under_maintenance
+        $isMaint = $request->has('under_maintenance') && in_array((string)$request->input('under_maintenance'), ['1', 'true']);
+        Setting::updateOrCreate(
+            ['key' => 'under_maintenance'],
+            ['value' => $isMaint ? '1' : '0']
         );
 
         return redirect()->route('admin.setting.index')->with('success', 'Konfigurasi parameter sistem berhasil disinkronisasi.');
