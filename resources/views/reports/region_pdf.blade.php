@@ -1,21 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Laporan Rekapitulasi Personel Berbasis Wilayah</title>
+    <title>Laporan Rekapitulasi Personel Berdasarkan Wilayah</title>
     <style>
         body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 10px; color: #000; line-height: 1.3; }
         .kop-surat { font-weight: bold; font-size: 11px; margin-bottom: 2px; }
         .title-block { text-align: center; margin-bottom: 20px; }
-        .title { font-size: 14px; font-weight: bold; text-decoration: underline; margin-bottom: 4px; }
+        .title { font-size: 13px; font-weight: bold; text-decoration: underline; margin-bottom: 4px; }
         .subtitle { font-size: 10px; font-weight: bold; }
-        .province-header { background-color: #1e293b; color: #fff; font-size: 11px; font-weight: bold; padding: 6px 10px; margin-top: 15px; border-radius: 4px; }
-        .city-header { background-color: #f1f5f9; color: #334155; font-size: 10px; font-weight: bold; padding: 4px 8px; margin-top: 8px; border-left: 4px solid #2563eb; }
-        table { width: 100%; border-collapse: collapse; margin-top: 6px; margin-bottom: 12px; }
-        table, th, td { border: 1px solid #cbd5e1; }
-        th { padding: 6px 4px; font-weight: bold; background-color: #f8fafc; text-align: center; font-size: 9px; }
-        td { padding: 5px 6px; font-size: 9px; }
+        
+        table.data-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        table.data-table, table.data-table th, table.data-table td { border: 1px solid #000; }
+        table.data-table th { background-color: #a3e635; font-weight: bold; text-align: center; padding: 6px 4px; font-size: 10px; text-transform: uppercase; }
+        table.data-table td { padding: 5px 8px; font-size: 10px; }
         .text-center { text-align: center; }
-        .signature-block { float: right; margin-top: 30px; width: 280px; font-size: 10px; text-align: center; page-break-inside: avoid; }
+        .font-bold { font-weight: bold; }
+        
+        table.summary-table { width: 100%; border-collapse: collapse; margin-top: 18px; }
+        table.summary-table, table.summary-table th, table.summary-table td { border: 1px solid #000; }
+        table.summary-table td { padding: 8px; text-align: center; font-weight: bold; font-size: 10px; }
+        
+        .signature-block { float: right; margin-top: 25px; width: 280px; font-size: 10px; text-align: center; page-break-inside: avoid; }
     </style>
 </head>
 <body>
@@ -25,59 +30,64 @@
     </div>
 
     <div class="title-block">
-        <div class="title">LAPORAN REKAPITULASI KEKUATAN PERSONEL BERBASIS WILAYAH</div>
-        <div class="subtitle">PENGELOMPOKAN BERDASARKAN PROVINSI DAN KOTA/KABUPATEN DOMISILI</div>
-        <div style="font-size: 9px; margin-top: 2px;">NOMOR: {{ $nomorSurat }}</div>
+        <div class="title">LAPORAN REKAPITULASI KEKUATAN PERSONEL DOMISILI</div>
+        <div class="subtitle">NOMOR: {{ $nomorSurat }}</div>
     </div>
 
-    @php $globalNo = 1; @endphp
-    @foreach($groupedData as $provinceName => $cities)
-        <div class="province-header">
-            PROVINSI: {{ $provinceName }}
-            <span style="float: right; font-weight: normal; font-size: 9px;">Total Personel: {{ $cities->flatten(1)->count() }}</span>
-        </div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th rowspan="2" style="width: 6%;">NO.</th>
+                <th rowspan="2" style="width: 18%;">SUMBER</th>
+                <th rowspan="2" style="width: 38%;">KABUPATEN/KOTA</th>
+                <th colspan="2" style="width: 22%;">JUMLAH</th>
+                <th rowspan="2" style="width: 16%;">KET.</th>
+            </tr>
+            <tr>
+                <th style="width: 11%;">JUMLAH</th>
+                <th style="width: 11%;">NYATA</th>
+            </tr>
+        </thead>
+        <tbody>
+            @php 
+                $grandTotalJumlah = 0;
+                $grandTotalNyata = 0;
+            @endphp
+            @foreach($rekapData as $index => $row)
+                @php 
+                    $grandTotalJumlah += $row->total_jumlah;
+                    $grandTotalNyata += $row->total_nyata;
+                @endphp
+                <tr>
+                    <td class="text-center">{{ $index + 1 }}.</td>
+                    <td class="text-center font-bold">{{ $row->sumber }}</td>
+                    <td>{{ $row->kabupaten_kota }}</td>
+                    <td class="text-center">{{ $row->total_jumlah }}</td>
+                    <td class="text-center">{{ $row->total_nyata }}</td>
+                    <td class="text-center font-bold">{{ $row->ket }}</td>
+                </tr>
+            @endforeach
+            <tr style="background-color: #f1f5f9; font-weight: bold;">
+                <td colspan="3" class="text-center">TOTAL KESELURUHAN</td>
+                <td class="text-center">{{ $grandTotalJumlah }}</td>
+                <td class="text-center">{{ $grandTotalNyata }}</td>
+                <td class="text-center">-</td>
+            </tr>
+        </tbody>
+    </table>
 
-        @foreach($cities as $cityName => $personels)
-            <div class="city-header">
-                📍 KOTA / KABUPATEN: {{ $cityName }} ({{ $personels->count() }} Personel)
-            </div>
+    <table class="summary-table">
+        <tr>
+            <td rowspan="2" style="width: 20%; background-color: #f8fafc; vertical-align: middle;">JUMLAH</td>
+            <td style="width: 40%; background-color: #f8fafc;">KESELURUHAN</td>
+            <td style="width: 40%; background-color: #f8fafc;">NYATA</td>
+        </tr>
+        <tr>
+            <td style="font-size: 13px; color: #1e3a8a;">{{ $grandTotalJumlah }} PERSONEL</td>
+            <td style="font-size: 13px; color: #15803d;">{{ $grandTotalNyata }} PERSONEL TERVERIFIKASI</td>
+        </tr>
+    </table>
 
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 4%;">NO</th>
-                        <th style="width: 14%;">NIKC</th>
-                        <th style="width: 25%;">NAMA LENGKAP</th>
-                        <th style="width: 12%;">PANGKAT / MATRA</th>
-                        <th style="width: 12%;">ABITUREN (ANGKATAN)</th>
-                        <th style="width: 13%;">SUMBER REKRUTMEN</th>
-                        <th style="width: 12%;">NOMOR HP</th>
-                        <th style="width: 8%;">STATUS</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($personels as $p)
-                    <tr>
-                        <td class="text-center">{{ $globalNo++ }}</td>
-                        <td class="text-center">{{ $p->nikc ?? '-' }}</td>
-                        <td><strong>{{ $p->full_name }}</strong></td>
-                        <td class="text-center">{{ \App\Models\Personel::formatShortRank($p->pangkat) }} ({{ $p->matra }})</td>
-                        <td class="text-center">{{ $p->angkatan ? 'Angkatan ' . $p->angkatan : '-' }}</td>
-                        <td class="text-center">{{ $p->sumber_rekrutmen ?? 'Reguler' }}</td>
-                        <td class="text-center">{{ $p->phone_number }}</td>
-                        <td class="text-center">{{ $p->face_verified ? 'VERIFIED' : 'PENDING' }}</td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        @endforeach
-    @endforeach
-
-    <div style="margin-top: 20px; font-size: 9px; font-weight: bold;">
-        TOTAL KESELURUHAN PERSONEL TERDAPAT PADA DOKUMEN: {{ $totalCount }} PERSONEL
-    </div>
-
-    <!-- Blok Tanda Tangan & QR Code -->
     <div class="signature-block">
         <div>Dikeluarkan di: Jakarta</div>
         <div>Pada tanggal: {{ date('d F Y') }}</div>
@@ -85,7 +95,7 @@
         <div>{{ $signerJabatan }},</div>
         
         <div style="margin-top: 15px; margin-bottom: 10px;">
-            <img src="{{ $qrCodeBase64 }}" style="width: 80px; height: 80px;" /><br>
+            <img src="{{ $qrCodeBase64 }}" style="width: 75px; height: 75px;" /><br>
             <span style="font-size: 8px; color: #475569;">Kode Verifikasi Legalitas: {{ $verifyCode }}</span>
         </div>
         
