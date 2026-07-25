@@ -31,6 +31,22 @@
           </button>
         </div>
       </div>
+
+      <!-- Card Download Rekapitulasi Berbasis Provinsi & Kota -->
+      <div class="bg-white border border-[#E2E8F0] p-6 rounded-2xl shadow-sm space-y-4 flex flex-col justify-between md:col-span-2">
+        <div class="space-y-1.5">
+          <h4 class="text-sm font-bold text-slate-800 uppercase tracking-wide">03. Berkas Rekapitulasi Wilayah & Abituren</h4>
+          <p class="text-xs text-slate-400 leading-relaxed">Ekspor rekapitulasi data kekuatan personel komponen cadangan nasional yang dikelompokkan secara hierarki per Provinsi, Kota/Kabupaten domisili, Abituren (Angkatan), dan Sumber Rekrutmen (Reguler, SPPI, PNS).</p>
+        </div>
+        <div class="flex gap-3 pt-2 max-w-md">
+          <a :href="route('admin.report.region.excel')" @click="triggerSwalDownload" class="flex-1 py-2.5 text-center bg-white border border-[#E2E8F0] hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl transition shadow-sm cursor-pointer">
+            Unduh Excel (.xlsx)
+          </a>
+          <a :href="route('admin.report.region.pdf')" @click="triggerSwalDownload" class="flex-1 py-2.5 text-center bg-[#2563EB] hover:bg-[#1E40AF] text-white text-xs font-semibold rounded-xl transition shadow-md shadow-blue-500/10 cursor-pointer">
+            Unduh Cetak PDF
+          </a>
+        </div>
+      </div>
     </div>
   </AuthenticatedLayout>
 </template>
