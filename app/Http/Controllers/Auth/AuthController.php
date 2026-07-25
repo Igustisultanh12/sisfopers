@@ -169,9 +169,9 @@ class AuthController extends Controller
                 'is_active' => false,
             ]);
 
-            // 2. Handle File Uploads berkas pendaftaran
-            $photoPath = $request->file('photo_profile')->store('personel/photos', 'public');
-            $ktpPath = $request->file('ktp_document')->store('personel/documents', 'public');
+            // 2. Handle File Uploads berkas pendaftaran (Disimpan di disk private aman)
+            $photoPath = $request->file('photo_profile')->store('personel/photos', 'private');
+            $ktpPath = $request->file('ktp_document')->store('personel/documents', 'private');
             
             $asnSkPath = null;
             if ($request->hasFile('asn_sk')) {

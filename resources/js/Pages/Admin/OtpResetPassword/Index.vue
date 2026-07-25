@@ -103,7 +103,7 @@
                 <td class="px-5 py-4">
                   <div class="flex items-center gap-3">
                     <img
-                      :src="p.photo_profile ? `/storage/${p.photo_profile}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(p.full_name)}&background=e2e8f0&color=334155&size=80`"
+                      :src="p.photo_profile ? `/documents/private/${p.photo_profile}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(p.full_name)}&background=e2e8f0&color=334155&size=80`"
                       class="w-9 h-9 rounded-xl object-cover bg-slate-100 border border-[#E2E8F0] shrink-0"
                     />
                     <div>

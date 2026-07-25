@@ -161,7 +161,7 @@
               <td class="p-4 font-semibold text-slate-700">{{ req.phone_number }}</td>
               <td class="p-4">
                 <a 
-                  :href="`/storage/${req.skep_file}`" 
+                  :href="`/documents/private/${req.skep_file}`" 
                   target="_blank" 
                   class="text-xs font-bold text-[#2563EB] hover:underline flex items-center gap-1 bg-[#2563EB]/5 px-2.5 py-1 rounded-lg w-max"
                 >
@@ -273,7 +273,7 @@
           <div class="mb-3 flex justify-between items-center">
             <h4 class="text-sm font-bold text-slate-800">Lampiran Berkas SKEP (PDF)</h4>
             <a 
-              :href="`/storage/${selectedRequest?.skep_file}`" 
+              :href="`/documents/private/${selectedRequest?.skep_file}`" 
               target="_blank" 
               class="text-xs font-bold text-[#2563EB] hover:underline"
             >
@@ -282,7 +282,7 @@
           </div>
           <div class="flex-1 bg-slate-100 rounded-xl overflow-hidden border border-[#E2E8F0]">
             <iframe 
-              :src="`/storage/${selectedRequest?.skep_file}`" 
+              :src="`/documents/private/${selectedRequest?.skep_file}`" 
               class="w-full h-full border-0"
             ></iframe>
           </div>

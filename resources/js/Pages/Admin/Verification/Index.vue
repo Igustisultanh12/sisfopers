@@ -67,7 +67,7 @@
 
           <div class="flex flex-col sm:flex-row gap-5 items-start bg-slate-50/60 p-4 rounded-xl border border-[#E2E8F0]">
             <div class="w-24 h-32 bg-slate-200 rounded-lg border border-[#E2E8F0] overflow-hidden shadow-xs shrink-0">
-              <img v-if="selectedItem?.photo_profile" :src="`/storage/${selectedItem.photo_profile}`" class="w-full h-full object-cover" />
+              <img v-if="selectedItem?.photo_profile" :src="`/documents/private/${selectedItem.photo_profile}`" class="w-full h-full object-cover" />
               <div v-else class="w-full h-full flex items-center justify-center text-slate-400 text-xs font-bold bg-slate-100 uppercase">No Photo</div>
             </div>
             
@@ -100,7 +100,7 @@
           <div class="space-y-2 mt-4">
             <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Dokumen KTP Lampiran</h4>
             <div class="relative group cursor-pointer border border-[#E2E8F0] rounded-xl overflow-hidden bg-slate-100 h-40 flex items-center justify-center shadow-xs" @click="enlargeKtp = true">
-              <img v-if="selectedItem?.ktp_document" :src="`/storage/${selectedItem.ktp_document}`" class="w-full h-full object-cover group-hover:scale-102 transition duration-200" />
+              <img v-if="selectedItem?.ktp_document" :src="`/documents/private/${selectedItem.ktp_document}`" class="w-full h-full object-cover group-hover:scale-102 transition duration-200" />
               <div v-else class="text-slate-400 text-xs font-bold">Tidak Ada Lampiran KTP</div>
               
               <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition duration-200">
@@ -144,7 +144,7 @@
     <!-- Lightbox Modal Perbesar KTP -->
     <div v-if="enlargeKtp" class="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4" @click="enlargeKtp = false">
       <div class="relative max-w-4xl max-h-[90vh] overflow-hidden rounded-2xl shadow-2xl bg-white/5 border border-white/10 p-2 flex items-center justify-center" @click.stopPropagation>
-        <img :src="`/storage/${selectedItem?.ktp_document}`" class="max-w-full max-h-[85vh] object-contain rounded-xl" />
+        <img :src="`/documents/private/${selectedItem?.ktp_document}`" class="max-w-full max-h-[85vh] object-contain rounded-xl" />
         <button @click="enlargeKtp = false" class="absolute top-4 right-4 bg-slate-900/70 hover:bg-slate-950 text-white rounded-full p-2 shadow-md transition cursor-pointer border-none flex items-center justify-center">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>

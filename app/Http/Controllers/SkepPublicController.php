@@ -104,8 +104,8 @@ class SkepPublicController extends Controller
         ]);
 
         try {
-            // Upload berkas PDF SKEP
-            $filePath = $request->file('skep_file')->store('personel/skep_requests', 'public');
+            // Upload berkas PDF SKEP (Disimpan di disk private aman)
+            $filePath = $request->file('skep_file')->store('personel/skep_requests', 'private');
 
             $skepRequest = SkepRequest::create([
                 'uuid' => Str::uuid(),
