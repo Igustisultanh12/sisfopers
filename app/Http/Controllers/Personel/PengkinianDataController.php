@@ -114,7 +114,6 @@ class PengkinianDataController extends Controller
 
         $cleanQ = preg_replace('/[^A-Za-z0-9]/', '', $q);
 
-        // Variations of 16 & 17 digit NIKC
         $nikc16 = null;
         $nikc17 = null;
         if (strlen($cleanQ) === 17 && substr($cleanQ, 9, 1) === '0') {
@@ -147,7 +146,7 @@ class PengkinianDataController extends Controller
                     }
                 })
                 ->limit(10)
-                ->get(['id', 'full_name', 'nikc', 'nik', 'pangkat', 'matra', 'angkatan', 'phone_number', 'province', 'city', 'subdistrict', 'status_keaktifan']);
+                ->get(['id', 'full_name', 'nikc', 'nik', 'pangkat', 'matra', 'angkatan', 'phone_number', 'province', 'city', 'district', 'status_keaktifan']);
 
             foreach ($personels as $p) {
                 $addedIds[] = $p->id;
@@ -162,7 +161,7 @@ class PengkinianDataController extends Controller
                     'phone_number'     => $p->phone_number,
                     'province'         => $p->province,
                     'city'             => $p->city,
-                    'subdistrict'       => $p->subdistrict,
+                    'district'         => $p->district,
                     'status_keaktifan' => $p->status_keaktifan ?: 'AKTIF',
                     'source'           => 'MASTER_PERSONEL',
                 ];
@@ -209,7 +208,7 @@ class PengkinianDataController extends Controller
                         'phone_number'     => $existing->phone_number,
                         'province'         => $existing->province,
                         'city'             => $existing->city,
-                        'subdistrict'       => $existing->subdistrict,
+                        'district'         => $existing->district,
                         'status_keaktifan' => $existing->status_keaktifan ?: 'AKTIF',
                         'source'           => 'MASTER_PERSONEL',
                     ];
@@ -225,7 +224,7 @@ class PengkinianDataController extends Controller
                         'phone_number'     => null,
                         'province'         => null,
                         'city'             => null,
-                        'subdistrict'       => null,
+                        'district'         => null,
                         'status_keaktifan' => 'DATA SKEP',
                         'source'           => 'SKEP_DATA',
                         'dob'              => $sk->dob?->format('Y-m-d'),
@@ -275,7 +274,7 @@ class PengkinianDataController extends Controller
                         'phone_number'     => $existing->phone_number,
                         'province'         => $existing->province,
                         'city'             => $existing->city,
-                        'subdistrict'       => $existing->subdistrict,
+                        'district'         => $existing->district,
                         'status_keaktifan' => $existing->status_keaktifan ?: 'AKTIF',
                         'source'           => 'MASTER_PERSONEL',
                     ];
@@ -291,7 +290,7 @@ class PengkinianDataController extends Controller
                         'phone_number'     => $sr->phone_number,
                         'province'         => null,
                         'city'             => null,
-                        'subdistrict'       => null,
+                        'district'         => null,
                         'status_keaktifan' => 'PENGAJUAN SKEP',
                         'source'           => 'SKEP_DATA',
                         'dob'              => $sr->dob?->format('Y-m-d'),
@@ -320,7 +319,7 @@ class PengkinianDataController extends Controller
             'phone_number'     => 'nullable|string',
             'province'         => 'nullable|string',
             'city'             => 'nullable|string',
-            'subdistrict'       => 'nullable|string',
+            'district'         => 'nullable|string',
             'jenis_pengkinian' => 'required|in:MENINGGAL,TNI_AD,TNI_AL,TNI_AU,POLRI',
             'document'         => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:4096',
             'nrp'              => 'nullable|string|max:50',
@@ -330,6 +329,8 @@ class PengkinianDataController extends Controller
             'jabatan'          => 'nullable|string|max:150',
             'catatan'          => 'nullable|string|max:1000',
         ]);
+
+        $districtValue = $request->district ?: $request->subdistrict ?: null;
 
         $personel = null;
         if ($request->filled('personel_id')) {
@@ -352,9 +353,12 @@ class PengkinianDataController extends Controller
                 'matra'               => $request->matra ?: ($skep ? $skep->matra : 'AD'),
                 'angkatan'            => $request->angkatan ?: ($skep ? $skep->angkatan : '2024'),
                 'phone_number'        => $request->phone_number,
-                'province'            => $request->province,
-                'city'                => $request->city,
-                'subdistrict'          => $request->subdistrict,
+                'province'            => $request->province ?: 'Jawa Timur',
+                'city'                => $request->city ?: 'Surabaya',
+                'district'            => $districtValue ?: 'Tegalsari',
+                'pob'                 => 'Indonesia',
+                'address'             => 'Indonesia',
+                'gender'              => 'L',
                 'status_keaktifan'    => $request->jenis_pengkinian,
                 'status_verification' => 'APPROVED',
             ]);
@@ -378,8 +382,8 @@ class PengkinianDataController extends Controller
             if (!$personel->city && $request->filled('city')) {
                 $updateData['city'] = $request->city;
             }
-            if (!$personel->subdistrict && $request->filled('subdistrict')) {
-                $updateData['subdistrict'] = $request->subdistrict;
+            if ((!$personel->district && !$personel->subdistrict) && $districtValue) {
+                $updateData['district'] = $districtValue;
             }
             if (!empty($updateData)) {
                 $personel->update($updateData);
