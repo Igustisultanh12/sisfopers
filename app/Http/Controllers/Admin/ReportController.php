@@ -179,4 +179,73 @@ class ReportController extends Controller
 
         return $pdf->download('Laporan_Presensi_' . str_replace(' ', '_', $broadcast->title) . '.pdf');
     }
+
+    public function regionPdf()
+    {
+         = Personel::where(function () {
+                ->whereDoesntHave('registration')
+                      ->orWhereHas('registration', function () {
+                          ->where('status_verification', 'APPROVED');
+                      });
+            })
+            ->with(['user', 'sinyalmen'])
+            ->get();
+
+         = ->count();
+
+         = ->groupBy(function () {
+            return strtoupper(trim(->province ?: 'LAINNYA / UNASSIGNED'));
+        })->map(function () {
+            return ->groupBy(function () {
+                return strtoupper(trim(->city ?: 'UNASSIGNED'));
+            });
+        });
+
+         = ->getSignerData();
+        
+         = [1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI', 7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'];
+         = 'R/002/PERS/REGIONAL/' . [date('n')] . '/' . date('Y');
+
+         = \App\Models\DocumentVerification::createRecord(
+            'PERS_REGION_REPORT',
+            'LAPORAN REKAPITULASI KEKUATAN PERSONEL BERBASIS WILAYAH',
+            'Seluruh Anggota Komcad (' .  . ' Personel)',
+            'Laporan Rekapitulasi Provinsi & Kota/Kabupaten',
+            ['name'],
+            ['pangkat'],
+            ['nomor_surat' => ]
+        );
+
+         = route('public.verify-doc', ->verify_code);
+         = \App\Services\QrCodeService::generateBase64();
+
+         = Pdf::loadView('reports.region_pdf', [
+            'groupedData'   => ,
+            'totalCount'    => ,
+            'signerName'    => ['name'],
+            'signerPangkat' => ['pangkat'],
+            'signerNikc'    => ['nikc'],
+            'signerJabatan' => ['jabatan'],
+            'nomorSurat'    => ,
+            'verifyCode'    => ->verify_code,
+            'verifyUrl'     => ,
+            'qrCodeBase64'  => 
+        ])->setPaper('a4', 'landscape');
+
+        return ->download('Laporan_Rekapitulasi_Wilayah_Personel_KC.pdf');
+    }
+
+    public function regionExcel()
+    {
+         = ->getSignerData();
+        return Excel::download(
+            new \App\Exports\PersonelRegionExport(
+                ['name'], 
+                ['pangkat'], 
+                ['nikc'], 
+                ['jabatan']
+            ), 
+            'Laporan_Rekapitulasi_Wilayah_Personel_KC_' . date('YmdHis') . '.xlsx'
+        );
+    }
 }
