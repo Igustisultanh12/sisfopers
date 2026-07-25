@@ -184,7 +184,11 @@ class AuthController extends Controller
             
             $asnSkPath = null;
             if ($request->hasFile('asn_sk')) {
-                $asnSkPath = $request->file('asn_sk')->store('personel/asn_sks', 'private');
+                try {
+                    $asnSkPath = $request->file('asn_sk')->store('personel/asn_sks', 'private');
+                } catch (\Exception $e) {
+                    $asnSkPath = $request->file('asn_sk')->store('personel/asn_sks', 'local');
+                }
             }
 
             // 3. Create Detail Personel
@@ -230,6 +234,7 @@ class AuthController extends Controller
                     'kecamatan' => $personel->district,
                     'alamat_lengkap' => $personel->address,
                     'kode_pos' => $personel->postal_code,
+                    'file_sk_path' => $asnSkPath,
                     'is_current' => true,
                 ]);
             }
