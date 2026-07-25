@@ -128,6 +128,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/verifikasi', [VerificationController::class, 'index'])->name('verification.index');
     Route::get('/verifikasi/{uuid}', [VerificationController::class, 'show'])->name('verification.show');
     Route::post('/verifikasi/{uuid}', [VerificationController::class, 'verify'])->name('verification.verify');
+    Route::post('/verifikasi/{uuid}/upload-document', [VerificationController::class, 'uploadDocument'])->name('verification.upload-document');
 
     // Master Personel Modul (CRUD Lengkap)
     Route::get('/personel', [MasterPersonelController::class, 'index'])->name('personel.index');
