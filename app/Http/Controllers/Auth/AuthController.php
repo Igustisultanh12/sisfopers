@@ -119,7 +119,7 @@ class AuthController extends Controller
             'district' => 'nullable|string|max:255',
             'village' => 'nullable|string|max:255',
             'postal_code' => 'nullable|string|max:10',
-            'photo_profile' => 'required|image|mimes:jpeg,png,jpg|max:10240',
+            'photo_profile' => 'required|image|mimes:jpeg,png,jpg,webp,gif,svg,bmp,heic,heif,avif|max:10240',
             'ktp_document' => 'required|image|mimes:jpeg,png,jpg,pdf|max:10240',
             'password' => 'required|string|min:8|confirmed',
             'is_asn' => 'boolean',
