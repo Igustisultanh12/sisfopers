@@ -74,7 +74,6 @@ class PengkinianDataController extends Controller
 
         $admins = User::whereHas('role', fn($q) => $q->where('name', 'admin'))->with('personel')->get();
         foreach ($admins as $adminUser) {
-            // Notifikasi WhatsApp ke Admin
             if ($adminUser->personel && $adminUser->personel->phone_number) {
                 $msgAdmin = "🔔 *PENGAJUAN PENGKINIAN DATA BARU*\n\n"
                     . "Nama: " . $personel->full_name . "\n"
@@ -84,7 +83,6 @@ class PengkinianDataController extends Controller
                 \App\Services\WhatsappService::sendMessage($adminUser->personel->phone_number, $msgAdmin);
             }
 
-            // Notifikasi Email ke Admin
             if ($adminUser->email) {
                 try {
                     Mail::to($adminUser->email)->send(new SystemNotificationMail(
@@ -100,6 +98,86 @@ class PengkinianDataController extends Controller
         }
 
         return back()->with('success', 'Pengajuan pengkinian data berhasil dikirim. Harap tunggu verifikasi administrator.');
+    }
+
+    public function searchPersonel(Request $request)
+    {
+        $user = $request->user();
+        abort_unless($user->hasRole('admin'), 403);
+
+        $q = trim($request->input('query', ''));
+        if (!$q) {
+            return response()->json([]);
+        }
+
+        $personels = Personel::where('full_name', 'like', "%{$q}%")
+            ->orWhere('nikc', 'like', "%{$q}%")
+            ->orWhere('nik', 'like', "%{$q}%")
+            ->limit(15)
+            ->get(['id', 'full_name', 'nikc', 'nik', 'pangkat', 'matra', 'status_keaktifan']);
+
+        return response()->json($personels);
+    }
+
+    public function adminStore(Request $request)
+    {
+        $user = $request->user();
+        abort_unless($user->hasRole('admin'), 403);
+
+        $request->validate([
+            'personel_id'      => 'required|exists:personels,id',
+            'jenis_pengkinian' => 'required|in:MENINGGAL,TNI_AD,TNI_AL,TNI_AU,POLRI',
+            'document'         => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:4096',
+            'nrp'              => 'nullable|string|max:50',
+            'tmt_pengangkatan' => 'nullable|date',
+            'tmt_masuk_satuan' => 'nullable|date',
+            'satuan'           => 'nullable|string|max:150',
+            'jabatan'          => 'nullable|string|max:150',
+            'catatan'          => 'nullable|string|max:1000',
+        ]);
+
+        $personel = Personel::with('user')->findOrFail($request->personel_id);
+
+        $filePath = 'personel/pengkinian_data/admin_entry.pdf';
+        if ($request->hasFile('document')) {
+            $filePath = $request->file('document')->store('personel/pengkinian_data', 'private');
+        }
+
+        $item = PengkinianData::create([
+            'uuid'             => Str::uuid(),
+            'personel_id'      => $personel->id,
+            'jenis_pengkinian' => $request->jenis_pengkinian,
+            'document_path'    => $filePath,
+            'nrp'              => $request->nrp,
+            'tmt_pengangkatan' => $request->tmt_pengangkatan,
+            'tmt_masuk_satuan' => $request->tmt_masuk_satuan,
+            'satuan'           => $request->satuan,
+            'jabatan'          => $request->jabatan,
+            'catatan'          => $request->catatan,
+            'status'           => 'APPROVED',
+            'verified_by'      => $user->id,
+            'verified_at'      => now(),
+        ]);
+
+        $personel->update([
+            'status_keaktifan' => $request->jenis_pengkinian
+        ]);
+
+        if ($request->jenis_pengkinian === 'MENINGGAL' && $personel->user) {
+            $personel->user->update([
+                'is_active' => false
+            ]);
+        }
+
+        if ($personel->phone_number) {
+            $msg = "Halo *" . $personel->full_name . "*, administrator telah meng-update status pengkinian data Anda menjadi: *" . $request->jenis_pengkinian . "*.";
+            if ($request->jenis_pengkinian === 'MENINGGAL') {
+                $msg .= "\n\nCatatan: Akun personel terkait telah dinonaktifkan secara otomatis oleh sistem.";
+            }
+            \App\Services\WhatsappService::sendMessage($personel->phone_number, $msg);
+        }
+
+        return back()->with('success', 'Data pengkinian personel berhasil ditambahkan dan langsung terverifikasi.');
     }
 
     public function adminIndex(Request $request)
@@ -144,19 +222,16 @@ class PengkinianDataController extends Controller
         ]);
 
         if ($item->personel) {
-            // Update status keaktifan personel
             $item->personel->update([
                 'status_keaktifan' => $item->jenis_pengkinian
             ]);
 
-            // Jika status Meninggal, akun User otomatis di-NONAKTIFKAN (is_active = false)
             if ($item->jenis_pengkinian === 'MENINGGAL' && $item->personel->user) {
                 $item->personel->user->update([
                     'is_active' => false
                 ]);
             }
 
-            // Send System Notification to Personel User
             if ($item->personel->user) {
                 $item->personel->user->notify(new \App\Notifications\SystemNotification(
                     'Pengkinian Data Disetujui',
@@ -166,7 +241,6 @@ class PengkinianDataController extends Controller
                 ));
             }
 
-            // Send WhatsApp Notification to Personel
             if ($item->personel->phone_number) {
                 $msg = "Halo *" . $item->personel->full_name . "*, pengajuan pengkinian data (" . $item->jenis_pengkinian . ") Anda telah *DISETUJUI* oleh Admin. Terima kasih.";
                 if ($item->jenis_pengkinian === 'MENINGGAL') {
@@ -175,7 +249,6 @@ class PengkinianDataController extends Controller
                 \App\Services\WhatsappService::sendMessage($item->personel->phone_number, $msg);
             }
 
-            // Send Email Notification to Personel
             if ($item->personel->user && $item->personel->user->email) {
                 try {
                     $mailText = "Pengajuan pengkinian data (" . $item->jenis_pengkinian . ") Anda telah <strong>DISETUJUI</strong> oleh Admin.";
@@ -216,7 +289,6 @@ class PengkinianDataController extends Controller
         ]);
 
         if ($item->personel) {
-            // Send System Notification
             if ($item->personel->user) {
                 $item->personel->user->notify(new \App\Notifications\SystemNotification(
                     'Pengkinian Data Ditolak',
@@ -226,13 +298,11 @@ class PengkinianDataController extends Controller
                 ));
             }
 
-            // Send WhatsApp Notification
             if ($item->personel->phone_number) {
                 $msg = 'Halo *' . $item->personel->full_name . '*, pengajuan pengkinian data (' . $item->jenis_pengkinian . ') Anda *DITOLAK* dengan alasan: "' . $request->reason . '". Silakan ajukan ulang dengan berkas yang sesuai.';
                 \App\Services\WhatsappService::sendMessage($item->personel->phone_number, $msg);
             }
 
-            // Send Email Notification
             if ($item->personel->user && $item->personel->user->email) {
                 try {
                     Mail::to($item->personel->user->email)->send(new SystemNotificationMail(
