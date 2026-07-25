@@ -117,7 +117,7 @@
     <div class="signature-block">
         <div>Dikeluarkan di: Jakarta</div>
         <div>Pada tanggal: {{ date('d F Y') }}</div>
-        <div style="margin-top: 8px;">a.n. Komandan Komponen Cadangan</div>
+        <div style="margin-top: 8px;">{{ $signerHeader }}</div>
         <div>{{ $signerJabatan }},</div>
         
         <div style="margin-top: 15px; margin-bottom: 10px;">
