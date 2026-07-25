@@ -170,8 +170,17 @@ class AuthController extends Controller
             ]);
 
             // 2. Handle File Uploads berkas pendaftaran (Disimpan di disk private aman)
-            $photoPath = $request->file('photo_profile')->store('personel/photos', 'private');
-            $ktpPath = $request->file('ktp_document')->store('personel/documents', 'private');
+            try {
+                $photoPath = $request->file('photo_profile')->store('personel/photos', 'private');
+            } catch (\Exception $e) {
+                $photoPath = $request->file('photo_profile')->store('personel/photos', 'local');
+            }
+
+            try {
+                $ktpPath = $request->file('ktp_document')->store('personel/documents', 'private');
+            } catch (\Exception $e) {
+                $ktpPath = $request->file('ktp_document')->store('personel/documents', 'local');
+            }
             
             $asnSkPath = null;
             if ($request->hasFile('asn_sk')) {
