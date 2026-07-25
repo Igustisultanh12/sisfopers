@@ -65,7 +65,7 @@
 
           <div class="flex flex-col gap-1.5">
             <label class="font-bold text-slate-500 uppercase text-[10px]">Upload Berkas Ijazah / Sertifikat (Max 4MB)</label>
-            <input type="file" @change="form.file_ijazah = .target.files[0]" class="text-xs text-slate-500 mt-1 file:py-1 file:px-3 file:border file:border-slate-200 file:rounded-lg file:text-xs file:bg-slate-50 file:cursor-pointer" />
+            <input type="file" @change="form.file_ijazah = $event.target.files[0]" class="text-xs text-slate-500 mt-1 file:py-1 file:px-3 file:border file:border-slate-200 file:rounded-lg file:text-xs file:bg-slate-50 file:cursor-pointer" />
           </div>
 
           <button type="submit" :disabled="form.processing" class="md:col-span-3 bg-[#2563EB] hover:bg-[#1E40AF] text-white rounded-xl px-4 py-2.5 font-bold text-xs transition disabled:opacity-50 mt-2 cursor-pointer">
