@@ -109,43 +109,59 @@
         <form @submit.prevent="submitAddForm" class="p-6 space-y-4">
           <!-- Autocomplete Search Personel / NIKC -->
           <div class="relative flex flex-col gap-1.5">
-            <label class="font-bold text-slate-600 uppercase text-[10px]">Cari NIKC / NIK / Nama Personel</label>
-            <input
-              v-model="personelSearchQuery"
-              @input="onSearchPersonelInput"
-              type="text"
-              class="rounded-xl border-[#E2E8F0] text-xs px-4 py-2.5 outline-none focus:border-[#2563EB]"
-              placeholder="Ketik NIKC atau Nama Personel..."
-              required
-            />
+            <label class="font-bold text-slate-600 uppercase text-[10px]">Cari NIKC / NIK / Nama Personel (Master DB & SKEP)</label>
+            <div class="relative">
+              <input
+                v-model="personelSearchQuery"
+                @input="onSearchPersonelInput"
+                type="text"
+                class="w-full rounded-xl border-[#E2E8F0] text-xs px-4 py-2.5 outline-none focus:border-[#2563EB]"
+                placeholder="Ketik minimal 2 karakter (NIKC / NIK / Nama)..."
+                required
+              />
+              <span v-if="isSearching" class="absolute right-3 top-2.5 text-[10px] text-slate-400 font-bold animate-pulse">Memuat...</span>
+            </div>
 
             <!-- Dropdown Hasil Pencarian Personel -->
-            <div v-if="searchResults.length > 0" class="absolute top-full left-0 right-0 z-10 mt-1 bg-white border border-[#E2E8F0] rounded-xl shadow-lg max-h-48 overflow-y-auto divide-y divide-slate-100">
+            <div v-if="searchResults.length > 0" class="absolute top-full left-0 right-0 z-20 mt-1 bg-white border border-[#E2E8F0] rounded-xl shadow-xl max-h-56 overflow-y-auto divide-y divide-slate-100">
               <button
                 v-for="p in searchResults"
-                :key="p.id"
+                :key="p.nikc"
                 type="button"
                 @click="selectPersonel(p)"
-                class="w-full text-left p-3 hover:bg-slate-50 transition flex items-center justify-between"
+                class="w-full text-left p-3 hover:bg-blue-50/60 transition flex items-center justify-between"
               >
                 <div>
                   <p class="font-bold text-slate-800">{{ p.full_name }}</p>
-                  <p class="text-[10px] text-slate-400">NIKC: {{ p.nikc || p.nik }} | {{ p.pangkat || '-' }} ({{ p.matra || '-' }})</p>
+                  <p class="text-[10px] text-slate-400">NIKC: <span class="font-bold text-slate-700">{{ p.nikc || p.nik }}</span> | {{ p.pangkat || '-' }} ({{ p.matra || '-' }})</p>
                 </div>
-                <span class="text-[9px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600">{{ p.status_keaktifan || 'AKTIF' }}</span>
+                <div class="text-right">
+                  <span class="text-[9px] font-bold px-2 py-0.5 rounded"
+                    :class="p.source === 'MASTER_PERSONEL' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'">
+                    {{ p.source === 'MASTER_PERSONEL' ? 'MASTER DB' : 'DATA SKEP' }}
+                  </span>
+                </div>
               </button>
             </div>
           </div>
 
           <!-- Card Personel Terpilih -->
-          <div v-if="selectedPersonel" class="p-3 bg-blue-50/60 border border-blue-100 rounded-xl grid grid-cols-2 gap-2 text-xs">
+          <div v-if="selectedPersonel" class="p-3 bg-blue-50/60 border border-blue-200 rounded-xl grid grid-cols-2 gap-2 text-xs">
             <div>
               <p class="text-[9px] font-bold text-slate-400 uppercase">Personel Terpilih</p>
               <p class="font-bold text-slate-800 mt-0.5">{{ selectedPersonel.full_name }}</p>
             </div>
             <div>
               <p class="text-[9px] font-bold text-slate-400 uppercase">NIKC / NIK</p>
-              <p class="font-bold text-slate-800 mt-0.5">{{ selectedPersonel.nikc || selectedPersonel.nik }}</p>
+              <p class="font-bold text-blue-700 mt-0.5">{{ selectedPersonel.nikc || selectedPersonel.nik }}</p>
+            </div>
+            <div>
+              <p class="text-[9px] font-bold text-slate-400 uppercase">Pangkat & Matra</p>
+              <p class="font-bold text-slate-800 mt-0.5">{{ selectedPersonel.pangkat || '-' }} ({{ selectedPersonel.matra || '-' }})</p>
+            </div>
+            <div>
+              <p class="text-[9px] font-bold text-slate-400 uppercase">Sumber Data</p>
+              <p class="font-bold text-slate-800 mt-0.5">{{ selectedPersonel.source === 'MASTER_PERSONEL' ? 'Master Database' : 'Database SKEP' }}</p>
             </div>
           </div>
 
@@ -203,7 +219,7 @@
 
           <div class="pt-2 flex items-center justify-end gap-3 border-t border-[#E2E8F0]">
             <button type="button" @click="showAddModal = false" class="px-4 py-2 border border-[#E2E8F0] rounded-xl hover:bg-slate-100 text-slate-600 font-bold transition cursor-pointer">Batal</button>
-            <button type="submit" :disabled="addForm.processing || !addForm.personel_id" class="px-5 py-2 bg-[#2563EB] hover:bg-[#1E40AF] disabled:opacity-50 text-white font-bold rounded-xl shadow-md transition cursor-pointer">
+            <button type="submit" :disabled="addForm.processing || !selectedPersonel" class="px-5 py-2 bg-[#2563EB] hover:bg-[#1E40AF] disabled:opacity-50 text-white font-bold rounded-xl shadow-md transition cursor-pointer">
               {{ addForm.processing ? 'Menyimpan...' : 'Simpan & Setujui' }}
             </button>
           </div>
@@ -355,9 +371,12 @@ const showAddModal = ref(false);
 const personelSearchQuery = ref('');
 const searchResults = ref([]);
 const selectedPersonel = ref(null);
+const isSearching = ref(false);
 
 const addForm = useForm({
   personel_id: '',
+  nikc: '',
+  full_name: '',
   jenis_pengkinian: 'MENINGGAL',
   document: null,
   nrp: '',
@@ -376,30 +395,43 @@ const openAddModal = () => {
   addForm.reset();
 };
 
-const onSearchPersonelInput = async () => {
+let searchTimeout = null;
+const onSearchPersonelInput = () => {
+  if (searchTimeout) clearTimeout(searchTimeout);
+
   if (personelSearchQuery.value.trim().length < 2) {
     searchResults.value = [];
+    isSearching.value = false;
     return;
   }
 
-  try {
-    const res = await fetch(route('admin.pengkinian-data.search-personel') + '?query=' + encodeURIComponent(personelSearchQuery.value));
-    const data = await res.json();
-    searchResults.value = data;
-  } catch (err) {
-    console.error('Failed to search personel', err);
-  }
+  isSearching.value = true;
+  searchTimeout = setTimeout(async () => {
+    try {
+      const response = await fetch('/admin/verifikasi-pengkinian/search-personel?query=' + encodeURIComponent(personelSearchQuery.value));
+      if (response.ok) {
+        const data = await response.json();
+        searchResults.value = data;
+      }
+    } catch (err) {
+      console.error('Search failed:', err);
+    } finally {
+      isSearching.value = false;
+    }
+  }, 300);
 };
 
 const selectPersonel = (p) => {
   selectedPersonel.value = p;
-  addForm.personel_id = p.id;
+  addForm.personel_id = p.id || '';
+  addForm.nikc = p.nikc || p.nik;
+  addForm.full_name = p.full_name;
   personelSearchQuery.value = p.full_name + ' (' + (p.nikc || p.nik) + ')';
   searchResults.value = [];
 };
 
 const submitAddForm = () => {
-  if (!addForm.personel_id) return;
+  if (!selectedPersonel.value) return;
   addForm.post(route('admin.pengkinian-data.store'), {
     forceFormData: true,
     preserveScroll: true,
@@ -407,6 +439,7 @@ const submitAddForm = () => {
       alertSuccess('Berhasil', 'Data pengkinian personel telah ditambahkan.');
       showAddModal.value = false;
       addForm.reset();
+      selectedPersonel.value = null;
     },
     onError: () => {
       alertError('Gagal', 'Terjadi kesalahan saat menyimpan data.');
