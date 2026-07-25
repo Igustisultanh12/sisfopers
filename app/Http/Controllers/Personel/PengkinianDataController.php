@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class PengkinianDataController extends Controller
@@ -111,14 +112,23 @@ class PengkinianDataController extends Controller
             return response()->json([]);
         }
 
+        $cleanQ = preg_replace('/[^A-Za-z0-9]/', '', $q);
+
         $results = [];
         $addedIds = [];
 
         try {
-            // 1. Cari dari Database Master Personel
-            $personels = Personel::where('full_name', 'like', "%{$q}%")
-                ->orWhere('nikc', 'like', "%{$q}%")
-                ->orWhere('nik', 'like', "%{$q}%")
+            // 1. Cari dari Database Master Personel (Gunakan strip titik/spasi agar selalu ketemu)
+            $personels = Personel::where(function($sub) use ($q, $cleanQ) {
+                    $sub->where('full_name', 'like', "%{$q}%")
+                        ->orWhere('nikc', 'like', "%{$q}%")
+                        ->orWhere('nik', 'like', "%{$q}%");
+                    
+                    if (!empty($cleanQ)) {
+                        $sub->orWhereRaw("REPLACE(REPLACE(REPLACE(nikc, '.', ''), '-', ''), ' ', '') LIKE ?", ["%{$cleanQ}%"])
+                            ->orWhereRaw("REPLACE(REPLACE(REPLACE(nik, '.', ''), '-', ''), ' ', '') LIKE ?", ["%{$cleanQ}%"]);
+                    }
+                })
                 ->limit(10)
                 ->get(['id', 'full_name', 'nikc', 'nik', 'pangkat', 'matra', 'angkatan', 'phone_number', 'province', 'city', 'subdistrict', 'status_keaktifan']);
 
@@ -142,8 +152,14 @@ class PengkinianDataController extends Controller
             }
 
             // 2. Cari dari Database Master SKEP
-            $skepItems = SkepData::where('nama_lengkap', 'like', "%{$q}%")
-                ->orWhere('nikc', 'like', "%{$q}%")
+            $skepItems = SkepData::where(function($sub) use ($q, $cleanQ) {
+                    $sub->where('nama_lengkap', 'like', "%{$q}%")
+                        ->orWhere('nikc', 'like', "%{$q}%");
+
+                    if (!empty($cleanQ)) {
+                        $sub->orWhereRaw("REPLACE(REPLACE(REPLACE(nikc, '.', ''), '-', ''), ' ', '') LIKE ?", ["%{$cleanQ}%"]);
+                    }
+                })
                 ->limit(10)
                 ->get();
 
@@ -250,7 +266,6 @@ class PengkinianDataController extends Controller
                 'status_verification' => 'APPROVED',
             ]);
         } else {
-            // Update fields jika sebelumnya kosong dan kini diisi oleh admin
             $updateData = [];
             if (!$personel->pangkat && $request->filled('pangkat')) {
                 $updateData['pangkat'] = $request->pangkat;
