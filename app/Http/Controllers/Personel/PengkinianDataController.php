@@ -120,7 +120,7 @@ class PengkinianDataController extends Controller
                 ->orWhere('nikc', 'like', "%{$q}%")
                 ->orWhere('nik', 'like', "%{$q}%")
                 ->limit(10)
-                ->get(['id', 'full_name', 'nikc', 'nik', 'pangkat', 'matra', 'angkatan', 'status_keaktifan']);
+                ->get(['id', 'full_name', 'nikc', 'nik', 'pangkat', 'matra', 'angkatan', 'phone_number', 'province', 'city', 'subdistrict', 'status_keaktifan']);
 
             foreach ($personels as $p) {
                 $addedIds[] = $p->id;
@@ -132,12 +132,16 @@ class PengkinianDataController extends Controller
                     'pangkat'          => $p->pangkat,
                     'matra'            => $p->matra,
                     'angkatan'         => $p->angkatan,
+                    'phone_number'     => $p->phone_number,
+                    'province'         => $p->province,
+                    'city'             => $p->city,
+                    'subdistrict'       => $p->subdistrict,
                     'status_keaktifan' => $p->status_keaktifan ?: 'AKTIF',
                     'source'           => 'MASTER_PERSONEL',
                 ];
             }
 
-            // 2. Cari dari Database Master SKEP (Hanya kolom nama_lengkap & nikc)
+            // 2. Cari dari Database Master SKEP
             $skepItems = SkepData::where('nama_lengkap', 'like', "%{$q}%")
                 ->orWhere('nikc', 'like', "%{$q}%")
                 ->limit(10)
@@ -159,6 +163,10 @@ class PengkinianDataController extends Controller
                         'pangkat'          => $existing->pangkat,
                         'matra'            => $existing->matra,
                         'angkatan'         => $existing->angkatan,
+                        'phone_number'     => $existing->phone_number,
+                        'province'         => $existing->province,
+                        'city'             => $existing->city,
+                        'subdistrict'       => $existing->subdistrict,
                         'status_keaktifan' => $existing->status_keaktifan ?: 'AKTIF',
                         'source'           => 'MASTER_PERSONEL',
                     ];
@@ -171,6 +179,10 @@ class PengkinianDataController extends Controller
                         'pangkat'          => $sk->pangkat,
                         'matra'            => $sk->matra,
                         'angkatan'         => $sk->angkatan,
+                        'phone_number'     => null,
+                        'province'         => null,
+                        'city'             => null,
+                        'subdistrict'       => null,
                         'status_keaktifan' => 'DATA SKEP',
                         'source'           => 'SKEP_DATA',
                         'dob'              => $sk->dob?->format('Y-m-d'),
@@ -196,6 +208,10 @@ class PengkinianDataController extends Controller
             'pangkat'          => 'nullable|string',
             'matra'            => 'nullable|string',
             'angkatan'         => 'nullable|string',
+            'phone_number'     => 'nullable|string',
+            'province'         => 'nullable|string',
+            'city'             => 'nullable|string',
+            'subdistrict'       => 'nullable|string',
             'jenis_pengkinian' => 'required|in:MENINGGAL,TNI_AD,TNI_AL,TNI_AU,POLRI',
             'document'         => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:4096',
             'nrp'              => 'nullable|string|max:50',
@@ -226,11 +242,15 @@ class PengkinianDataController extends Controller
                 'pangkat'             => $request->pangkat ?: ($skep ? $skep->pangkat : 'PRADA'),
                 'matra'               => $request->matra ?: ($skep ? $skep->matra : 'AD'),
                 'angkatan'            => $request->angkatan ?: ($skep ? $skep->angkatan : '2024'),
+                'phone_number'        => $request->phone_number,
+                'province'            => $request->province,
+                'city'                => $request->city,
+                'subdistrict'          => $request->subdistrict,
                 'status_keaktifan'    => $request->jenis_pengkinian,
                 'status_verification' => 'APPROVED',
             ]);
         } else {
-            // Update pangkat/matra/angkatan jika sebelumnya kosong dan kini diisi oleh admin
+            // Update fields jika sebelumnya kosong dan kini diisi oleh admin
             $updateData = [];
             if (!$personel->pangkat && $request->filled('pangkat')) {
                 $updateData['pangkat'] = $request->pangkat;
@@ -240,6 +260,18 @@ class PengkinianDataController extends Controller
             }
             if (!$personel->angkatan && $request->filled('angkatan')) {
                 $updateData['angkatan'] = $request->angkatan;
+            }
+            if (!$personel->phone_number && $request->filled('phone_number')) {
+                $updateData['phone_number'] = $request->phone_number;
+            }
+            if (!$personel->province && $request->filled('province')) {
+                $updateData['province'] = $request->province;
+            }
+            if (!$personel->city && $request->filled('city')) {
+                $updateData['city'] = $request->city;
+            }
+            if (!$personel->subdistrict && $request->filled('subdistrict')) {
+                $updateData['subdistrict'] = $request->subdistrict;
             }
             if (!empty($updateData)) {
                 $personel->update($updateData);
