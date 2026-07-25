@@ -87,7 +87,6 @@ class VerificationController extends Controller
                 // 1. Aktifkan status hak masuk akun user
                 User::where('id', $personel->user_id)->update(['is_active' => true]);
 
-                // 🌟 PERBAIKAN MUTLAK: Ambil NIKC bawaan yang sudah diisi pendaftar saat registrasi
                 $nikc = $personel->nikc;
 
                 // 3. Kirim Notifikasi WA, Email, dan SystemNotification
@@ -104,7 +103,6 @@ class VerificationController extends Controller
                 }
             } else {
                 // Jika pendaftaran ditolak oleh administrator
-                // 1. Kirim notifikasi WA & Email penolakan terlebih dahulu
                 $msg = "Mohon maaf *{$personel->full_name}*, pendaftaran Anda di Sisfoperskc ditolak dengan catatan: " . ($request->admin_notes ?? 'Berkas pendukung tidak valid.');
                 \App\Services\WhatsappService::sendMessage($personel->phone_number, $msg);
 
@@ -124,7 +122,7 @@ class VerificationController extends Controller
                     }
                 }
 
-                // 2. Hapus secara permanen personel, seluruh berkas fisik di disk, tabel relasi, dan akun User (email & username)
+                // Hapus secara permanen personel
                 Personel::purgePersonelCompletely($personel);
             }
 
@@ -135,7 +133,7 @@ class VerificationController extends Controller
             return back()->withErrors(['error' => 'Gagal memproses validasi berkas: ' . $e->getMessage()]);
         }
     }
-}
+
     /**
      * Unggah / Update Berkas Foto Profil atau KTP Pendaftar oleh Admin
      */
