@@ -145,23 +145,60 @@
             </div>
           </div>
 
-          <!-- Card Personel Terpilih -->
-          <div v-if="selectedPersonel" class="p-3 bg-blue-50/60 border border-blue-200 rounded-xl grid grid-cols-2 gap-2 text-xs">
-            <div>
-              <p class="text-[9px] font-bold text-slate-400 uppercase">Personel Terpilih</p>
-              <p class="font-bold text-slate-800 mt-0.5">{{ selectedPersonel.full_name }}</p>
+          <!-- Card Info & Detail Personel Terpilih -->
+          <div v-if="selectedPersonel" class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+              <span class="text-[10px] font-bold uppercase text-slate-400">Informasi Personel</span>
+              <span class="text-[9px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800">
+                🔒 Data yang sudah ada dikunci (Tampil saja)
+              </span>
             </div>
-            <div>
-              <p class="text-[9px] font-bold text-slate-400 uppercase">NIKC / NIK</p>
-              <p class="font-bold text-blue-700 mt-0.5">{{ selectedPersonel.nikc || selectedPersonel.nik }}</p>
-            </div>
-            <div>
-              <p class="text-[9px] font-bold text-slate-400 uppercase">Pangkat & Matra</p>
-              <p class="font-bold text-slate-800 mt-0.5">{{ selectedPersonel.pangkat || '-' }} ({{ selectedPersonel.matra || '-' }})</p>
-            </div>
-            <div>
-              <p class="text-[9px] font-bold text-slate-400 uppercase">Sumber Data</p>
-              <p class="font-bold text-slate-800 mt-0.5">{{ selectedPersonel.source === 'MASTER_PERSONEL' ? 'Master Database' : 'Database SKEP' }}</p>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <p class="text-[9px] font-bold text-slate-400 uppercase">Nama Lengkap</p>
+                <p class="font-bold text-slate-800 mt-0.5 text-xs">{{ selectedPersonel.full_name }}</p>
+              </div>
+
+              <div>
+                <p class="text-[9px] font-bold text-slate-400 uppercase">NIKC / NIK</p>
+                <p class="font-bold text-blue-700 mt-0.5 text-xs">{{ selectedPersonel.nikc || selectedPersonel.nik }}</p>
+              </div>
+
+              <!-- Pangkat: Jika sudah ada -> Tampil saja. Jika belum ada -> Inputable -->
+              <div>
+                <p class="text-[9px] font-bold text-slate-400 uppercase">Pangkat</p>
+                <p v-if="selectedPersonel.pangkat" class="font-bold text-slate-800 mt-0.5 text-xs">{{ selectedPersonel.pangkat }}</p>
+                <div v-else class="mt-1">
+                  <input
+                    v-model="addForm.pangkat"
+                    type="text"
+                    placeholder="Isi Pangkat..."
+                    class="w-full rounded-lg border-[#E2E8F0] text-xs px-2.5 py-1 outline-none focus:border-[#2563EB]"
+                    required
+                  />
+                  <span class="text-[9px] text-amber-600 font-semibold">*Data belum ada, silakan lengkapi</span>
+                </div>
+              </div>
+
+              <!-- Matra: Jika sudah ada -> Tampil saja. Jika belum ada -> Selectable -->
+              <div>
+                <p class="text-[9px] font-bold text-slate-400 uppercase">Matra</p>
+                <p v-if="selectedPersonel.matra" class="font-bold text-slate-800 mt-0.5 text-xs">{{ selectedPersonel.matra }}</p>
+                <div v-else class="mt-1">
+                  <select
+                    v-model="addForm.matra"
+                    class="w-full rounded-lg border-[#E2E8F0] text-xs px-2.5 py-1 outline-none focus:border-[#2563EB]"
+                    required
+                  >
+                    <option value="">Pilih Matra...</option>
+                    <option value="AD">TNI AD</option>
+                    <option value="AL">TNI AL</option>
+                    <option value="AU">TNI AU</option>
+                  </select>
+                  <span class="text-[9px] text-amber-600 font-semibold">*Data belum ada, silakan lengkapi</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -377,6 +414,9 @@ const addForm = useForm({
   personel_id: '',
   nikc: '',
   full_name: '',
+  pangkat: '',
+  matra: '',
+  angkatan: '',
   jenis_pengkinian: 'MENINGGAL',
   document: null,
   nrp: '',
@@ -426,6 +466,9 @@ const selectPersonel = (p) => {
   addForm.personel_id = p.id || '';
   addForm.nikc = p.nikc || p.nik;
   addForm.full_name = p.full_name;
+  addForm.pangkat = p.pangkat || '';
+  addForm.matra = p.matra || '';
+  addForm.angkatan = p.angkatan || '';
   personelSearchQuery.value = p.full_name + ' (' + (p.nikc || p.nik) + ')';
   searchResults.value = [];
 };
