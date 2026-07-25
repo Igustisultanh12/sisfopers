@@ -73,7 +73,7 @@
             
             <div class="text-xs space-y-2 text-slate-600 w-full">
               <p class="text-sm font-bold text-slate-800">{{ selectedItem?.full_name }}</p>
-              <p><strong>Pangkat :</strong> <span class="font-bold text-slate-700">{{ selectedItem?.pangkat || '-' }}</span></p>
+              <p><strong>Pangkat :</strong> <span class="font-bold text-slate-700">{{ formatLongRank(selectedItem?.pangkat) }}</span></p>
               <p><strong>NIKC :</strong> <span class="font-mono font-bold text-[#2563EB] bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100/60">{{ selectedItem?.nikc || '-' }}</span></p>
               <p><strong>Nomor Induk Kependudukan:</strong> {{ selectedItem?.nik }}</p>
               <p><strong>Nomor Kontrol Hub WhatsApp:</strong> {{ selectedItem?.phone_number }}</p>
@@ -216,6 +216,52 @@ const submitVerification = () => {
       alertError('Gagal Memproses', 'Terjadi kesalahan interupsi data server.');
     }
   });
+};
+
+
+const formatLongRank = (pangkat) => {
+  if (!pangkat) return '-';
+  let p = pangkat.toUpperCase().trim();
+  let isWanita = false;
+
+  if (p.includes('(W)') || p.includes(' W')) {
+    isWanita = true;
+    p = p.replace('(W)', '').replace(' W', '').trim();
+  }
+
+  const map = {
+    'PRADA': 'Prajurit Dua',
+    'PRATU': 'Prajurit Satu',
+    'PRAKA': 'Prajurit Kepala',
+    'KOPDA': 'Kopral Dua',
+    'KOPTU': 'Kopral Satu',
+    'KOPKA': 'Kopral Kepala',
+    'SERDA': 'Sersan Dua',
+    'SERTU': 'Sersan Satu',
+    'SERKA': 'Sersan Kepala',
+    'SERMA': 'Sersan Mayor',
+    'PELDA': 'Pembantu Letnan Dua',
+    'PELTU': 'Pembantu Letnan Satu',
+    'LETDA': 'Letnan Dua',
+    'LETTU': 'Letnan Satu',
+    'KAPTEN': 'Kapten',
+    'MAYOR': 'Mayor',
+    'LETKOL': 'Letnan Kolonel',
+    'KOLONEL': 'Kolonel',
+  };
+
+  const parts = p.split(' ');
+  const rankKey = parts[0];
+  const korps = parts[1] ? ' ' + parts[1].charAt(0).toUpperCase() + parts[1].slice(1).toLowerCase() : '';
+
+  let longRank = map[rankKey] ? (map[rankKey] + korps) : (p.charAt(0).toUpperCase() + p.slice(1).toLowerCase());
+
+  if (!longRank.toUpperCase().includes('KC')) {
+    if (isWanita) return `${longRank} KC/W`;
+    return `${longRank} KC`;
+  }
+
+  return longRank;
 };
 
 const formatDate = (d) => new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
