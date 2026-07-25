@@ -85,24 +85,24 @@ Route::middleware(['auth'])->group(function () {
     })->where('path', '.*')->name('personel.document.download');
 });
 
-// Rute Servis Berkas Storage Fallback (Pencarian Multi-Folder & Sinkronisasi Format .jpeg / .jpg / .png)
+// Rute Servis Berkas Storage Fallback (Mendukung Seluruh Ekstensi Gambar & Dokumen: JPG, JPEG, PNG, WEBP, GIF, SVG, BMP, HEIC, AVIF, PDF)
 Route::get('/storage/{path}', function ($path) {
     $cleanPath = ltrim($path, '/');
     $cleanPath = preg_replace('/^(storage\/|public\/|private\/)+/', '', $cleanPath);
     $filename = basename($cleanPath);
     $filenameWithoutExt = pathinfo($filename, PATHINFO_FILENAME);
 
-    // Menangani perbedaan ekstensi berkas (.jpeg vs .jpg vs .png)
-    $extVariants = [
-        $filename,
-        $filenameWithoutExt . '.jpg',
-        $filenameWithoutExt . '.jpeg',
-        $filenameWithoutExt . '.png',
-        $filenameWithoutExt . '.pdf',
-    ];
+    // Seluruh variasi ekstensi gambar & dokumen yang didukung
+    $imageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg', '.bmp', '.heic', '.heif', '.avif', '.tiff', '.pdf'];
+    
+    $extVariants = [$filename];
+    foreach ($imageExtensions as $ext) {
+        $extVariants[] = $filenameWithoutExt . $ext;
+        $extVariants[] = $filenameWithoutExt . strtoupper($ext);
+    }
 
     $possibleSubpaths = [];
-    foreach ($extVariants as $fileVar) {
+    foreach (array_unique($extVariants) as $fileVar) {
         $possibleSubpaths[] = $fileVar;
         $possibleSubpaths[] = 'personel/photos/' . $fileVar;
         $possibleSubpaths[] = 'personel/documents/' . $fileVar;
@@ -117,14 +117,21 @@ Route::get('/storage/{path}', function ($path) {
             if (Storage::disk($diskName)->exists($subPath)) {
                 $fullPath = Storage::disk($diskName)->path($subPath);
                 if (file_exists($fullPath) && is_readable($fullPath)) {
-                    $mime = mime_content_type($fullPath) ?: 'image/jpeg';
+                    $ext = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
+                    $mimeTypes = [
+                        'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png',
+                        'webp' => 'image/webp', 'gif' => 'image/gif', 'svg' => 'image/svg+xml',
+                        'bmp' => 'image/bmp', 'heic' => 'image/heic', 'heif' => 'image/heif',
+                        'avif' => 'image/avif', 'pdf' => 'application/pdf'
+                    ];
+                    $mime = $mimeTypes[$ext] ?? (mime_content_type($fullPath) ?: 'image/jpeg');
                     return response()->file($fullPath, ['Content-Type' => $mime]);
                 }
             }
         }
     }
 
-    abort(404, 'File storage tidak ditemukan.');
+    abort(404, 'File gambar tidak ditemukan.');
 })->where('path', '.*')->name('storage.fallback');
 
 /*
