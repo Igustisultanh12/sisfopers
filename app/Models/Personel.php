@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 use App\Models\MasterKepangkatan;
 
 class Personel extends Model
@@ -125,5 +126,28 @@ class Personel extends Model
     public function sinyalmen(): HasOne
     {
         return $this->hasOne(Sinyalmen::class, 'personel_id');
+    }
+
+    public function broadcastResponses(): HasMany
+    {
+        return $this->hasMany(BroadcastResponse::class, 'personel_id');
+    }
+
+    public function ensureKomcadEducationExists()
+    {
+        $exists = $this->riwayatPendidikan()
+            ->where('jenis', 'PENDIDIKAN_KOMCAD')
+            ->exists();
+
+        if (!$exists && $this->angkatan) {
+            $this->riwayatPendidikan()->create([
+                'uuid'           => (string) Str::uuid(),
+                'jenis'          => 'PENDIDIKAN_KOMCAD',
+                'nama_institusi' => 'Pusdiklat / Rindam TNI ' . ($this->matra ?: 'AD'),
+                'program_studi'  => 'Pendidikan Pembentukan Komponen Cadangan (Dikbatsis Komcad)',
+                'tahun_lulus'    => $this->angkatan ?: date('Y'),
+                'verified_at'    => now(),
+            ]);
+        }
     }
 }
