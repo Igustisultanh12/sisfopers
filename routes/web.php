@@ -62,39 +62,12 @@ Route::middleware('guest')->group(function () {
     Route::get('/reset-password-otp', [\App\Http\Controllers\Auth\PasswordResetOtpController::class, 'create'])->name('password.reset-otp');
     Route::post('/reset-password-otp', [\App\Http\Controllers\Auth\PasswordResetOtpController::class, 'store'])->name('password.update-otp');
     
-    // Rute Publik Pengecekan & Pengajuan SKEP
-    Route::get('/skep/check', [SkepPublicController::class, 'checkNikc'])->middleware('throttle:120,1')->name('skep.check');
-    Route::post('/skep/request', [SkepPublicController::class, 'submitRequest'])->middleware('throttle:120,1')->name('skep.request');
-});
-
-/*
-|--------------------------------------------------------------------------
-| Authenticated Shared Routes (Akses Bersama Semua Role)
-|--------------------------------------------------------------------------
-*/
-Route::middleware('auth')->group(function () {
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-
-    // Hub Manajemen Pusat Akun Global (ROMEI Style Terintegrasi)
-    Route::get('/account/settings', [ProfileController::class, 'edit'])->name('profile.edit');
-    
-    // Menggunakan POST agar engine Laravel dapat membaca payload Upload File / Avatar murni
-    Route::post('/account/settings', [ProfileController::class, 'update'])->name('profile.update');
-    
-    // Rute Pembaruan Kata Sandi & Validasi Verifikasi Token OTP M2FA
-    Route::put('/account/settings/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
-    Route::post('/account/settings/mfa', [ProfileController::class, 'toggleMfa'])->name('profile.mfa');
-    Route::post('/account/settings/mfa/verify', [ProfileController::class, 'verifyMfa'])->name('profile.mfa.verify');
-
-    // HUB SISTEM NOTIFIKASI INTERAKTIF GLOBAL (Bisa diklik Admin & Personel)
-    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-    Route::get('/notifications/{id}/read', [NotificationController::class, 'read'])->name('notifications.read');
-    Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
-
-    // Rute Unduhan Berkas Ijazah/Dokumen Privat Aman
-        // Rute Unduhan & Tampilan Berkas Foto / KTP Privat Aman
+        // Rute Tampilan Foto & Dokumen Terproteksi Wajib Login (Auth Middleware)
     Route::get('/documents/private/{path}', function ($path) {
-        abort_unless(auth()->check(), 403);
+        // PERIKSA STATUS LOGIN (Hanya pengguna terautentikasi yang bisa akses)
+        if (!auth()->check()) {
+            abort(403, 'Akses ditolak. Anda harus login terlebih dahulu.');
+        }
 
         $cleanPath = ltrim($path, '/');
         $cleanPath = preg_replace('/^(app\/private\/|private\/|storage\/|public\/)+/', '', $cleanPath);
@@ -106,9 +79,11 @@ Route::middleware('auth')->group(function () {
             'personel/pendidikan/' . basename($cleanPath),
             'personel/pekerjaan/' . basename($cleanPath),
             'personel/asn_sks/' . basename($cleanPath),
+            'personel/skep_requests/' . basename($cleanPath),
         ];
 
-        foreach (['private', 'public', 'local'] as $diskName) {
+        // Cari file di storage/app (disk local) dan disk public/private
+        foreach (['local', 'public', 'private'] as $diskName) {
             foreach ($possiblePaths as $tryPath) {
                 if (Storage::disk($diskName)->exists($tryPath)) {
                     $fullPath = Storage::disk($diskName)->path($tryPath);
@@ -120,7 +95,7 @@ Route::middleware('auth')->group(function () {
             }
         }
 
-        abort(404);
+        abort(404, 'Berkas foto / dokumen tidak ditemukan.');
     })->where('path', '.*')->name('personel.document.download');
 });
 
