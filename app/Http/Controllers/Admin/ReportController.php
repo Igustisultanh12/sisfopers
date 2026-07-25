@@ -101,6 +101,33 @@ class ReportController extends Controller
             ['nomor_surat' => $data['nomorSurat']]
         );
 
+        $statusCounts = Personel::select('status_keaktifan', DB::raw('COUNT(*) as total'))
+            ->whereIn('status_keaktifan', ['MENINGGAL', 'TNI_AD', 'TNI_AL', 'TNI_AU', 'POLRI'])
+            ->groupBy('status_keaktifan')
+            ->pluck('total', 'status_keaktifan')
+            ->all();
+
+        $keteranganList = [];
+        if (!empty($statusCounts['MENINGGAL'])) {
+            $keteranganList[] = "{$statusCounts['MENINGGAL']} ORANG MENINGGAL DUNIA";
+        }
+        if (!empty($statusCounts['TNI_AD'])) {
+            $keteranganList[] = "{$statusCounts['TNI_AD']} ORANG MASUK TNI AD";
+        }
+        if (!empty($statusCounts['TNI_AL'])) {
+            $keteranganList[] = "{$statusCounts['TNI_AL']} ORANG MASUK TNI AL";
+        }
+        if (!empty($statusCounts['TNI_AU'])) {
+            $keteranganList[] = "{$statusCounts['TNI_AU']} ORANG MASUK TNI AU";
+        }
+        if (!empty($statusCounts['POLRI'])) {
+            $keteranganList[] = "{$statusCounts['POLRI']} ORANG MASUK POLRI";
+        }
+
+        if (empty($keteranganList)) {
+            $keteranganList[] = "NIHIL / SELURUH PERSONEL AKTIF";
+        }
+
         $verifyUrl = route('public.verify-doc', $docVerif->verify_code);
         $data['verifyCode'] = $docVerif->verify_code;
         $data['verifyUrl']  = $verifyUrl;
@@ -158,6 +185,33 @@ class ReportController extends Controller
             ['nomor_surat' => $nomorSurat]
         );
 
+        $statusCounts = Personel::select('status_keaktifan', DB::raw('COUNT(*) as total'))
+            ->whereIn('status_keaktifan', ['MENINGGAL', 'TNI_AD', 'TNI_AL', 'TNI_AU', 'POLRI'])
+            ->groupBy('status_keaktifan')
+            ->pluck('total', 'status_keaktifan')
+            ->all();
+
+        $keteranganList = [];
+        if (!empty($statusCounts['MENINGGAL'])) {
+            $keteranganList[] = "{$statusCounts['MENINGGAL']} ORANG MENINGGAL DUNIA";
+        }
+        if (!empty($statusCounts['TNI_AD'])) {
+            $keteranganList[] = "{$statusCounts['TNI_AD']} ORANG MASUK TNI AD";
+        }
+        if (!empty($statusCounts['TNI_AL'])) {
+            $keteranganList[] = "{$statusCounts['TNI_AL']} ORANG MASUK TNI AL";
+        }
+        if (!empty($statusCounts['TNI_AU'])) {
+            $keteranganList[] = "{$statusCounts['TNI_AU']} ORANG MASUK TNI AU";
+        }
+        if (!empty($statusCounts['POLRI'])) {
+            $keteranganList[] = "{$statusCounts['POLRI']} ORANG MASUK POLRI";
+        }
+
+        if (empty($keteranganList)) {
+            $keteranganList[] = "NIHIL / SELURUH PERSONEL AKTIF";
+        }
+
         $verifyUrl = route('public.verify-doc', $docVerif->verify_code);
         $qrCodeBase64 = \App\Services\QrCodeService::generateBase64($verifyUrl);
 
@@ -211,6 +265,33 @@ class ReportController extends Controller
             ['nomor_surat' => $nomorSurat]
         );
 
+        $statusCounts = Personel::select('status_keaktifan', DB::raw('COUNT(*) as total'))
+            ->whereIn('status_keaktifan', ['MENINGGAL', 'TNI_AD', 'TNI_AL', 'TNI_AU', 'POLRI'])
+            ->groupBy('status_keaktifan')
+            ->pluck('total', 'status_keaktifan')
+            ->all();
+
+        $keteranganList = [];
+        if (!empty($statusCounts['MENINGGAL'])) {
+            $keteranganList[] = "{$statusCounts['MENINGGAL']} ORANG MENINGGAL DUNIA";
+        }
+        if (!empty($statusCounts['TNI_AD'])) {
+            $keteranganList[] = "{$statusCounts['TNI_AD']} ORANG MASUK TNI AD";
+        }
+        if (!empty($statusCounts['TNI_AL'])) {
+            $keteranganList[] = "{$statusCounts['TNI_AL']} ORANG MASUK TNI AL";
+        }
+        if (!empty($statusCounts['TNI_AU'])) {
+            $keteranganList[] = "{$statusCounts['TNI_AU']} ORANG MASUK TNI AU";
+        }
+        if (!empty($statusCounts['POLRI'])) {
+            $keteranganList[] = "{$statusCounts['POLRI']} ORANG MASUK POLRI";
+        }
+
+        if (empty($keteranganList)) {
+            $keteranganList[] = "NIHIL / SELURUH PERSONEL AKTIF";
+        }
+
         $verifyUrl = route('public.verify-doc', $docVerif->verify_code);
         $qrCodeBase64 = \App\Services\QrCodeService::generateBase64($verifyUrl);
 
@@ -223,7 +304,8 @@ class ReportController extends Controller
             'nomorSurat'    => $nomorSurat,
             'verifyCode'    => $docVerif->verify_code,
             'verifyUrl'     => $verifyUrl,
-            'qrCodeBase64'  => $qrCodeBase64
+            'qrCodeBase64'  => $qrCodeBase64,
+            'keteranganList' => $keteranganList
         ])->setPaper('a4', 'portrait');
 
         return $pdf->download('Laporan_Rekapitulasi_Wilayah_Personel_KC.pdf');
