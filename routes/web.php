@@ -157,6 +157,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Ekspor Data Laporan (PDF & Excel Engine Terpusat)
     Route::get('/laporan', [ReportController::class, 'index'])->name('report.index');
     Route::get('/laporan/personel/pdf', [ReportController::class, 'personelPdf'])->name('report.personel.pdf');
+    Route::get('/laporan/wilayah/excel', [ReportController::class, 'regionExcel'])->name('report.region.excel');
+    Route::get('/laporan/wilayah/pdf', [ReportController::class, 'regionPdf'])->name('report.region.pdf');
     Route::get('/laporan/personel/excel', [ReportController::class, 'personelExcel'])->name('report.personel.excel');
     Route::get('/laporan/broadcast/{uuid}/pdf', [ReportController::class, 'broadcastPdf'])->name('report.broadcast.pdf');
     Route::get('/laporan/broadcast/{uuid}/excel', [ReportController::class, 'broadcastExcel'])->name('report.broadcast.excel');
