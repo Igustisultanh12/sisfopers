@@ -47,6 +47,17 @@
                 <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
               </label>
             </div>
+
+            <div class="md:col-span-2 bg-red-50/50 border border-red-200 rounded-2xl p-4 flex items-center justify-between">
+              <div class="space-y-0.5">
+                <label class="block text-xs font-bold text-red-800 uppercase">Aktifkan Mode Perbaikan (Under Maintenance)</label>
+                <p class="text-[11px] text-red-500/85">Jika aktif, seluruh akun dengan role "Personel" yang mencoba masuk atau mengakses halaman akan dihadapkan ke halaman perbaikan. Admin tetap dapat mengakses sistem.</p>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer select-none">
+                <input type="checkbox" v-model="form.under_maintenance" true-value="1" false-value="0" class="sr-only peer" />
+                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+              </label>
+            </div>
           </div>
 
           <!-- Section Pengaturan Tampilan Visual (Background, Logo, Favicon) -->
@@ -208,6 +219,7 @@ const form = useForm({
   wa_session: props.settings.wa_session || 'sisfopers_session',
   wa_api_key: '',
   disable_whatsapp_otp: props.settings.disable_whatsapp_otp || '0',
+  under_maintenance: props.settings.under_maintenance || '0',
   login_background: null,
   logo_tni: null,
   logo_ad: null,
