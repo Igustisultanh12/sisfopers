@@ -371,7 +371,7 @@ class MasterPersonelController extends Controller
 
             if ($request->hasFile('photo_profile')) {
                 if ($personel->photo_profile) {
-                    Storage::disk('private')->delete($personel->photo_profile);
+                    Storage::disk('local')->delete($personel->photo_profile);
                     Storage::disk('public')->delete($personel->photo_profile);
                 }
                 $fileName = $request->file('photo_profile')->store('personel/photos', 'local');
