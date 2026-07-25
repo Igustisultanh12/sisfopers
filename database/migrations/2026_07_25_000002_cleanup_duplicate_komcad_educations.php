@@ -10,8 +10,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Hapus secara permanen seluruh record DIKBATSIS_KOMCAD dari riwayat_pendidikans
-        DB::table('riwayat_pendidikans')
+        // Hapus secara permanen seluruh record DIKBATSIS_KOMCAD dari riwayat_pendidikan
+        DB::table('riwayat_pendidikan')
             ->where('jenjang', 'DIKBATSIS_KOMCAD')
             ->orWhere('jenjang', 'LIKE', '%DIKBATSIS%')
             ->delete();
