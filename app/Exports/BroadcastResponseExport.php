@@ -18,13 +18,16 @@ class BroadcastResponseExport implements FromCollection, WithHeadings, WithMappi
     protected $signerNikc;
     protected $signerJabatan;
 
-    public function __construct($broadcastId, $signerName = null, $signerPangkat = null, $signerNikc = null, $signerJabatan = null)
+    protected $signerHeader;
+
+    public function __construct($broadcastId, $signerName = null, $signerPangkat = null, $signerNikc = null, $signerJabatan = null, $signerHeader = null)
     {
         $this->broadcastId = $broadcastId;
         $this->signerName = $signerName ?: '-';
         $this->signerPangkat = $signerPangkat ?: '-';
         $this->signerNikc = $signerNikc ?: '-';
         $this->signerJabatan = $signerJabatan ?: '-';
+        $this->signerHeader = $signerHeader ?: 'a.n. Komandan Komponen Cadangan,';
     }
 
     public function collection()
@@ -126,7 +129,7 @@ class BroadcastResponseExport implements FromCollection, WithHeadings, WithMappi
                 
                 $sheet->setCellValue('F' . $sigRow, 'Dikeluarkan di: Surabaya');
                 $sheet->setCellValue('F' . ($sigRow + 1), 'Pada tanggal: ' . date('d F Y'));
-                $sheet->setCellValue('F' . ($sigRow + 3), 'a.n. Komandan Komponen Cadangan');
+                $sheet->setCellValue('F' . ($sigRow + 3), $this->signerHeader);
                 $sheet->setCellValue('F' . ($sigRow + 4), $this->signerJabatan . ',');
                 
                 $sheet->setCellValue('F' . ($sigRow + 8), $this->signerName);
