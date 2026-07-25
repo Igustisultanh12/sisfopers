@@ -66,9 +66,16 @@
           </div>
 
           <div class="flex flex-col sm:flex-row gap-5 items-start bg-slate-50/60 p-4 rounded-xl border border-[#E2E8F0]">
-            <div class="w-24 h-32 bg-slate-200 rounded-lg border border-[#E2E8F0] overflow-hidden shadow-xs shrink-0">
+            <div class="w-24 h-32 bg-slate-200 rounded-lg border border-[#E2E8F0] overflow-hidden shadow-xs shrink-0 relative group">
               <img v-if="selectedItem?.photo_profile" :src="getDocumentUrl(selectedItem?.photo_profile)" class="w-full h-full object-cover" />
-              <div v-else class="w-full h-full flex items-center justify-center text-slate-400 text-xs font-bold bg-slate-100 uppercase">No Photo</div>
+              <div v-else class="w-full h-full flex flex-col items-center justify-center text-slate-400 text-[10px] font-bold bg-slate-100 uppercase gap-1 p-1 text-center">
+                <span>📷</span>
+                <span>NO PHOTO</span>
+              </div>
+              <label class="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[10px] font-bold cursor-pointer transition duration-200 text-center p-1">
+                <span>📷 {{ selectedItem?.photo_profile ? 'Ganti Foto' : 'Unggah Foto' }}</span>
+                <input type="file" accept="image/*" class="hidden" @change="e => handleFileUpload(e, 'photo_profile')" />
+              </label>
             </div>
             
             <div class="text-xs space-y-2 text-slate-600 w-full">
@@ -99,12 +106,18 @@
           <!-- Box KTP Lampiran -->
           <div class="space-y-2 mt-4">
             <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Dokumen KTP Lampiran</h4>
-            <div class="relative group cursor-pointer border border-[#E2E8F0] rounded-xl overflow-hidden bg-slate-100 h-40 flex items-center justify-center shadow-xs" @click="enlargeKtp = true">
-              <img v-if="selectedItem?.ktp_document" :src="getDocumentUrl(selectedItem?.ktp_document)" class="w-full h-full object-cover group-hover:scale-102 transition duration-200" />
-              <div v-else class="text-slate-400 text-xs font-bold">Tidak Ada Lampiran KTP</div>
+            <div class="relative group border border-[#E2E8F0] rounded-xl overflow-hidden bg-slate-100 h-40 flex items-center justify-center shadow-xs">
+              <img v-if="selectedItem?.ktp_document" :src="getDocumentUrl(selectedItem?.ktp_document)" class="w-full h-full object-cover cursor-pointer" @click="enlargeKtp = true" />
+              <div v-else class="text-slate-400 text-xs font-bold flex flex-col items-center gap-1">
+                <span>📄 Tidak Ada Lampiran KTP</span>
+              </div>
               
-              <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition duration-200">
-                <span class="text-white text-[11px] font-bold bg-slate-950/70 px-3 py-1.5 rounded-lg flex items-center gap-1.5">🔍 Perbesar KTP</span>
+              <div class="absolute bottom-2 right-2 flex items-center gap-2">
+                <button v-if="selectedItem?.ktp_document" type="button" @click="enlargeKtp = true" class="text-white text-[11px] font-bold bg-slate-950/80 hover:bg-slate-900 px-2.5 py-1 rounded-lg shadow-xs">🔍 Perbesar</button>
+                <label class="text-white text-[11px] font-bold bg-blue-600 hover:bg-blue-700 px-2.5 py-1 rounded-lg cursor-pointer shadow-xs flex items-center gap-1">
+                  <span>📤 {{ selectedItem?.ktp_document ? 'Ganti KTP' : 'Unggah KTP' }}</span>
+                  <input type="file" accept="image/*,application/pdf" class="hidden" @change="e => handleFileUpload(e, 'ktp_document')" />
+                </label>
               </div>
             </div>
           </div>
@@ -228,6 +241,37 @@ const getDocumentUrl = (path) => {
   if (cleanPath.startsWith('documents/private/')) cleanPath = cleanPath.replace('documents/private/', '');
   if (cleanPath.startsWith('/')) cleanPath = cleanPath.substring(1);
   return `/documents/private/${cleanPath}`;
+};
+
+
+import { router } from '@inertiajs/vue3';
+
+const isUploading = ref(false);
+
+const handleFileUpload = (event, type) => {
+  const file = event.target.files[0];
+  if (!file || !selectedItem.value) return;
+
+  const formData = new FormData();
+  formData.append('type', type);
+  formData.append('file', file);
+
+  isUploading.value = true;
+  router.post(route('admin.verification.upload-document', selectedItem.value.uuid), formData, {
+    forceFormData: true,
+    preserveScroll: true,
+    onSuccess: (page) => {
+      isUploading.value = false;
+      // Refresh selectedItem photo/ktp
+      const updated = page.props.pendaftar.data.find(p => p.uuid === selectedItem.value.uuid);
+      if (updated) {
+        selectedItem.value = updated;
+      }
+    },
+    onError: () => {
+      isUploading.value = false;
+    }
+  });
 };
 
 const formatLongRank = (pangkat) => {
