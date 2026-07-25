@@ -114,66 +114,71 @@ class PengkinianDataController extends Controller
         $results = [];
         $addedIds = [];
 
-        // 1. Cari dari Database Master Personel
-        $personels = Personel::where('full_name', 'like', "%{$q}%")
-            ->orWhere('nikc', 'like', "%{$q}%")
-            ->orWhere('nik', 'like', "%{$q}%")
-            ->limit(10)
-            ->get(['id', 'full_name', 'nikc', 'nik', 'pangkat', 'matra', 'status_keaktifan']);
+        try {
+            // 1. Cari dari Database Master Personel
+            $personels = Personel::where('full_name', 'like', "%{$q}%")
+                ->orWhere('nikc', 'like', "%{$q}%")
+                ->orWhere('nik', 'like', "%{$q}%")
+                ->limit(10)
+                ->get(['id', 'full_name', 'nikc', 'nik', 'pangkat', 'matra', 'angkatan', 'status_keaktifan']);
 
-        foreach ($personels as $p) {
-            $addedIds[] = $p->id;
-            $results[] = [
-                'id'               => $p->id,
-                'full_name'        => $p->full_name,
-                'nikc'             => $p->nikc ?: $p->nik,
-                'nik'              => $p->nik,
-                'pangkat'          => $p->pangkat,
-                'matra'            => $p->matra,
-                'status_keaktifan' => $p->status_keaktifan ?: 'AKTIF',
-                'source'           => 'MASTER_PERSONEL',
-            ];
-        }
-
-        // 2. Cari dari Database Master SKEP
-        $skepItems = SkepData::where('nama_lengkap', 'like', "%{$q}%")
-            ->orWhere('nikc', 'like', "%{$q}%")
-            ->orWhere('nik', 'like', "%{$q}%")
-            ->limit(10)
-            ->get();
-
-        foreach ($skepItems as $sk) {
-            $existing = Personel::where('nikc', $sk->nikc)->orWhere('nik', $sk->nik)->first();
-            if ($existing && in_array($existing->id, $addedIds)) {
-                continue;
-            }
-
-            if ($existing) {
-                $addedIds[] = $existing->id;
+            foreach ($personels as $p) {
+                $addedIds[] = $p->id;
                 $results[] = [
-                    'id'               => $existing->id,
-                    'full_name'        => $existing->full_name,
-                    'nikc'             => $existing->nikc ?: $existing->nik,
-                    'nik'              => $existing->nik,
-                    'pangkat'          => $existing->pangkat,
-                    'matra'            => $existing->matra,
-                    'status_keaktifan' => $existing->status_keaktifan ?: 'AKTIF',
+                    'id'               => $p->id,
+                    'full_name'        => $p->full_name,
+                    'nikc'             => $p->nikc ?: $p->nik,
+                    'nik'              => $p->nik,
+                    'pangkat'          => $p->pangkat,
+                    'matra'            => $p->matra,
+                    'angkatan'         => $p->angkatan,
+                    'status_keaktifan' => $p->status_keaktifan ?: 'AKTIF',
                     'source'           => 'MASTER_PERSONEL',
                 ];
-            } else {
-                $results[] = [
-                    'id'               => null,
-                    'full_name'        => $sk->nama_lengkap,
-                    'nikc'             => $sk->nikc ?: $sk->nik,
-                    'nik'              => $sk->nik,
-                    'pangkat'          => $sk->pangkat,
-                    'matra'            => $sk->matra,
-                    'status_keaktifan' => 'DATA SKEP',
-                    'source'           => 'SKEP_DATA',
-                    'dob'              => $sk->dob,
-                    'angkatan'         => $sk->angkatan,
-                ];
             }
+
+            // 2. Cari dari Database Master SKEP (Hanya kolom nama_lengkap & nikc)
+            $skepItems = SkepData::where('nama_lengkap', 'like', "%{$q}%")
+                ->orWhere('nikc', 'like', "%{$q}%")
+                ->limit(10)
+                ->get();
+
+            foreach ($skepItems as $sk) {
+                $existing = Personel::where('nikc', $sk->nikc)->first();
+                if ($existing && in_array($existing->id, $addedIds)) {
+                    continue;
+                }
+
+                if ($existing) {
+                    $addedIds[] = $existing->id;
+                    $results[] = [
+                        'id'               => $existing->id,
+                        'full_name'        => $existing->full_name,
+                        'nikc'             => $existing->nikc ?: $existing->nik,
+                        'nik'              => $existing->nik,
+                        'pangkat'          => $existing->pangkat,
+                        'matra'            => $existing->matra,
+                        'angkatan'         => $existing->angkatan,
+                        'status_keaktifan' => $existing->status_keaktifan ?: 'AKTIF',
+                        'source'           => 'MASTER_PERSONEL',
+                    ];
+                } else {
+                    $results[] = [
+                        'id'               => null,
+                        'full_name'        => $sk->nama_lengkap,
+                        'nikc'             => $sk->nikc,
+                        'nik'              => null,
+                        'pangkat'          => $sk->pangkat,
+                        'matra'            => $sk->matra,
+                        'angkatan'         => $sk->angkatan,
+                        'status_keaktifan' => 'DATA SKEP',
+                        'source'           => 'SKEP_DATA',
+                        'dob'              => $sk->dob?->format('Y-m-d'),
+                    ];
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error("searchPersonel error: " . $e->getMessage());
         }
 
         return response()->json($results);
@@ -188,6 +193,9 @@ class PengkinianDataController extends Controller
             'personel_id'      => 'nullable|exists:personels,id',
             'nikc'             => 'required|string',
             'full_name'        => 'required|string',
+            'pangkat'          => 'nullable|string',
+            'matra'            => 'nullable|string',
+            'angkatan'         => 'nullable|string',
             'jenis_pengkinian' => 'required|in:MENINGGAL,TNI_AD,TNI_AL,TNI_AU,POLRI',
             'document'         => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:4096',
             'nrp'              => 'nullable|string|max:50',
@@ -208,20 +216,34 @@ class PengkinianDataController extends Controller
         }
 
         if (!$personel) {
-            // Buat record Personel baru jika diambil dari SKEP
             $skep = SkepData::where('nikc', $request->nikc)->first();
             $personel = Personel::create([
                 'uuid'                => Str::uuid(),
                 'full_name'           => $request->full_name,
                 'nikc'                => $request->nikc,
-                'nik'                 => $skep ? $skep->nik : Str::random(16),
-                'dob'                 => $skep ? $skep->dob : '1990-01-01',
-                'pangkat'             => $skep ? $skep->pangkat : 'PRADA',
-                'matra'               => $skep ? $skep->matra : 'AD',
-                'angkatan'            => $skep ? $skep->angkatan : '2024',
+                'nik'                 => Str::random(16),
+                'dob'                 => $skep ? ($skep->dob?->format('Y-m-d') ?: '1990-01-01') : '1990-01-01',
+                'pangkat'             => $request->pangkat ?: ($skep ? $skep->pangkat : 'PRADA'),
+                'matra'               => $request->matra ?: ($skep ? $skep->matra : 'AD'),
+                'angkatan'            => $request->angkatan ?: ($skep ? $skep->angkatan : '2024'),
                 'status_keaktifan'    => $request->jenis_pengkinian,
                 'status_verification' => 'APPROVED',
             ]);
+        } else {
+            // Update pangkat/matra/angkatan jika sebelumnya kosong dan kini diisi oleh admin
+            $updateData = [];
+            if (!$personel->pangkat && $request->filled('pangkat')) {
+                $updateData['pangkat'] = $request->pangkat;
+            }
+            if (!$personel->matra && $request->filled('matra')) {
+                $updateData['matra'] = $request->matra;
+            }
+            if (!$personel->angkatan && $request->filled('angkatan')) {
+                $updateData['angkatan'] = $request->angkatan;
+            }
+            if (!empty($updateData)) {
+                $personel->update($updateData);
+            }
         }
 
         $filePath = 'personel/pengkinian_data/admin_entry.pdf';
