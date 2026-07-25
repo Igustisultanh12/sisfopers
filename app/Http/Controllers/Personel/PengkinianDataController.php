@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\PengkinianData;
 use App\Models\Personel;
 use App\Models\User;
+use App\Mail\SystemNotificationMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class PengkinianDataController extends Controller
@@ -71,6 +74,7 @@ class PengkinianDataController extends Controller
 
         $admins = User::whereHas('role', fn($q) => $q->where('name', 'admin'))->with('personel')->get();
         foreach ($admins as $adminUser) {
+            // Notifikasi WhatsApp ke Admin
             if ($adminUser->personel && $adminUser->personel->phone_number) {
                 $msgAdmin = "🔔 *PENGAJUAN PENGKINIAN DATA BARU*\n\n"
                     . "Nama: {$personel->full_name}\n"
@@ -78,6 +82,20 @@ class PengkinianDataController extends Controller
                     . "Kategori: {$item->jenis_pengkinian}\n"
                     . "Silakan login ke dashboard Admin SISFOPERS untuk memproses pengajuan ini.";
                 \App\Services\WhatsappService::sendMessage($adminUser->personel->phone_number, $msgAdmin);
+            }
+
+            // Notifikasi Email ke Admin
+            if ($adminUser->email) {
+                try {
+                    Mail::to($adminUser->email)->send(new SystemNotificationMail(
+                        'Pengajuan Pengkinian Data Baru',
+                        "Terdapat pengajuan pengkinian data baru ({$item->jenis_pengkinian}) dari personel <strong>{$personel->full_name}</strong> (NIKC: {$personel->nikc}).",
+                        $adminUser,
+                        route('admin.pengkinian-data.index')
+                    ));
+                } catch (\Exception $e) {
+                    Log::error("Gagal mengirim email pengkinian data ke admin {$adminUser->email}: " . $e->getMessage());
+                }
             }
         }
 
@@ -126,26 +144,59 @@ class PengkinianDataController extends Controller
         ]);
 
         if ($item->personel) {
+            // Update status keaktifan personel
             $item->personel->update([
                 'status_keaktifan' => $item->jenis_pengkinian
             ]);
 
+            // Jika status Meninggal, akun User otomatis di-NONAKTIFKAN (is_active = false)
+            if ($item->jenis_pengkinian === 'MENINGGAL' && $item->personel->user) {
+                $item->personel->user->update([
+                    'is_active' => false
+                ]);
+            }
+
+            // Send System Notification to Personel User
             if ($item->personel->user) {
                 $item->personel->user->notify(new \App\Notifications\SystemNotification(
                     'Pengkinian Data Disetujui',
-                    "Pengajuan pengkinian data ({$item->jenis_pengkinian}) Anda telah DISETUJUI oleh Admin.",
+                    "Pengajuan pengkinian data ({$item->jenis_pengkinian}) Anda telah DISETUJUI oleh Admin." . ($item->jenis_pengkinian === 'MENINGGAL' ? " Akun Anda telah dinonaktifkan." : ""),
                     'pengkinian_data',
                     route('personel.pengkinian-data.index')
                 ));
             }
 
+            // Send WhatsApp Notification to Personel
             if ($item->personel->phone_number) {
                 $msg = "Halo *{$item->personel->full_name}*, pengajuan pengkinian data ({$item->jenis_pengkinian}) Anda telah *DISETUJUI* oleh Admin. Terima kasih.";
+                if ($item->jenis_pengkinian === 'MENINGGAL') {
+                    $msg .= "
+
+Catatan: Akun personel terkait telah dinonaktifkan secara otomatis oleh sistem.";
+                }
                 \App\Services\WhatsappService::sendMessage($item->personel->phone_number, $msg);
+            }
+
+            // Send Email Notification to Personel
+            if ($item->personel->user && $item->personel->user->email) {
+                try {
+                    $mailText = "Pengajuan pengkinian data ({$item->jenis_pengkinian}) Anda telah <strong>DISETUJUI</strong> oleh Admin.";
+                    if ($item->jenis_pengkinian === 'MENINGGAL') {
+                        $mailText .= "<br/><br/><strong>Catatan:</strong> Akun personel terkait telah dinonaktifkan secara otomatis dari sistem SISFOPERS.";
+                    }
+                    Mail::to($item->personel->user->email)->send(new SystemNotificationMail(
+                        'Pengkinian Data Disetujui',
+                        $mailText,
+                        $item->personel,
+                        route('personel.pengkinian-data.index')
+                    ));
+                } catch (\Exception $e) {
+                    Log::error("Gagal mengirim email disetujui pengkinian data ke {$item->personel->user->email}: " . $e->getMessage());
+                }
             }
         }
 
-        return back()->with('success', 'Pengkinian data berhasil disetujui.');
+        return back()->with('success', 'Pengkinian data berhasil disetujui.' . ($item->jenis_pengkinian === 'MENINGGAL' ? ' Akun personel otomatis dinonaktifkan.' : ''));
     }
 
     public function reject(Request $request, int $id)
@@ -167,6 +218,7 @@ class PengkinianDataController extends Controller
         ]);
 
         if ($item->personel) {
+            // Send System Notification
             if ($item->personel->user) {
                 $item->personel->user->notify(new \App\Notifications\SystemNotification(
                     'Pengkinian Data Ditolak',
@@ -176,9 +228,24 @@ class PengkinianDataController extends Controller
                 ));
             }
 
+            // Send WhatsApp Notification
             if ($item->personel->phone_number) {
                 $msg = "Halo *{$item->personel->full_name}*, pengajuan pengkinian data ({$item->jenis_pengkinian}) Anda *DITOLAK* dengan alasan: "{$request->reason}". Silakan ajukan ulang dengan berkas yang sesuai.";
                 \App\Services\WhatsappService::sendMessage($item->personel->phone_number, $msg);
+            }
+
+            // Send Email Notification
+            if ($item->personel->user && $item->personel->user->email) {
+                try {
+                    Mail::to($item->personel->user->email)->send(new SystemNotificationMail(
+                        'Pengkinian Data Ditolak',
+                        "Pengajuan pengkinian data ({$item->jenis_pengkinian}) Anda <strong>DITOLAK</strong> oleh Admin dengan alasan:<br/><blockquote style='color:#dc2626; margin:10px 0;'>"{$request->reason}"</blockquote>Silakan ajukan ulang dengan berkas yang sesuai.",
+                        $item->personel,
+                        route('personel.pengkinian-data.index')
+                    ));
+                } catch (\Exception $e) {
+                    Log::error("Gagal mengirim email ditolak pengkinian data ke {$item->personel->user->email}: " . $e->getMessage());
+                }
             }
         }
 
