@@ -91,7 +91,9 @@ class Personel extends Model
         'uuid', 'user_id', 'full_name', 'dob', 'pangkat', 'nik', 'nikc', 'phone_number',
         'district', 'subdistrict', 'city', 'province', 'village', 'zip_code', 'postal_code', 'address', 'pob',
         'face_verified', 'status_keaktifan', 'status_profile', 'catatan_pembinaan',
-        'sumber_rekrutmen', 'angkatan', 'matra', 'gender'
+        'sumber_rekrutmen', 'angkatan', 'matra', 'gender',
+        'manual_otp', 'manual_otp_expired_at', 'manual_otp_printed_at',
+        'reset_password_otp', 'reset_password_otp_expired_at', 'reset_password_otp_printed_at'
     ];
 
     public function user(): BelongsTo
