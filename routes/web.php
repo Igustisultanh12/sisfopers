@@ -94,10 +94,23 @@ Route::middleware('auth')->group(function () {
     // Rute Unduhan Berkas Ijazah/Dokumen Privat Aman
     Route::get('/documents/private/{path}', function ($path) {
         abort_unless(auth()->check(), 403);
-        if (!Storage::disk('private')->exists($path)) {
-            abort(404);
+
+        $cleanPath = ltrim($path, '/');
+        $cleanPath = preg_replace('/^(app\/private\/|private\/|storage\/)+/', '', $cleanPath);
+
+        if (Storage::disk('private')->exists($cleanPath)) {
+            return Storage::disk('private')->response($cleanPath);
         }
-        return Storage::disk('private')->response($path);
+
+        if (Storage::disk('public')->exists($cleanPath)) {
+            return Storage::disk('public')->response($cleanPath);
+        }
+
+        if (Storage::disk('local')->exists($cleanPath)) {
+            return Storage::disk('local')->response($cleanPath);
+        }
+
+        abort(404);
     })->where('path', '.*')->name('personel.document.download');
 });
 
