@@ -72,6 +72,12 @@
               Mail Gateway
             </Link>
 
+            <!-- Menu Verifikasi Pengkinian Data -->
+            <Link :href="route('admin.pengkinian-data.index')" :class="route().current('admin.pengkinian-data.*') ? 'bg-[#2563EB]/5 text-[#2563EB] font-bold shadow-sm shadow-blue-500/[0.02]' : 'text-[#64748B] hover:text-slate-800 font-medium'" class="group flex items-center gap-4 px-5 py-3.5 rounded-2xl text-[14px] transition duration-150">
+              <svg class="w-5 h-5 text-slate-400 group-hover:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span>Verifikasi Pengkinian Data</span>
+            </Link>
+
             <!-- Menu Verifikasi Pendidikan -->
             <Link :href="route('admin.education.verif-list')" :class="route().current('admin.education.verif-list') ? 'bg-[#2563EB]/5 text-[#2563EB] font-bold shadow-sm shadow-blue-500/[0.02]' : 'text-[#64748B] hover:text-slate-800 font-medium'" class="group flex items-center gap-4 px-5 py-3.5 rounded-2xl text-[14px] transition duration-150">
               <svg class="w-5 h-5 opacity-80 group-hover:opacity-100" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
@@ -81,7 +87,12 @@
             <!-- Data Mandiri Admin (sebagai Personel) -->
             <div class="border-t border-slate-100/50 my-2 pt-2">
               <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-5 mb-2">Data Mandiri Saya</p>
-              <Link :href="route('personel.education.index')" :class="route().current('personel.education.*') ? 'bg-[#2563EB]/5 text-[#2563EB] font-bold' : 'text-[#64748B] hover:text-slate-800 font-medium'" class="flex items-center gap-4 px-5 py-3.5 rounded-2xl text-[14px] transition duration-150">
+              <Link :href="route('personel.pengkinian-data.index')" :class="route().current('personel.pengkinian-data.*') ? 'bg-[#2563EB]/5 text-[#2563EB] font-bold' : 'text-[#64748B] hover:text-slate-800 font-medium'" class="flex items-center gap-4 px-5 py-3.5 rounded-2xl text-[14px] transition duration-150">
+              <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              <span>Pengkinian Data</span>
+            </Link>
+
+            <Link :href="route('personel.education.index')" :class="route().current('personel.education.*') ? 'bg-[#2563EB]/5 text-[#2563EB] font-bold' : 'text-[#64748B] hover:text-slate-800 font-medium'" class="flex items-center gap-4 px-5 py-3.5 rounded-2xl text-[14px] transition duration-150">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
                 Pendidikan Saya
               </Link>
