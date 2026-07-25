@@ -10,38 +10,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Cari personel yang memiliki lebih dari 1 data pendidikan MILITER/Komcad
-        $personelIds = DB::table('riwayat_pendidikans')
-            ->where(function ($q) {
-                $q->where('jenis', 'MILITER')
-                  ->orWhere('jenis', 'Militer')
-                  ->orWhere('jenjang', 'LIKE', '%Komcad%');
-            })
-            ->select('personel_id')
-            ->groupBy('personel_id')
-            ->havingRaw('COUNT(*) > 1')
-            ->pluck('personel_id');
-
-        foreach ($personelIds as $personelId) {
-            // Hapus record auto-generated DIKBATSIS_KOMCAD jika sudah ada record Komcad yang lebih spesifik
-            $hasPrimary = DB::table('riwayat_pendidikans')
-                ->where('personel_id', $personelId)
-                ->where('jenjang', '!=', 'DIKBATSIS_KOMCAD')
-                ->where(function ($q) {
-                    $q->where('jenis', 'MILITER')
-                      ->orWhere('jenis', 'Militer')
-                      ->orWhere('jenjang', 'LIKE', '%Komcad%')
-                      ->orWhere('program_studi', 'LIKE', '%Komcad%');
-                })
-                ->exists();
-
-            if ($hasPrimary) {
-                DB::table('riwayat_pendidikans')
-                    ->where('personel_id', $personelId)
-                    ->where('jenjang', 'DIKBATSIS_KOMCAD')
-                    ->delete();
-            }
-        }
+        // Hapus secara permanen seluruh record DIKBATSIS_KOMCAD dari riwayat_pendidikans
+        DB::table('riwayat_pendidikans')
+            ->where('jenjang', 'DIKBATSIS_KOMCAD')
+            ->orWhere('jenjang', 'LIKE', '%DIKBATSIS%')
+            ->delete();
     }
 
     /**
