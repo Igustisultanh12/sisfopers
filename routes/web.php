@@ -66,12 +66,16 @@ Route::middleware('guest')->group(function () {
 // Rute Global Pengguna Terautentikasi (Auth Group)
 Route::middleware(['auth'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-    // Manajemen Profil & Pengaturan Akun
+
+    // Manajemen Profil & Pengaturan Akun (dengan Alias Rute Ziggy Lengkap)
     Route::get('/account/settings', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::match(['post', 'put', 'patch'], '/account/settings', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/account/settings/password', [ProfileController::class, 'updatePassword'])->name('profile.update-password');
+    Route::post('/account/settings/password-update', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
     Route::post('/account/settings/mfa/toggle', [ProfileController::class, 'toggleMfa'])->name('profile.toggle-mfa');
+    Route::post('/account/settings/mfa', [ProfileController::class, 'toggleMfa'])->name('profile.mfa');
     Route::post('/account/settings/mfa/verify', [ProfileController::class, 'verifyMfa'])->name('profile.verify-mfa');
+    Route::post('/account/settings/mfa/verify-code', [ProfileController::class, 'verifyMfa'])->name('profile.mfa.verify');
 
     // Redirect fallback jika ada yang mengakses URL lama /documents/private/...
     Route::get('/documents/private/{path}', function ($path) {
@@ -80,6 +84,24 @@ Route::middleware(['auth'])->group(function () {
         return redirect('/storage/' . $cleanPath);
     })->where('path', '.*')->name('personel.document.download');
 });
+
+// Rute Servis Berkas Storage Fallback (Penjamin Gambar Selalu Tampil 100% Meskipun Symlink Bermasalah)
+Route::get('/storage/{path}', function ($path) {
+    $cleanPath = ltrim($path, '/');
+    $cleanPath = preg_replace('/^(storage\/|public\/)+/', '', $cleanPath);
+
+    foreach (['public', 'local', 'private'] as $diskName) {
+        if (Storage::disk($diskName)->exists($cleanPath)) {
+            $fullPath = Storage::disk($diskName)->path($cleanPath);
+            if (file_exists($fullPath) && is_readable($fullPath)) {
+                $mime = mime_content_type($fullPath) ?: 'image/jpeg';
+                return response()->file($fullPath, ['Content-Type' => $mime]);
+            }
+        }
+    }
+
+    abort(404, 'File storage tidak ditemukan.');
+})->where('path', '.*')->name('storage.fallback');
 
 /*
 |--------------------------------------------------------------------------
