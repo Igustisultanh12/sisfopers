@@ -61,7 +61,7 @@ class PengkinianDataController extends Controller
             'catatan'          => 'nullable|string|max:1000',
         ]);
 
-        $filePath = $request->file('document')->store('personel/pengkinian_data', 'private');
+        $filePath = $request->file('document')->store('personel/pengkinian_data', 'local');
 
         $item = PengkinianData::create([
             'uuid'             => Str::uuid(),
@@ -422,7 +422,7 @@ class PengkinianDataController extends Controller
 
         $filePath = 'personel/pengkinian_data/admin_entry.pdf';
         if ($request->hasFile('document')) {
-            $filePath = $request->file('document')->store('personel/pengkinian_data', 'private');
+            $filePath = $request->file('document')->store('personel/pengkinian_data', 'local');
         }
 
         $item = PengkinianData::create([
