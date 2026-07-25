@@ -90,7 +90,7 @@ class Personel extends Model
     protected $fillable = [
         'uuid', 'user_id', 'full_name', 'dob', 'pangkat', 'nik', 'nikc', 'phone_number',
         'district', 'subdistrict', 'city', 'province', 'zip_code', 'postal_code', 'address', 'pob',
-        'face_verified', 'status_keaktifan', 'status_verification', 'catatan_pembinaan',
+        'face_verified', 'status_keaktifan', 'status_profile', 'catatan_pembinaan',
         'sumber_rekrutmen', 'angkatan', 'matra', 'gender'
     ];
 
