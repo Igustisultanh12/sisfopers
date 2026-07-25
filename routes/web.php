@@ -61,14 +61,19 @@ Route::middleware('guest')->group(function () {
     
     Route::get('/reset-password-otp', [\App\Http\Controllers\Auth\PasswordResetOtpController::class, 'create'])->name('password.reset-otp');
     Route::post('/reset-password-otp', [\App\Http\Controllers\Auth\PasswordResetOtpController::class, 'store'])->name('password.update-otp');
-    
-        // Rute Tampilan Foto & Dokumen Terproteksi Wajib Login (Auth Middleware)
-    Route::get('/documents/private/{path}', function ($path) {
-        // PERIKSA STATUS LOGIN (Hanya pengguna terautentikasi yang bisa akses)
-        if (!auth()->check()) {
-            abort(403, 'Akses ditolak. Anda harus login terlebih dahulu.');
-        }
+});
 
+// Rute Global Pengguna Terautentikasi (Auth Group)
+Route::middleware(['auth'])->group(function () {
+    // Manajemen Profil & Pengaturan Akun
+    Route::get('/account/settings', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::match(['post', 'put', 'patch'], '/account/settings', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/account/settings/password', [ProfileController::class, 'updatePassword'])->name('profile.update-password');
+    Route::post('/account/settings/mfa/toggle', [ProfileController::class, 'toggleMfa'])->name('profile.toggle-mfa');
+    Route::post('/account/settings/mfa/verify', [ProfileController::class, 'verifyMfa'])->name('profile.verify-mfa');
+
+    // Rute Unduhan Berkas / Tampilan Foto Terproteksi Login
+    Route::get('/documents/private/{path}', function ($path) {
         $cleanPath = ltrim($path, '/');
         $cleanPath = preg_replace('/^(app\/private\/|private\/|storage\/|public\/)+/', '', $cleanPath);
 
@@ -82,8 +87,7 @@ Route::middleware('guest')->group(function () {
             'personel/skep_requests/' . basename($cleanPath),
         ];
 
-        // Cari file di storage/app (disk local) dan disk public/private
-        foreach (['local', 'public', 'private'] as $diskName) {
+        foreach (['public', 'local', 'private'] as $diskName) {
             foreach ($possiblePaths as $tryPath) {
                 if (Storage::disk($diskName)->exists($tryPath)) {
                     $fullPath = Storage::disk($diskName)->path($tryPath);
