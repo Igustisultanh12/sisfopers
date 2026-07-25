@@ -106,7 +106,7 @@
           <button @click="showAddModal = false" class="text-slate-400 hover:text-slate-600 font-bold text-base cursor-pointer">✕</button>
         </div>
 
-        <form @submit.prevent="submitAddForm" class="p-6 space-y-4">
+        <form @submit.prevent="submitAddForm" class="p-6 space-y-4 max-h-[85vh] overflow-y-auto">
           <!-- Autocomplete Search Personel / NIKC -->
           <div class="relative flex flex-col gap-1.5">
             <label class="font-bold text-slate-600 uppercase text-[10px]">Cari NIKC / NIK / Nama Personel (Master DB & SKEP)</label>
@@ -148,7 +148,7 @@
           <!-- Card Info & Detail Personel Terpilih -->
           <div v-if="selectedPersonel" class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
             <div class="flex items-center justify-between border-b border-slate-200 pb-2">
-              <span class="text-[10px] font-bold uppercase text-slate-400">Informasi Personel</span>
+              <span class="text-[10px] font-bold uppercase text-slate-400">Informasi Profil Personel</span>
               <span class="text-[9px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800">
                 🔒 Data yang sudah ada dikunci (Tampil saja)
               </span>
@@ -165,7 +165,7 @@
                 <p class="font-bold text-blue-700 mt-0.5 text-xs">{{ selectedPersonel.nikc || selectedPersonel.nik }}</p>
               </div>
 
-              <!-- Pangkat: Jika sudah ada -> Tampil saja. Jika belum ada -> Inputable -->
+              <!-- Pangkat -->
               <div>
                 <p class="text-[9px] font-bold text-slate-400 uppercase">Pangkat</p>
                 <p v-if="selectedPersonel.pangkat" class="font-bold text-slate-800 mt-0.5 text-xs">{{ selectedPersonel.pangkat }}</p>
@@ -177,11 +177,11 @@
                     class="w-full rounded-lg border-[#E2E8F0] text-xs px-2.5 py-1 outline-none focus:border-[#2563EB]"
                     required
                   />
-                  <span class="text-[9px] text-amber-600 font-semibold">*Data belum ada, silakan lengkapi</span>
+                  <span class="text-[9px] text-amber-600 font-semibold">*Kosong, silakan lengkapi</span>
                 </div>
               </div>
 
-              <!-- Matra: Jika sudah ada -> Tampil saja. Jika belum ada -> Selectable -->
+              <!-- Matra -->
               <div>
                 <p class="text-[9px] font-bold text-slate-400 uppercase">Matra</p>
                 <p v-if="selectedPersonel.matra" class="font-bold text-slate-800 mt-0.5 text-xs">{{ selectedPersonel.matra }}</p>
@@ -196,7 +196,36 @@
                     <option value="AL">TNI AL</option>
                     <option value="AU">TNI AU</option>
                   </select>
-                  <span class="text-[9px] text-amber-600 font-semibold">*Data belum ada, silakan lengkapi</span>
+                  <span class="text-[9px] text-amber-600 font-semibold">*Kosong, silakan lengkapi</span>
+                </div>
+              </div>
+
+              <!-- Nomor WhatsApp / HP -->
+              <div class="col-span-2 md:col-span-1">
+                <p class="text-[9px] font-bold text-slate-400 uppercase">No. WhatsApp / Telepon</p>
+                <p v-if="selectedPersonel.phone_number" class="font-bold text-emerald-700 mt-0.5 text-xs">{{ selectedPersonel.phone_number }}</p>
+                <div v-else class="mt-1">
+                  <input
+                    v-model="addForm.phone_number"
+                    type="text"
+                    placeholder="Contoh: 08123456789"
+                    class="w-full rounded-lg border-[#E2E8F0] text-xs px-2.5 py-1 outline-none focus:border-[#2563EB]"
+                  />
+                  <span class="text-[9px] text-amber-600 font-semibold">*Kosong, silakan lengkapi</span>
+                </div>
+              </div>
+
+              <!-- Alamat Domisili -->
+              <div class="col-span-2 md:col-span-1">
+                <p class="text-[9px] font-bold text-slate-400 uppercase">Alamat Domisili</p>
+                <p v-if="selectedPersonel.province || selectedPersonel.city" class="font-bold text-slate-800 mt-0.5 text-xs">
+                  {{ [selectedPersonel.subdistrict, selectedPersonel.city, selectedPersonel.province].filter(Boolean).join(', ') }}
+                </p>
+                <div v-else class="mt-1 space-y-1">
+                  <input v-model="addForm.province" type="text" placeholder="Provinsi..." class="w-full rounded-lg border-[#E2E8F0] text-xs px-2 py-1 outline-none focus:border-[#2563EB]" />
+                  <input v-model="addForm.city" type="text" placeholder="Kota / Kabupaten..." class="w-full rounded-lg border-[#E2E8F0] text-xs px-2 py-1 outline-none focus:border-[#2563EB]" />
+                  <input v-model="addForm.subdistrict" type="text" placeholder="Kecamatan..." class="w-full rounded-lg border-[#E2E8F0] text-xs px-2 py-1 outline-none focus:border-[#2563EB]" />
+                  <span class="text-[9px] text-amber-600 font-semibold">*Kosong, silakan lengkapi</span>
                 </div>
               </div>
             </div>
@@ -417,6 +446,10 @@ const addForm = useForm({
   pangkat: '',
   matra: '',
   angkatan: '',
+  phone_number: '',
+  province: '',
+  city: '',
+  subdistrict: '',
   jenis_pengkinian: 'MENINGGAL',
   document: null,
   nrp: '',
@@ -469,6 +502,10 @@ const selectPersonel = (p) => {
   addForm.pangkat = p.pangkat || '';
   addForm.matra = p.matra || '';
   addForm.angkatan = p.angkatan || '';
+  addForm.phone_number = p.phone_number || '';
+  addForm.province = p.province || '';
+  addForm.city = p.city || '';
+  addForm.subdistrict = p.subdistrict || '';
   personelSearchQuery.value = p.full_name + ' (' + (p.nikc || p.nik) + ')';
   searchResults.value = [];
 };
