@@ -11,31 +11,31 @@ use Maatwebsite\Excel\Events\AfterSheet;
 
 class PersonelRegionExport implements FromCollection, WithHeadings, WithMapping, WithEvents
 {
-    protected string ;
-    protected string ;
-    protected string ;
-    protected string ;
+    protected string $signerName;
+    protected string $signerPangkat;
+    protected string $signerNikc;
+    protected string $signerJabatan;
 
-    public function __construct(string , string , string , string )
+    public function __construct(string $signerName, string $signerPangkat, string $signerNikc, string $signerJabatan)
     {
-        ->signerName = ;
-        ->signerPangkat = ;
-        ->signerNikc = ;
-        ->signerJabatan = ;
+        $this->signerName = $signerName;
+        $this->signerPangkat = $signerPangkat;
+        $this->signerNikc = $signerNikc;
+        $this->signerJabatan = $signerJabatan;
     }
 
     public function collection()
     {
-        return Personel::where(function () {
-                ->whereDoesntHave('registration')
-                      ->orWhereHas('registration', function () {
-                          ->where('status_verification', 'APPROVED');
+        return Personel::where(function ($query) {
+                $query->whereDoesntHave('registration')
+                      ->orWhereHas('registration', function ($q) {
+                          $q->where('status_verification', 'APPROVED');
                       });
             })
             ->with(['user'])
             ->get()
-            ->sortBy(function () {
-                return sprintf('%s-%s-%s', ->province, ->city, ->full_name);
+            ->sortBy(function ($personel) {
+                return sprintf('%s-%s-%s', $personel->province, $personel->city, $personel->full_name);
             });
     }
 
@@ -44,71 +44,71 @@ class PersonelRegionExport implements FromCollection, WithHeadings, WithMapping,
         return ['PROVINSI', 'KOTA / KABUPATEN', 'NIKC', 'NAMA LENGKAP', 'PANGKAT', 'MATRA', 'ABITUREN (ANGKATAN)', 'SUMBER REKRUTMEN', 'NO. HP', 'EMAIL', 'STATUS VERIFIKASI'];
     }
 
-    public function map(): array
+    public function map($personel): array
     {
         return [
-            strtoupper(->province ?: 'LAINNYA'),
-            strtoupper(->city ?: 'UNASSIGNED'),
-            ->nikc ?? '-',
-            ->full_name,
-            Personel::formatShortRank(->pangkat),
-            ->matra,
-            ->angkatan ? 'Angkatan ' . ->angkatan : '-',
-            ->sumber_rekrutmen ?? 'Reguler',
-            ->phone_number,
-            ->user?->email ?? '-',
-            ->face_verified ? 'TERVERIFIKASI' : 'MENUNGGU'
+            strtoupper($personel->province ?: 'LAINNYA'),
+            strtoupper($personel->city ?: 'UNASSIGNED'),
+            $personel->nikc ?? '-',
+            $personel->full_name,
+            Personel::formatShortRank($personel->pangkat),
+            $personel->matra,
+            $personel->angkatan ? 'Angkatan ' . $personel->angkatan : '-',
+            $personel->sumber_rekrutmen ?? 'Reguler',
+            $personel->phone_number,
+            $personel->user?->email ?? '-',
+            $personel->face_verified ? 'TERVERIFIKASI' : 'MENUNGGU'
         ];
     }
 
     public function registerEvents(): array
     {
         return [
-            AfterSheet::class => function(AfterSheet ) {
-                 = ->sheet->getDelegate();
-                ->getPageSetup()->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE);
+            AfterSheet::class => function(AfterSheet $event) {
+                $sheet = $event->sheet->getDelegate();
+                $sheet->getPageSetup()->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE);
                 
-                ->insertNewRowBefore(1, 5);
+                $sheet->insertNewRowBefore(1, 5);
                 
-                ->mergeCells('A1:C1');
-                ->setCellValue('A1', 'TENTARA NASIONAL INDONESIA');
-                ->getStyle('A1')->getFont()->setBold(true)->setSize(11);
+                $sheet->mergeCells('A1:C1');
+                $sheet->setCellValue('A1', 'TENTARA NASIONAL INDONESIA');
+                $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(11);
                 
-                ->mergeCells('A2:C2');
-                ->setCellValue('A2', 'KOMPONEN CADANGAN');
-                ->getStyle('A2')->getFont()->setBold(true)->setSize(11);
+                $sheet->mergeCells('A2:C2');
+                $sheet->setCellValue('A2', 'KOMPONEN CADANGAN');
+                $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(11);
                 
-                ->getStyle('A3:C3')->getBorders()->getBottom()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+                $sheet->getStyle('A3:C3')->getBorders()->getBottom()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
                 
-                 = [1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI', 7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'];
-                 = 'R/002/PERS/' . [date('n')] . '/' . date('Y');
+                $romans = [1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI', 7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'];
+                $nomorSurat = 'R/002/PERS/' . $romans[date('n')] . '/' . date('Y');
 
-                ->setCellValue('D4', 'LAPORAN REKAPITULASI PERSONEL BERBASIS PROVINSI & KOTA');
-                ->getStyle('D4')->getFont()->setBold(true)->setSize(12);
+                $sheet->setCellValue('D4', 'LAPORAN REKAPITULASI PERSONEL BERBASIS PROVINSI & KOTA');
+                $sheet->getStyle('D4')->getFont()->setBold(true)->setSize(12);
                 
-                ->setCellValue('D5', 'NOMOR: ' . );
-                ->getStyle('D5')->getFont()->setBold(true)->setSize(10);
+                $sheet->setCellValue('D5', 'NOMOR: ' . $nomorSurat);
+                $sheet->getStyle('D5')->getFont()->setBold(true)->setSize(10);
                 
-                ->getStyle('A6:K6')->getFont()->setBold(true);
-                ->getStyle('A6:K6')->getFill()
+                $sheet->getStyle('A6:K6')->getFont()->setBold(true);
+                $sheet->getStyle('A6:K6')->getFill()
                     ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
                     ->getStartColor()->setARGB('FFF2F2F2');
                 
-                foreach (range('A', 'K') as ) {
-                    ->getColumnDimension()->setAutoSize(true);
+                foreach (range('A', 'K') as $column) {
+                    $sheet->getColumnDimension($column)->setAutoSize(true);
                 }
                 
-                 = ->getHighestRow();
-                 =  + 3;
+                $highestRow = $sheet->getHighestRow();
+                $sigRow = $highestRow + 3;
                 
-                ->setCellValue('I' . , 'Dikeluarkan di: Jakarta');
-                ->setCellValue('I' . ( + 1), 'Pada tanggal: ' . date('d F Y'));
-                ->setCellValue('I' . ( + 3), 'a.n. Komandan Komponen Cadangan');
-                ->setCellValue('I' . ( + 4), ->signerJabatan . ',');
+                $sheet->setCellValue('I' . $sigRow, 'Dikeluarkan di: Jakarta');
+                $sheet->setCellValue('I' . ($sigRow + 1), 'Pada tanggal: ' . date('d F Y'));
+                $sheet->setCellValue('I' . ($sigRow + 3), 'a.n. Komandan Komponen Cadangan');
+                $sheet->setCellValue('I' . ($sigRow + 4), $this->signerJabatan . ',');
                 
-                ->setCellValue('I' . ( + 8), ->signerName);
-                ->getStyle('I' . ( + 8))->getFont()->setBold(true)->setUnderline(true);
-                ->setCellValue('I' . ( + 9), ->signerPangkat . ' NIKC. ' . ->signerNikc);
+                $sheet->setCellValue('I' . ($sigRow + 8), $this->signerName);
+                $sheet->getStyle('I' . ($sigRow + 8))->getFont()->setBold(true)->setUnderline(true);
+                $sheet->setCellValue('I' . ($sigRow + 9), $this->signerPangkat . ' NIKC. ' . $this->signerNikc);
             }
         ];
     }
