@@ -143,8 +143,20 @@
                 </div>
               </button>
             </div>
-            <div v-else-if="personelSearchQuery.trim().length >= 2 && !isSearching && hasSearched" class="mt-1 p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-700 font-semibold">
-              ⚠️ Data tidak ditemukan di Master Personel maupun SKEP. Coba ketik sebagian Nama atau NIKC.
+            
+            <!-- Tombol Manual Override jika data belum terdaftar -->
+            <div v-else-if="personelSearchQuery.trim().length >= 2 && !isSearching && hasSearched" class="mt-1 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between gap-3">
+              <div>
+                <p class="text-[11px] text-amber-800 font-bold">⚠️ Data tidak ditemukan di database auto-search.</p>
+                <p class="text-[10px] text-amber-600">Anda dapat menggunakan NIKC/Nama ini untuk diinputkan secara manual.</p>
+              </div>
+              <button
+                type="button"
+                @click="useManualInput"
+                class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-[10px] shrink-0 cursor-pointer shadow-xs"
+              >
+                + Gunakan Data Ini
+              </button>
             </div>
           </div>
 
@@ -160,12 +172,14 @@
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <p class="text-[9px] font-bold text-slate-400 uppercase">Nama Lengkap</p>
-                <p class="font-bold text-slate-800 mt-0.5 text-xs">{{ selectedPersonel.full_name }}</p>
+                <p v-if="selectedPersonel.full_name" class="font-bold text-slate-800 mt-0.5 text-xs">{{ selectedPersonel.full_name }}</p>
+                <input v-else v-model="addForm.full_name" type="text" placeholder="Isi Nama Lengkap..." class="mt-1 w-full rounded-lg border-[#E2E8F0] text-xs px-2.5 py-1 outline-none focus:border-[#2563EB]" required />
               </div>
 
               <div>
                 <p class="text-[9px] font-bold text-slate-400 uppercase">NIKC / NIK</p>
-                <p class="font-bold text-blue-700 mt-0.5 text-xs">{{ selectedPersonel.nikc || selectedPersonel.nik }}</p>
+                <p v-if="selectedPersonel.nikc || selectedPersonel.nik" class="font-bold text-blue-700 mt-0.5 text-xs">{{ selectedPersonel.nikc || selectedPersonel.nik }}</p>
+                <input v-else v-model="addForm.nikc" type="text" placeholder="Isi NIKC..." class="mt-1 w-full rounded-lg border-[#E2E8F0] text-xs px-2.5 py-1 outline-none focus:border-[#2563EB]" required />
               </div>
 
               <!-- Pangkat -->
@@ -514,6 +528,34 @@ const selectPersonel = (p) => {
   addForm.city = p.city || '';
   addForm.subdistrict = p.subdistrict || '';
   personelSearchQuery.value = p.full_name + ' (' + (p.nikc || p.nik) + ')';
+  searchResults.value = [];
+};
+
+const useManualInput = () => {
+  const val = personelSearchQuery.value.trim();
+  const isNumeric = /^\d+$/.test(val);
+  
+  const manualPersonel = {
+    id: null,
+    full_name: isNumeric ? '' : val,
+    nikc: isNumeric ? val : '',
+    pangkat: '',
+    matra: '',
+    angkatan: '2024',
+    phone_number: '',
+    province: '',
+    city: '',
+    subdistrict: '',
+    source: 'MANUAL_ENTRY'
+  };
+
+  selectedPersonel.value = manualPersonel;
+  addForm.personel_id = '';
+  addForm.nikc = manualPersonel.nikc;
+  addForm.full_name = manualPersonel.full_name;
+  addForm.pangkat = '';
+  addForm.matra = '';
+  addForm.angkatan = '2024';
   searchResults.value = [];
 };
 
