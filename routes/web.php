@@ -92,22 +92,32 @@ Route::middleware('auth')->group(function () {
     Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
 
     // Rute Unduhan Berkas Ijazah/Dokumen Privat Aman
+        // Rute Unduhan & Tampilan Berkas Foto / KTP Privat Aman
     Route::get('/documents/private/{path}', function ($path) {
         abort_unless(auth()->check(), 403);
 
         $cleanPath = ltrim($path, '/');
-        $cleanPath = preg_replace('/^(app\/private\/|private\/|storage\/)+/', '', $cleanPath);
+        $cleanPath = preg_replace('/^(app\/private\/|private\/|storage\/|public\/)+/', '', $cleanPath);
 
-        if (Storage::disk('private')->exists($cleanPath)) {
-            return Storage::disk('private')->response($cleanPath);
-        }
+        $possiblePaths = [
+            $cleanPath,
+            'personel/photos/' . basename($cleanPath),
+            'personel/documents/' . basename($cleanPath),
+            'personel/pendidikan/' . basename($cleanPath),
+            'personel/pekerjaan/' . basename($cleanPath),
+            'personel/asn_sks/' . basename($cleanPath),
+        ];
 
-        if (Storage::disk('public')->exists($cleanPath)) {
-            return Storage::disk('public')->response($cleanPath);
-        }
-
-        if (Storage::disk('local')->exists($cleanPath)) {
-            return Storage::disk('local')->response($cleanPath);
+        foreach (['private', 'public', 'local'] as $diskName) {
+            foreach ($possiblePaths as $tryPath) {
+                if (Storage::disk($diskName)->exists($tryPath)) {
+                    $fullPath = Storage::disk($diskName)->path($tryPath);
+                    if (file_exists($fullPath) && is_readable($fullPath)) {
+                        $mime = mime_content_type($fullPath) ?: 'image/jpeg';
+                        return response()->file($fullPath, ['Content-Type' => $mime]);
+                    }
+                }
+            }
         }
 
         abort(404);
