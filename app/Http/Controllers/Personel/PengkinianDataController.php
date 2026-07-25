@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Personel;
 use App\Http\Controllers\Controller;
 use App\Models\PengkinianData;
 use App\Models\Personel;
+use App\Models\SkepData;
 use App\Models\User;
 use App\Mail\SystemNotificationMail;
 use Illuminate\Http\Request;
@@ -110,13 +111,72 @@ class PengkinianDataController extends Controller
             return response()->json([]);
         }
 
+        $results = [];
+        $addedIds = [];
+
+        // 1. Cari dari Database Master Personel
         $personels = Personel::where('full_name', 'like', "%{$q}%")
             ->orWhere('nikc', 'like', "%{$q}%")
             ->orWhere('nik', 'like', "%{$q}%")
-            ->limit(15)
+            ->limit(10)
             ->get(['id', 'full_name', 'nikc', 'nik', 'pangkat', 'matra', 'status_keaktifan']);
 
-        return response()->json($personels);
+        foreach ($personels as $p) {
+            $addedIds[] = $p->id;
+            $results[] = [
+                'id'               => $p->id,
+                'full_name'        => $p->full_name,
+                'nikc'             => $p->nikc ?: $p->nik,
+                'nik'              => $p->nik,
+                'pangkat'          => $p->pangkat,
+                'matra'            => $p->matra,
+                'status_keaktifan' => $p->status_keaktifan ?: 'AKTIF',
+                'source'           => 'MASTER_PERSONEL',
+            ];
+        }
+
+        // 2. Cari dari Database Master SKEP
+        $skepItems = SkepData::where('nama_lengkap', 'like', "%{$q}%")
+            ->orWhere('nikc', 'like', "%{$q}%")
+            ->orWhere('nik', 'like', "%{$q}%")
+            ->limit(10)
+            ->get();
+
+        foreach ($skepItems as $sk) {
+            $existing = Personel::where('nikc', $sk->nikc)->orWhere('nik', $sk->nik)->first();
+            if ($existing && in_array($existing->id, $addedIds)) {
+                continue;
+            }
+
+            if ($existing) {
+                $addedIds[] = $existing->id;
+                $results[] = [
+                    'id'               => $existing->id,
+                    'full_name'        => $existing->full_name,
+                    'nikc'             => $existing->nikc ?: $existing->nik,
+                    'nik'              => $existing->nik,
+                    'pangkat'          => $existing->pangkat,
+                    'matra'            => $existing->matra,
+                    'status_keaktifan' => $existing->status_keaktifan ?: 'AKTIF',
+                    'source'           => 'MASTER_PERSONEL',
+                ];
+            } else {
+                $results[] = [
+                    'id'               => null,
+                    'full_name'        => $sk->nama_lengkap,
+                    'nikc'             => $sk->nikc ?: $sk->nik,
+                    'nik'              => $sk->nik,
+                    'pangkat'          => $sk->pangkat,
+                    'matra'            => $sk->matra,
+                    'status_keaktifan' => 'DATA SKEP',
+                    'source'           => 'SKEP_DATA',
+                    'dob'              => $sk->dob,
+                    'angkatan'         => $sk->angkatan,
+                ];
+            }
+        }
+
+        return response()->json($results);
     }
 
     public function adminStore(Request $request)
@@ -125,7 +185,9 @@ class PengkinianDataController extends Controller
         abort_unless($user->hasRole('admin'), 403);
 
         $request->validate([
-            'personel_id'      => 'required|exists:personels,id',
+            'personel_id'      => 'nullable|exists:personels,id',
+            'nikc'             => 'required|string',
+            'full_name'        => 'required|string',
             'jenis_pengkinian' => 'required|in:MENINGGAL,TNI_AD,TNI_AL,TNI_AU,POLRI',
             'document'         => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:4096',
             'nrp'              => 'nullable|string|max:50',
@@ -136,7 +198,31 @@ class PengkinianDataController extends Controller
             'catatan'          => 'nullable|string|max:1000',
         ]);
 
-        $personel = Personel::with('user')->findOrFail($request->personel_id);
+        $personel = null;
+        if ($request->filled('personel_id')) {
+            $personel = Personel::with('user')->find($request->personel_id);
+        }
+
+        if (!$personel) {
+            $personel = Personel::where('nikc', $request->nikc)->orWhere('nik', $request->nikc)->first();
+        }
+
+        if (!$personel) {
+            // Buat record Personel baru jika diambil dari SKEP
+            $skep = SkepData::where('nikc', $request->nikc)->first();
+            $personel = Personel::create([
+                'uuid'                => Str::uuid(),
+                'full_name'           => $request->full_name,
+                'nikc'                => $request->nikc,
+                'nik'                 => $skep ? $skep->nik : Str::random(16),
+                'dob'                 => $skep ? $skep->dob : '1990-01-01',
+                'pangkat'             => $skep ? $skep->pangkat : 'PRADA',
+                'matra'               => $skep ? $skep->matra : 'AD',
+                'angkatan'            => $skep ? $skep->angkatan : '2024',
+                'status_keaktifan'    => $request->jenis_pengkinian,
+                'status_verification' => 'APPROVED',
+            ]);
+        }
 
         $filePath = 'personel/pengkinian_data/admin_entry.pdf';
         if ($request->hasFile('document')) {
