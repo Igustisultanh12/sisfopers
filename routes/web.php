@@ -72,34 +72,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/account/settings/mfa/toggle', [ProfileController::class, 'toggleMfa'])->name('profile.toggle-mfa');
     Route::post('/account/settings/mfa/verify', [ProfileController::class, 'verifyMfa'])->name('profile.verify-mfa');
 
-    // Rute Unduhan Berkas / Tampilan Foto Terproteksi Login
+    // Redirect fallback jika ada yang mengakses URL lama /documents/private/...
     Route::get('/documents/private/{path}', function ($path) {
         $cleanPath = ltrim($path, '/');
         $cleanPath = preg_replace('/^(app\/private\/|private\/|storage\/|public\/)+/', '', $cleanPath);
-
-        $possiblePaths = [
-            $cleanPath,
-            'personel/photos/' . basename($cleanPath),
-            'personel/documents/' . basename($cleanPath),
-            'personel/pendidikan/' . basename($cleanPath),
-            'personel/pekerjaan/' . basename($cleanPath),
-            'personel/asn_sks/' . basename($cleanPath),
-            'personel/skep_requests/' . basename($cleanPath),
-        ];
-
-        foreach (['public', 'local', 'private'] as $diskName) {
-            foreach ($possiblePaths as $tryPath) {
-                if (Storage::disk($diskName)->exists($tryPath)) {
-                    $fullPath = Storage::disk($diskName)->path($tryPath);
-                    if (file_exists($fullPath) && is_readable($fullPath)) {
-                        $mime = mime_content_type($fullPath) ?: 'image/jpeg';
-                        return response()->file($fullPath, ['Content-Type' => $mime]);
-                    }
-                }
-            }
-        }
-
-        abort(404, 'Berkas foto / dokumen tidak ditemukan.');
+        return redirect('/storage/' . $cleanPath);
     })->where('path', '.*')->name('personel.document.download');
 });
 
