@@ -80,6 +80,11 @@ class AuthController extends Controller
 
     public function showRegister()
     {
+        $isMaintenance = \App\Models\Setting::where('key', 'under_maintenance')->value('value') === '1';
+        if ($isMaintenance) {
+            return redirect()->route('maintenance');
+        }
+
         return Inertia::render('Auth/Register', [
             'pangkatOptions' => MasterKepangkatan::where('is_active', true)
                 ->orderBy('urutan')
@@ -89,6 +94,10 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
+        $isMaintenance = \App\Models\Setting::where('key', 'under_maintenance')->value('value') === '1';
+        if ($isMaintenance) {
+            return redirect()->route('maintenance');
+        }
         if ($request->has('nikc')) {
             $request->merge(['nikc' => SkepData::reconstructNikc($request->nikc)]);
         }
