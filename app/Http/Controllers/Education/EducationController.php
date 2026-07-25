@@ -79,7 +79,11 @@ class EducationController extends Controller
 
         foreach (['file_ijazah_path' => 'file_ijazah', 'file_sertifikat_path' => 'file_sertifikat'] as $column => $field) {
             if ($request->hasFile($field)) {
-                $validated[$column] = $request->file($field)->store('personel/pendidikan', 'private');
+                try {
+                    $validated[$column] = $request->file($field)->store('personel/pendidikan', 'private');
+                } catch (\Exception $e) {
+                    $validated[$column] = $request->file($field)->store('personel/pendidikan', 'local');
+                }
             }
         }
 
@@ -97,7 +101,11 @@ class EducationController extends Controller
 
         foreach (['file_ijazah_path' => 'file_ijazah', 'file_sertifikat_path' => 'file_sertifikat'] as $column => $field) {
             if ($request->hasFile($field)) {
-                $validated[$column] = $request->file($field)->store('personel/pendidikan', 'private');
+                try {
+                    $validated[$column] = $request->file($field)->store('personel/pendidikan', 'private');
+                } catch (\Exception $e) {
+                    $validated[$column] = $request->file($field)->store('personel/pendidikan', 'local');
+                }
             }
         }
 
