@@ -1,14 +1,23 @@
 <template>
   <AuthenticatedLayout>
-    <template #header-title>Verifikasi Pengkinian Data Personel</template>
+    <template #header-title>Verifikasi & Kelola Pengkinian Data Personel</template>
 
     <div class="space-y-6 max-w-6xl">
-      <!-- Summary / Filter section -->
+      <!-- Summary / Filter section & Add Button -->
       <div class="bg-white border border-[#E2E8F0] rounded-2xl p-5 shadow-sm space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-4">
-          <h3 class="text-xs font-bold uppercase tracking-wide text-slate-800">Daftar Pengajuan Pengkinian Data</h3>
+          <div>
+            <h3 class="text-xs font-bold uppercase tracking-wide text-slate-800">Daftar Pengajuan Pengkinian Data</h3>
+            <p class="text-[11px] text-slate-500 mt-0.5">Admin dapat menyetujui pengajuan personel atau menambahkan pengkinian data personel secara langsung.</p>
+          </div>
           
           <div class="flex flex-wrap items-center gap-3">
+            <button
+              @click="openAddModal"
+              class="px-4 py-2 bg-[#2563EB] hover:bg-[#1E40AF] text-white text-xs font-bold rounded-xl shadow-sm transition flex items-center gap-1.5 cursor-pointer"
+            >
+              <span>+ Tambah Pengkinian Data</span>
+            </button>
             <input
               v-model="search"
               @keyup.enter="handleSearch"
@@ -89,10 +98,122 @@
       </div>
     </div>
 
+    <!-- MODAL ADD PENGKINIAN DATA (ADMIN INPUT) -->
+    <div v-if="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in">
+      <div class="bg-white border border-[#E2E8F0] rounded-2xl shadow-2xl max-w-xl w-full overflow-hidden text-xs">
+        <div class="px-6 py-4 border-b border-[#E2E8F0] bg-slate-50 flex items-center justify-between">
+          <h3 class="text-sm font-bold text-slate-800">Tambah Pengkinian Data Personel</h3>
+          <button @click="showAddModal = false" class="text-slate-400 hover:text-slate-600 font-bold text-base cursor-pointer">✕</button>
+        </div>
+
+        <form @submit.prevent="submitAddForm" class="p-6 space-y-4">
+          <!-- Autocomplete Search Personel / NIKC -->
+          <div class="relative flex flex-col gap-1.5">
+            <label class="font-bold text-slate-600 uppercase text-[10px]">Cari NIKC / NIK / Nama Personel</label>
+            <input
+              v-model="personelSearchQuery"
+              @input="onSearchPersonelInput"
+              type="text"
+              class="rounded-xl border-[#E2E8F0] text-xs px-4 py-2.5 outline-none focus:border-[#2563EB]"
+              placeholder="Ketik NIKC atau Nama Personel..."
+              required
+            />
+
+            <!-- Dropdown Hasil Pencarian Personel -->
+            <div v-if="searchResults.length > 0" class="absolute top-full left-0 right-0 z-10 mt-1 bg-white border border-[#E2E8F0] rounded-xl shadow-lg max-h-48 overflow-y-auto divide-y divide-slate-100">
+              <button
+                v-for="p in searchResults"
+                :key="p.id"
+                type="button"
+                @click="selectPersonel(p)"
+                class="w-full text-left p-3 hover:bg-slate-50 transition flex items-center justify-between"
+              >
+                <div>
+                  <p class="font-bold text-slate-800">{{ p.full_name }}</p>
+                  <p class="text-[10px] text-slate-400">NIKC: {{ p.nikc || p.nik }} | {{ p.pangkat || '-' }} ({{ p.matra || '-' }})</p>
+                </div>
+                <span class="text-[9px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600">{{ p.status_keaktifan || 'AKTIF' }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Card Personel Terpilih -->
+          <div v-if="selectedPersonel" class="p-3 bg-blue-50/60 border border-blue-100 rounded-xl grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <p class="text-[9px] font-bold text-slate-400 uppercase">Personel Terpilih</p>
+              <p class="font-bold text-slate-800 mt-0.5">{{ selectedPersonel.full_name }}</p>
+            </div>
+            <div>
+              <p class="text-[9px] font-bold text-slate-400 uppercase">NIKC / NIK</p>
+              <p class="font-bold text-slate-800 mt-0.5">{{ selectedPersonel.nikc || selectedPersonel.nik }}</p>
+            </div>
+          </div>
+
+          <!-- Kategori Pengkinian -->
+          <div class="flex flex-col gap-1.5">
+            <label class="font-bold text-slate-600 uppercase text-[10px]">Kategori Pengkinian Data</label>
+            <select v-model="addForm.jenis_pengkinian" class="rounded-xl border-[#E2E8F0] text-xs px-4 py-2.5 outline-none focus:border-[#2563EB]">
+              <option value="MENINGGAL">Telah Meninggal Dunia</option>
+              <option value="TNI_AD">Menjadi Anggota TNI AD</option>
+              <option value="TNI_AL">Menjadi Anggota TNI AL</option>
+              <option value="TNI_AU">Menjadi Anggota TNI AU</option>
+              <option value="POLRI">Menjadi Anggota POLRI</option>
+            </select>
+          </div>
+
+          <!-- Form Tambahan untuk TNI / POLRI -->
+          <div v-if="addForm.jenis_pengkinian !== 'MENINGGAL'" class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+            <div class="flex flex-col gap-1">
+              <label class="font-bold text-slate-600 uppercase text-[9px]">NRP</label>
+              <input v-model="addForm.nrp" class="rounded-xl border-[#E2E8F0] text-xs px-3 py-1.5 outline-none focus:border-[#2563EB]" placeholder="Nomor NRP" required />
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <label class="font-bold text-slate-600 uppercase text-[9px]">Nama Satuan</label>
+              <input v-model="addForm.satuan" class="rounded-xl border-[#E2E8F0] text-xs px-3 py-1.5 outline-none focus:border-[#2563EB]" placeholder="Nama Satuan" required />
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <label class="font-bold text-slate-600 uppercase text-[9px]">TMT Pengangkatan</label>
+              <input v-model="addForm.tmt_pengangkatan" type="date" class="rounded-xl border-[#E2E8F0] text-xs px-3 py-1.5 outline-none focus:border-[#2563EB]" required />
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <label class="font-bold text-slate-600 uppercase text-[9px]">TMT Masuk Satuan</label>
+              <input v-model="addForm.tmt_masuk_satuan" type="date" class="rounded-xl border-[#E2E8F0] text-xs px-3 py-1.5 outline-none focus:border-[#2563EB]" required />
+            </div>
+
+            <div class="flex flex-col gap-1 md:col-span-2">
+              <label class="font-bold text-slate-600 uppercase text-[9px]">Jabatan</label>
+              <input v-model="addForm.jabatan" class="rounded-xl border-[#E2E8F0] text-xs px-3 py-1.5 outline-none focus:border-[#2563EB]" placeholder="Jabatan" required />
+            </div>
+          </div>
+
+          <!-- Upload Berkas -->
+          <div class="flex flex-col gap-1.5">
+            <label class="font-bold text-slate-600 uppercase text-[10px]">Upload Berkas Pendukung (PDF/JPG/PNG Opsional)</label>
+            <input type="file" @change="addForm.document = $event.target.files[0]" class="text-xs text-slate-500 file:py-1.5 file:px-3 file:border file:border-slate-200 file:rounded-xl file:text-xs file:bg-slate-50 file:cursor-pointer" />
+          </div>
+
+          <!-- Catatan -->
+          <div class="flex flex-col gap-1.5">
+            <label class="font-bold text-slate-600 uppercase text-[10px]">Catatan Tambahan (Opsional)</label>
+            <textarea v-model="addForm.catatan" rows="2" class="rounded-xl border-[#E2E8F0] text-xs p-2.5 outline-none focus:border-[#2563EB]" placeholder="Keterangan tambahan..."></textarea>
+          </div>
+
+          <div class="pt-2 flex items-center justify-end gap-3 border-t border-[#E2E8F0]">
+            <button type="button" @click="showAddModal = false" class="px-4 py-2 border border-[#E2E8F0] rounded-xl hover:bg-slate-100 text-slate-600 font-bold transition cursor-pointer">Batal</button>
+            <button type="submit" :disabled="addForm.processing || !addForm.personel_id" class="px-5 py-2 bg-[#2563EB] hover:bg-[#1E40AF] disabled:opacity-50 text-white font-bold rounded-xl shadow-md transition cursor-pointer">
+              {{ addForm.processing ? 'Menyimpan...' : 'Simpan & Setujui' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- MODAL DETAIL & VERIFIKASI PENGKINIAN DATA -->
     <div v-if="showModal && selectedItem" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in">
       <div class="bg-white border border-[#E2E8F0] rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden text-xs">
-        <!-- Modal Header -->
         <div class="px-6 py-4 border-b border-[#E2E8F0] bg-slate-50 flex items-center justify-between">
           <div>
             <span class="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border"
@@ -104,9 +225,7 @@
           <button @click="closeModal" class="text-slate-400 hover:text-slate-600 p-1 font-bold text-base cursor-pointer">✕</button>
         </div>
 
-        <!-- Body Modal -->
         <div v-if="!isRejecting" class="p-6 space-y-4">
-          <!-- Detail Personel & Kategori -->
           <div class="grid grid-cols-2 gap-3 p-4 bg-slate-50 rounded-xl border border-[#E2E8F0]">
             <div>
               <p class="text-[10px] font-bold text-slate-400 uppercase">Nama Personel</p>
@@ -138,7 +257,6 @@
             </div>
           </div>
 
-          <!-- Pratinjau Berkas -->
           <div class="space-y-2">
             <div class="flex items-center justify-between">
               <p class="text-[10px] font-bold text-slate-400 uppercase">Berkas Lampiran Pengkinian</p>
@@ -152,7 +270,6 @@
           </div>
         </div>
 
-        <!-- Form Alasan Penolakan -->
         <div v-else class="p-6 space-y-4">
           <div class="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700">
             <p class="font-bold text-xs">Form Penolakan Pengkinian Data</p>
@@ -170,7 +287,6 @@
           </div>
         </div>
 
-        <!-- Footer Modal Aksi -->
         <div v-if="!isRejecting" class="px-6 py-4 border-t border-[#E2E8F0] bg-slate-50 flex items-center justify-between">
           <button
             v-if="selectedItem.status === 'PENDING'"
@@ -196,7 +312,6 @@
           </div>
         </div>
 
-        <!-- Footer Modal Reject -->
         <div v-else class="px-6 py-4 border-t border-[#E2E8F0] bg-slate-50 flex items-center justify-end gap-3">
           <button @click="isRejecting = false" class="px-4 py-2 border border-[#E2E8F0] rounded-xl hover:bg-slate-100 text-slate-600 font-bold transition cursor-pointer">
             Kembali
@@ -218,7 +333,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { ref } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { router, useForm } from '@inertiajs/vue3';
 import { useSwal } from '@/Composables/useSwal';
 
 const props = defineProps({
@@ -235,6 +350,69 @@ const selectedItem = ref(null);
 const isRejecting = ref(false);
 const rejectReason = ref('');
 const processing = ref(false);
+
+const showAddModal = ref(false);
+const personelSearchQuery = ref('');
+const searchResults = ref([]);
+const selectedPersonel = ref(null);
+
+const addForm = useForm({
+  personel_id: '',
+  jenis_pengkinian: 'MENINGGAL',
+  document: null,
+  nrp: '',
+  tmt_pengangkatan: '',
+  tmt_masuk_satuan: '',
+  satuan: '',
+  jabatan: '',
+  catatan: '',
+});
+
+const openAddModal = () => {
+  showAddModal.value = true;
+  personelSearchQuery.value = '';
+  searchResults.value = [];
+  selectedPersonel.value = null;
+  addForm.reset();
+};
+
+const onSearchPersonelInput = async () => {
+  if (personelSearchQuery.value.trim().length < 2) {
+    searchResults.value = [];
+    return;
+  }
+
+  try {
+    const res = await fetch(route('admin.pengkinian-data.search-personel') + '?query=' + encodeURIComponent(personelSearchQuery.value));
+    const data = await res.json();
+    searchResults.value = data;
+  } catch (err) {
+    console.error('Failed to search personel', err);
+  }
+};
+
+const selectPersonel = (p) => {
+  selectedPersonel.value = p;
+  addForm.personel_id = p.id;
+  personelSearchQuery.value = p.full_name + ' (' + (p.nikc || p.nik) + ')';
+  searchResults.value = [];
+};
+
+const submitAddForm = () => {
+  if (!addForm.personel_id) return;
+  addForm.post(route('admin.pengkinian-data.store'), {
+    forceFormData: true,
+    preserveScroll: true,
+    onSuccess: () => {
+      alertSuccess('Berhasil', 'Data pengkinian personel telah ditambahkan.');
+      showAddModal.value = false;
+      addForm.reset();
+    },
+    onError: () => {
+      alertError('Gagal', 'Terjadi kesalahan saat menyimpan data.');
+    }
+  });
+};
 
 const handleSearch = () => {
   router.get(route('admin.pengkinian-data.index'), {
