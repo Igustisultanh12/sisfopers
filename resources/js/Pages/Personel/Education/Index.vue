@@ -222,7 +222,7 @@
         <div v-if="!isRejecting" class="px-6 py-4 border-t border-[#E2E8F0] bg-slate-50 flex items-center justify-between">
           <div>
             <button
-              v-if="routes?.reject && !selectedItem.verified_at"
+              v-if="routes?.verify && !selectedItem.verified_at"
               @click="isRejecting = true"
               class="px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl font-bold transition cursor-pointer"
             >
