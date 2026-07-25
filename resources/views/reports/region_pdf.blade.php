@@ -20,7 +20,7 @@
         
         table.summary-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         table.summary-table, table.summary-table th, table.summary-table td { border: 1px solid #000; }
-        table.summary-table td { padding: 8px; text-align: center; font-weight: bold; font-size: 10px; }
+        table.summary-table td { padding: 6px; text-align: center; font-weight: bold; font-size: 10px; }
         
         .signature-block { float: right; margin-top: 25px; width: 280px; font-size: 10px; text-align: center; page-break-inside: avoid; }
     </style>
@@ -91,16 +91,27 @@
         </table>
     @endforeach
 
+    @php
+        $ketRows = count($keteranganList) > 0 ? count($keteranganList) : 1;
+    @endphp
+
     <table class="summary-table">
         <tr>
-            <td rowspan="2" style="width: 20%; background-color: #f8fafc; vertical-align: middle;">JUMLAH KESELURUHAN WILAYAH</td>
-            <td style="width: 40%; background-color: #f8fafc;">TOTAL PERSONEL TERDAFTAR</td>
-            <td style="width: 40%; background-color: #f8fafc;">TOTAL NYATA TERVERIFIKASI</td>
+            <td rowspan="{{ $ketRows + 1 }}" style="width: 20%; background-color: #f8fafc; vertical-align: middle;">JUMLAH</td>
+            <td style="width: 30%; background-color: #f8fafc;">KESELURUHAN</td>
+            <td style="width: 25%; background-color: #f8fafc;">NYATA</td>
+            <td style="width: 25%; background-color: #f8fafc;">KETERANGAN</td>
         </tr>
         <tr>
-            <td style="font-size: 13px; color: #1e3a8a;">{{ $grandTotalJumlah }} PERSONEL</td>
-            <td style="font-size: 13px; color: #15803d;">{{ $grandTotalNyata }} PERSONEL TERVERIFIKASI</td>
+            <td rowspan="{{ $ketRows }}" style="font-size: 12px; color: #1e3a8a; vertical-align: middle;">{{ $grandTotalJumlah }} PERSONEL</td>
+            <td rowspan="{{ $ketRows }}" style="font-size: 12px; color: #15803d; vertical-align: middle;">{{ $grandTotalNyata }} PERSONEL</td>
+            <td style="font-size: 9px; text-align: left; font-weight: bold; color: #dc2626;">{{ $keteranganList[0] ?? '-' }}</td>
         </tr>
+        @foreach(array_slice($keteranganList, 1) as $ketNote)
+        <tr>
+            <td style="font-size: 9px; text-align: left; font-weight: bold; color: #dc2626;">{{ $ketNote }}</td>
+        </tr>
+        @endforeach
     </table>
 
     <div class="signature-block">
