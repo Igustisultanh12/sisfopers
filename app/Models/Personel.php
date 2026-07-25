@@ -146,11 +146,11 @@ class Personel extends Model
     {
         // 1. Hapus berkas foto & dokumen dari storage (private & public)
         if ($personel->photo_profile) {
-            \Illuminate\Support\Facades\Storage::disk('private')->delete($personel->photo_profile);
+            \Illuminate\Support\Facades\Storage::disk('local')->delete($personel->photo_profile);
             \Illuminate\Support\Facades\Storage::disk('public')->delete($personel->photo_profile);
         }
         if ($personel->ktp_document) {
-            \Illuminate\Support\Facades\Storage::disk('private')->delete($personel->ktp_document);
+            \Illuminate\Support\Facades\Storage::disk('local')->delete($personel->ktp_document);
             \Illuminate\Support\Facades\Storage::disk('public')->delete($personel->ktp_document);
         }
 
