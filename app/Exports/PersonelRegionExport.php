@@ -3,11 +3,15 @@
 namespace App\Exports;
 
 use App\Models\Personel;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class PersonelRegionExport implements FromCollection, WithHeadings, WithMapping, WithEvents
 {
@@ -15,6 +19,7 @@ class PersonelRegionExport implements FromCollection, WithHeadings, WithMapping,
     protected string $signerPangkat;
     protected string $signerNikc;
     protected string $signerJabatan;
+    protected int $rowIndex = 0;
 
     public function __construct(string $signerName, string $signerPangkat, string $signerNikc, string $signerJabatan)
     {
@@ -26,38 +31,34 @@ class PersonelRegionExport implements FromCollection, WithHeadings, WithMapping,
 
     public function collection()
     {
-        return Personel::where(function ($query) {
-                $query->whereDoesntHave('registration')
-                      ->orWhereHas('registration', function ($q) {
-                          $q->where('status_verification', 'APPROVED');
-                      });
-            })
-            ->with(['user'])
-            ->get()
-            ->sortBy(function ($personel) {
-                return sprintf('%s-%s-%s', $personel->province, $personel->city, $personel->full_name);
-            });
+        return Personel::select(
+                DB::raw("UPPER(COALESCE(NULLIF(sumber_rekrutmen, ''), 'REGULER')) as sumber"),
+                DB::raw("UPPER(COALESCE(NULLIF(city, ''), 'UNASSIGNED')) as kabupaten_kota"),
+                DB::raw("CASE WHEN gender = 'P' THEN 'PEREMPUAN' ELSE 'LAKI-LAKI' END as ket"),
+                DB::raw("COUNT(*) as total_jumlah"),
+                DB::raw("SUM(CASE WHEN face_verified = 1 THEN 1 ELSE 0 END) as total_nyata")
+            )
+            ->groupBy('sumber', 'kabupaten_kota', 'ket')
+            ->orderBy('sumber')
+            ->orderBy('kabupaten_kota')
+            ->get();
     }
 
     public function headings(): array
     {
-        return ['PROVINSI', 'KOTA / KABUPATEN', 'NIKC', 'NAMA LENGKAP', 'PANGKAT', 'MATRA', 'ABITUREN (ANGKATAN)', 'SUMBER REKRUTMEN', 'NO. HP', 'EMAIL', 'STATUS VERIFIKASI'];
+        return ['NO.', 'SUMBER', 'KABUPATEN/KOTA', 'JUMLAH', 'NYATA', 'KET.'];
     }
 
-    public function map($personel): array
+    public function map($row): array
     {
+        $this->rowIndex++;
         return [
-            strtoupper($personel->province ?: 'LAINNYA'),
-            strtoupper($personel->city ?: 'UNASSIGNED'),
-            $personel->nikc ?? '-',
-            $personel->full_name,
-            Personel::formatShortRank($personel->pangkat),
-            $personel->matra,
-            $personel->angkatan ? 'Angkatan ' . $personel->angkatan : '-',
-            $personel->sumber_rekrutmen ?? 'Reguler',
-            $personel->phone_number,
-            $personel->user?->email ?? '-',
-            $personel->face_verified ? 'TERVERIFIKASI' : 'MENUNGGU'
+            $this->rowIndex . '.',
+            $row->sumber,
+            $row->kabupaten_kota,
+            (int) $row->total_jumlah,
+            (int) $row->total_nyata,
+            $row->ket
         ];
     }
 
@@ -66,7 +67,6 @@ class PersonelRegionExport implements FromCollection, WithHeadings, WithMapping,
         return [
             AfterSheet::class => function(AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
-                $sheet->getPageSetup()->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE);
                 
                 $sheet->insertNewRowBefore(1, 5);
                 
@@ -78,37 +78,51 @@ class PersonelRegionExport implements FromCollection, WithHeadings, WithMapping,
                 $sheet->setCellValue('A2', 'KOMPONEN CADANGAN');
                 $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(11);
                 
-                $sheet->getStyle('A3:C3')->getBorders()->getBottom()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+                $sheet->getStyle('A3:C3')->getBorders()->getBottom()->setBorderStyle(Border::BORDER_THIN);
                 
                 $romans = [1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI', 7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'];
                 $nomorSurat = 'R/002/PERS/' . $romans[date('n')] . '/' . date('Y');
 
-                $sheet->setCellValue('D4', 'LAPORAN REKAPITULASI PERSONEL BERBASIS PROVINSI & KOTA');
-                $sheet->getStyle('D4')->getFont()->setBold(true)->setSize(12);
+                $sheet->setCellValue('C4', 'LAPORAN REKAPITULASI KEKUATAN PERSONEL DOMISILI');
+                $sheet->getStyle('C4')->getFont()->setBold(true)->setSize(12);
                 
-                $sheet->setCellValue('D5', 'NOMOR: ' . $nomorSurat);
-                $sheet->getStyle('D5')->getFont()->setBold(true)->setSize(10);
+                $sheet->setCellValue('C5', 'NOMOR: ' . $nomorSurat);
+                $sheet->getStyle('C5')->getFont()->setBold(true)->setSize(10);
                 
-                $sheet->getStyle('A6:K6')->getFont()->setBold(true);
-                $sheet->getStyle('A6:K6')->getFill()
-                    ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
-                    ->getStartColor()->setARGB('FFF2F2F2');
+                $sheet->getStyle('A6:F6')->getFont()->setBold(true);
+                $sheet->getStyle('A6:F6')->getFill()
+                    ->setFillType(Fill::FILL_SOLID)
+                    ->getStartColor()->setARGB('FFA3E635');
+                $sheet->getStyle('A6:F6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 
-                foreach (range('A', 'K') as $column) {
+                $highestRow = $sheet->getHighestRow();
+                
+                $totalRow = $highestRow + 1;
+                $sheet->setCellValue('A' . $totalRow, 'TOTAL KESELURUHAN');
+                $sheet->mergeCells('A' . $totalRow . ':C' . $totalRow);
+                $sheet->setCellValue('D' . $totalRow, '=SUM(D7:D' . $highestRow . ')');
+                $sheet->setCellValue('E' . $totalRow, '=SUM(E7:E' . $highestRow . ')');
+                $sheet->setCellValue('F' . $totalRow, '-');
+                $sheet->getStyle('A' . $totalRow . ':F' . $totalRow)->getFont()->setBold(true);
+                $sheet->getStyle('A' . $totalRow . ':F' . $totalRow)->getFill()
+                    ->setFillType(Fill::FILL_SOLID)
+                    ->getStartColor()->setARGB('FFF1F5F9');
+                
+                $sheet->getStyle('A6:F' . $totalRow)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                
+                foreach (range('A', 'F') as $column) {
                     $sheet->getColumnDimension($column)->setAutoSize(true);
                 }
                 
-                $highestRow = $sheet->getHighestRow();
-                $sigRow = $highestRow + 3;
+                $sigRow = $totalRow + 3;
+                $sheet->setCellValue('E' . $sigRow, 'Dikeluarkan di: Jakarta');
+                $sheet->setCellValue('E' . ($sigRow + 1), 'Pada tanggal: ' . date('d F Y'));
+                $sheet->setCellValue('E' . ($sigRow + 3), 'a.n. Komandan Komponen Cadangan');
+                $sheet->setCellValue('E' . ($sigRow + 4), $this->signerJabatan . ',');
                 
-                $sheet->setCellValue('I' . $sigRow, 'Dikeluarkan di: Jakarta');
-                $sheet->setCellValue('I' . ($sigRow + 1), 'Pada tanggal: ' . date('d F Y'));
-                $sheet->setCellValue('I' . ($sigRow + 3), 'a.n. Komandan Komponen Cadangan');
-                $sheet->setCellValue('I' . ($sigRow + 4), $this->signerJabatan . ',');
-                
-                $sheet->setCellValue('I' . ($sigRow + 8), $this->signerName);
-                $sheet->getStyle('I' . ($sigRow + 8))->getFont()->setBold(true)->setUnderline(true);
-                $sheet->setCellValue('I' . ($sigRow + 9), $this->signerPangkat . ' NIKC. ' . $this->signerNikc);
+                $sheet->setCellValue('E' . ($sigRow + 8), $this->signerName);
+                $sheet->getStyle('E' . ($sigRow + 8))->getFont()->setBold(true)->setUnderline(true);
+                $sheet->setCellValue('E' . ($sigRow + 9), $this->signerPangkat . ' NIKC. ' . $this->signerNikc);
             }
         ];
     }
