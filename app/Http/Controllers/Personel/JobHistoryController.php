@@ -315,7 +315,7 @@ class JobHistoryController extends Controller
             ]);
 
             if ($request->hasFile('asn_sk')) {
-                $path = $request->file('asn_sk')->store('personel/asn_sks', 'private');
+                $path = $request->file('asn_sk')->store('personel/asn_sks', 'local');
                 $personel->update(['asn_sk' => $path]);
             }
 
