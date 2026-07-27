@@ -76,6 +76,8 @@ class User extends Authenticatable
                 'full_name' => $this->username ? strtoupper($this->username) : 'ADMIN / KOORDINATOR',
                 'nik' => '35' . str_pad((string)$this->id, 14, '0', STR_PAD_LEFT),
                 'nikc' => 'KC' . str_pad((string)$this->id, 10, '0', STR_PAD_LEFT),
+                'pob' => 'Jakarta',
+                'dob' => '1990-01-01',
                 'matra' => 'AD',
                 'angkatan' => date('Y'),
                 'pangkat' => 'Perwira',
