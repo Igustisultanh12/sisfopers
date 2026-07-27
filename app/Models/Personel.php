@@ -93,7 +93,9 @@ class Personel extends Model
         'face_verified', 'status_keaktifan', 'status_profile', 'catatan_pembinaan',
         'sumber_rekrutmen', 'angkatan', 'matra', 'gender',
         'manual_otp', 'manual_otp_expired_at', 'manual_otp_printed_at',
-        'reset_password_otp', 'reset_password_otp_expired_at', 'reset_password_otp_printed_at'
+        'reset_password_otp', 'reset_password_otp_expired_at', 'reset_password_otp_printed_at',
+        'photo_profile', 'ktp_document', 'skep_file',
+        'is_asn', 'asn_nip', 'asn_jenis', 'asn_tmt', 'asn_sk'
     ];
 
     public function user(): BelongsTo
