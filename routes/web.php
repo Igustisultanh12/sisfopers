@@ -97,25 +97,51 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/account/settings/mfa/verify', [ProfileController::class, 'verifyMfa'])->name('profile.verify-mfa');
     Route::post('/account/settings/mfa/verify-code', [ProfileController::class, 'verifyMfa'])->name('profile.mfa.verify');
 
-    // Rute Unduhan & Display Berkas Privat Aman (Multi-Disk Support)
+    // Rute Unduhan & Display Berkas Privat Aman (Multi-Disk & Multi-Path Robust Scanner)
     Route::get('/documents/private/{path}', function ($path) {
         abort_unless(auth()->check(), 403);
         
         $cleanPath = ltrim($path, '/');
-        $cleanPath = preg_replace('/^(app\/private\/|private\/|storage\/|public\/)+/', '', $cleanPath);
+        $cleanPath = preg_replace('/^(app\/private\/|app\/public\/|app\/|private\/|storage\/|public\/)+/', '', $cleanPath);
 
-        // 1. Cek ketersediaan di disk private
-        if (\Illuminate\Support\Facades\Storage::disk('private')->exists($cleanPath)) {
-            $fullPath = \Illuminate\Support\Facades\Storage::disk('private')->path($cleanPath);
-            $mime = @mime_content_type($fullPath) ?: 'image/jpeg';
-            return response()->file($fullPath, ['Content-Type' => $mime]);
+        $possibleDisks = ['private', 'public', 'local'];
+        $possiblePaths = [
+            $cleanPath,
+            'personel/photos/' . basename($cleanPath),
+            'personel/documents/' . basename($cleanPath),
+            'personel/skep_requests/' . basename($cleanPath),
+            'personel/pendidikan/' . basename($cleanPath),
+            'personel/asn_sks/' . basename($cleanPath),
+            'personel/pengkinian_data/' . basename($cleanPath),
+        ];
+
+        foreach ($possibleDisks as $disk) {
+            foreach ($possiblePaths as $tryPath) {
+                if (\Illuminate\Support\Facades\Storage::disk($disk)->exists($tryPath)) {
+                    $fullPath = \Illuminate\Support\Facades\Storage::disk($disk)->path($tryPath);
+                    if (file_exists($fullPath) && is_readable($fullPath)) {
+                        $mime = @mime_content_type($fullPath) ?: 'image/jpeg';
+                        return response()->file($fullPath, ['Content-Type' => $mime]);
+                    }
+                }
+            }
         }
 
-        // 2. Fallback cek di disk public (untuk berkas terlanjur publik)
-        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($cleanPath)) {
-            $fullPath = \Illuminate\Support\Facades\Storage::disk('public')->path($cleanPath);
-            $mime = @mime_content_type($fullPath) ?: 'image/jpeg';
-            return response()->file($fullPath, ['Content-Type' => $mime]);
+        // Direct file_exists check in storage/app/private, storage/app/public, and storage/app/
+        $directCandidates = [
+            storage_path('app/private/' . $cleanPath),
+            storage_path('app/public/' . $cleanPath),
+            storage_path('app/' . $cleanPath),
+            storage_path('app/private/personel/photos/' . basename($cleanPath)),
+            storage_path('app/public/personel/photos/' . basename($cleanPath)),
+            storage_path('app/private/personel/documents/' . basename($cleanPath)),
+            storage_path('app/public/personel/documents/' . basename($cleanPath)),
+        ];
+        foreach ($directCandidates as $candidate) {
+            if (file_exists($candidate) && is_readable($candidate)) {
+                $mime = @mime_content_type($candidate) ?: 'image/jpeg';
+                return response()->file($candidate, ['Content-Type' => $mime]);
+            }
         }
 
         abort(404);
