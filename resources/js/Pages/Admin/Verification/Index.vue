@@ -235,10 +235,8 @@ const submitVerification = () => {
 
 const getDocumentUrl = (path) => {
   if (!path) return '';
-  if (path.startsWith('http://') || path.startsWith('https://')) return path;
-
-  let cleanPath = path.replace(/^(storage\/|public\/)+/, '');
-  return `/storage/${cleanPath}`;
+  let cleanPath = path.replace(/^(app\/private\/|app\/public\/|app\/|private\/|storage\/|public\/)+/, '');
+  return `/documents/private-stream?path=${encodeURIComponent(cleanPath)}`;
 };
 
 
