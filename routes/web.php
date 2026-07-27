@@ -97,6 +97,12 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/account/settings/mfa/verify', [ProfileController::class, 'verifyMfa'])->name('profile.verify-mfa');
     Route::post('/account/settings/mfa/verify-code', [ProfileController::class, 'verifyMfa'])->name('profile.mfa.verify');
 
+    // Modul Notifikasi System Global & Dropdown Header
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::match(['get', 'post'], '/notifications/{id}/read', [NotificationController::class, 'read'])->name('notifications.read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+    Route::post('/notifications/readAll', [NotificationController::class, 'readAll'])->name('notifications.readAll');
+
     // Rute Unduhan & Display Berkas Privat Aman via Query String (Memotong Intersepsi Static Regex Nginx aaPanel)
     Route::get('/documents/private-stream', function (\Illuminate\Http\Request $request) {
         $path = $request->query('path', '');
