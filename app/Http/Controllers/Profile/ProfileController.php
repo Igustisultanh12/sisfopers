@@ -63,7 +63,7 @@ class ProfileController extends Controller
 
         if ($request->hasFile('avatar')) {
             if ($user->avatar) {
-                Storage::disk('public')->delete($user->avatar);
+                Storage::disk('private')->delete($user->avatar);
             }
             $dataUpdate['avatar'] = $request->file('avatar')->store('avatars', 'public');
         }

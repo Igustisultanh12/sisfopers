@@ -79,7 +79,7 @@ class EducationController extends Controller
 
         foreach (['file_ijazah_path' => 'file_ijazah', 'file_sertifikat_path' => 'file_sertifikat'] as $column => $field) {
             if ($request->hasFile($field)) {
-                $validated[$column] = $request->file($field)->store('personel/pendidikan', 'local');
+                $validated[$column] = $request->file($field)->store('personel/pendidikan', 'private');
             }
         }
 
@@ -97,7 +97,7 @@ class EducationController extends Controller
 
         foreach (['file_ijazah_path' => 'file_ijazah', 'file_sertifikat_path' => 'file_sertifikat'] as $column => $field) {
             if ($request->hasFile($field)) {
-                $validated[$column] = $request->file($field)->store('personel/pendidikan', 'local');
+                $validated[$column] = $request->file($field)->store('personel/pendidikan', 'private');
             }
         }
 
@@ -162,9 +162,9 @@ class EducationController extends Controller
         foreach (['file_ijazah_path' => 'file_ijazah', 'file_sertifikat_path' => 'file_sertifikat'] as $column => $field) {
             if ($request->hasFile($field)) {
                 if ($item->{$column}) {
-                    Storage::disk('local')->delete($item->{$column});
+                    Storage::disk('private')->delete($item->{$column});
                 }
-                $validated[$column] = $request->file($field)->store('personel/pendidikan', 'local');
+                $validated[$column] = $request->file($field)->store('personel/pendidikan', 'private');
             }
         }
 
@@ -243,12 +243,12 @@ class EducationController extends Controller
         // Hapus file fisik ijazah/sertifikat jika ada
         if ($item->file_ijazah_path) {
             try {
-                Storage::disk('local')->delete($item->file_ijazah_path);
+                Storage::disk('private')->delete($item->file_ijazah_path);
             } catch (\Exception $e) {}
         }
         if ($item->file_sertifikat_path) {
             try {
-                Storage::disk('local')->delete($item->file_sertifikat_path);
+                Storage::disk('private')->delete($item->file_sertifikat_path);
             } catch (\Exception $e) {}
         }
 

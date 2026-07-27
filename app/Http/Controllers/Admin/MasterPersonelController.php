@@ -233,7 +233,7 @@ class MasterPersonelController extends Controller
             ]);
 
             // Standard Laravel upload (Disimpan di disk private aman)
-            $fileName = $request->file('photo_profile')->store('personel/photos', 'local');
+            $fileName = $request->file('photo_profile')->store('personel/photos', 'private');
 
             $otpCode   = str_pad(strval(rand(0, 999999)), 6, '0', STR_PAD_LEFT);
             $expiredAt = now()->addHours(72);
@@ -371,10 +371,10 @@ class MasterPersonelController extends Controller
 
             if ($request->hasFile('photo_profile')) {
                 if ($personel->photo_profile) {
-                    Storage::disk('local')->delete($personel->photo_profile);
-                    Storage::disk('public')->delete($personel->photo_profile);
+                    Storage::disk('private')->delete($personel->photo_profile);
+                    Storage::disk('private')->delete($personel->photo_profile);
                 }
-                $fileName = $request->file('photo_profile')->store('personel/photos', 'local');
+                $fileName = $request->file('photo_profile')->store('personel/photos', 'private');
                 $personel->photo_profile = $fileName;
             }
 
