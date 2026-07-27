@@ -16,7 +16,7 @@ class JobHistoryController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $personel = $user->personel;
+        $personel = $user->getPersonelOrAutoCreate();
 
         // Tarik riwayat pekerjaan diurutkan berdasarkan pekerjaan aktif saat ini dahulu, lalu tanggal dibuat terbaru
         $histories = JobHistory::where('personel_id', $personel->id)
@@ -37,7 +37,7 @@ class JobHistoryController extends Controller
         ]);
 
         $user     = auth()->user();
-        $personel = $user->personel;
+        $personel = $user->getPersonelOrAutoCreate();
 
         if (!$personel) {
             return response()->json([
@@ -171,7 +171,7 @@ class JobHistoryController extends Controller
         ]);
 
         $user = auth()->user();
-        $personel = $user->personel;
+        $personel = $user->getPersonelOrAutoCreate();
 
         // Proteksi Blokir Percobaan
         $lockKey = "otp_lock_{$personel->id}";
@@ -239,7 +239,7 @@ class JobHistoryController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        $personel = $user->personel;
+        $personel = $user->getPersonelOrAutoCreate();
 
         // Validasi Sesi OTP
         $sessionKey = 'job_otp_verified_' . $personel->id;
@@ -410,7 +410,7 @@ class JobHistoryController extends Controller
     public function phk(Request $request)
     {
         $user = auth()->user();
-        $personel = $user->personel;
+        $personel = $user->getPersonelOrAutoCreate();
 
         // Validasi Sesi OTP
         $sessionKey = 'job_otp_verified_' . $personel->id;

@@ -23,7 +23,7 @@ class PengkinianDataController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $personel = $user->personel;
+        $personel = $user->getPersonelOrAutoCreate();
 
         if (!$personel) {
             $redirectRoute = $user->hasRole('admin') ? 'admin.dashboard' : 'personel.dashboard';
@@ -44,7 +44,7 @@ class PengkinianDataController extends Controller
     public function store(Request $request)
     {
         $user = $request->user();
-        $personel = $user->personel;
+        $personel = $user->getPersonelOrAutoCreate();
 
         if (!$personel) {
             return back()->withErrors(['error' => 'Data personel tidak ditemukan.']);

@@ -59,4 +59,38 @@ class User extends Authenticatable
     {
         return $this->role?->name === $roleName;
     }
+
+    /**
+     * Mengambil profil Personel milik User, atau otomatis membuat profil Personel jika User (Admin/Koordinator) belum memiliki profil.
+     */
+    public function getPersonelOrAutoCreate(): Personel
+    {
+        if ($this->personel) {
+            return $this->personel;
+        }
+
+        return Personel::firstOrCreate(
+            ['user_id' => $this->id],
+            [
+                'uuid' => \Illuminate\Support\Str::uuid(),
+                'full_name' => $this->username ? strtoupper($this->username) : 'ADMIN / KOORDINATOR',
+                'nik' => '35' . str_pad((string)$this->id, 14, '0', STR_PAD_LEFT),
+                'nikc' => 'KC' . str_pad((string)$this->id, 10, '0', STR_PAD_LEFT),
+                'matra' => 'AD',
+                'angkatan' => date('Y'),
+                'pangkat' => 'Perwira',
+                'gender' => 'L',
+                'phone_number' => '08123456789',
+                'address' => 'Mabes Komcad RI',
+                'province' => 'DKI Jakarta',
+                'city' => 'Jakarta Pusat',
+                'district' => 'Gambir',
+                'village' => 'Gambir',
+                'postal_code' => '10110',
+                'face_verified' => true,
+                'status_profile' => 'LENGKAP',
+                'status_keaktifan' => 'AKTIF',
+            ]
+        );
+    }
 }

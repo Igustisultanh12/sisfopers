@@ -16,7 +16,7 @@ class EducationController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $personel = $user->personel;
+        $personel = $user->getPersonelOrAutoCreate();
         
         if (!$personel) {
             $redirectRoute = $user->hasRole('admin') ? 'admin.dashboard' : 'personel.dashboard';
@@ -70,7 +70,7 @@ class EducationController extends Controller
     public function store(Request $request)
     {
         $user = $request->user();
-        $personel = $user->personel;
+        $personel = $user->getPersonelOrAutoCreate();
         if (!$personel) {
             return back()->with('error', 'Profil personel tidak ditemukan.');
         }
@@ -299,7 +299,7 @@ class EducationController extends Controller
     private function authorizeManage(Request $request, RiwayatPendidikan $item): void
     {
         $user = $request->user();
-        $personel = $user->personel;
+        $personel = $user->getPersonelOrAutoCreate();
         abort_unless($user->hasRole('admin') || ($personel && $item->personel_id === $personel->id), 403);
     }
 

@@ -18,7 +18,7 @@ class BroadcastResponseController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $personel = $user->personel;
+        $personel = $user->getPersonelOrAutoCreate();
 
         if (!$personel) {
             return redirect()->route('personel.dashboard')->with('error', 'Profil personel Anda belum terkonfigurasi dengan lengkap.');
@@ -47,7 +47,7 @@ class BroadcastResponseController extends Controller
         $broadcast = Broadcast::where('uuid', $uuid)->firstOrFail();
 
         // 2. Tarik informasi data diri personel yang sedang aktif
-        $personel = Auth::user()->personel;
+        $personel = Auth::user()->getPersonelOrAutoCreate();
 
         if (!$personel) {
             return redirect()->route('personel.dashboard')->with('error', 'Akses ditolak, profil administrasi Anda tidak ditemukan.');
@@ -77,7 +77,7 @@ class BroadcastResponseController extends Controller
         ]);
 
         $user = Auth::user();
-        $personel = $user->personel;
+        $personel = $user->getPersonelOrAutoCreate();
         $broadcast = Broadcast::where('uuid', $uuid)->firstOrFail();
 
         BroadcastResponse::updateOrCreate(
