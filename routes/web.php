@@ -97,54 +97,56 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/account/settings/mfa/verify', [ProfileController::class, 'verifyMfa'])->name('profile.verify-mfa');
     Route::post('/account/settings/mfa/verify-code', [ProfileController::class, 'verifyMfa'])->name('profile.mfa.verify');
 
-    // Rute Unduhan & Display Berkas Privat Aman (Multi-Disk & Multi-Path Robust Scanner)
+    // Rute Unduhan & Display Berkas Privat Aman (Guaranteed Image Streamer & SVG Fallback)
     Route::get('/documents/private/{path}', function ($path) {
-        abort_unless(auth()->check(), 403);
-        
         $cleanPath = ltrim($path, '/');
         $cleanPath = preg_replace('/^(app\/private\/|app\/public\/|app\/|private\/|storage\/|public\/)+/', '', $cleanPath);
+        $filename = basename($cleanPath);
 
-        $possibleDisks = ['private', 'public', 'local'];
-        $possiblePaths = [
-            $cleanPath,
-            'personel/photos/' . basename($cleanPath),
-            'personel/documents/' . basename($cleanPath),
-            'personel/skep_requests/' . basename($cleanPath),
-            'personel/pendidikan/' . basename($cleanPath),
-            'personel/asn_sks/' . basename($cleanPath),
-            'personel/pengkinian_data/' . basename($cleanPath),
-        ];
-
-        foreach ($possibleDisks as $disk) {
-            foreach ($possiblePaths as $tryPath) {
-                if (\Illuminate\Support\Facades\Storage::disk($disk)->exists($tryPath)) {
-                    $fullPath = \Illuminate\Support\Facades\Storage::disk($disk)->path($tryPath);
-                    if (file_exists($fullPath) && is_readable($fullPath)) {
-                        $mime = @mime_content_type($fullPath) ?: 'image/jpeg';
-                        return response()->file($fullPath, ['Content-Type' => $mime]);
-                    }
-                }
-            }
-        }
-
-        // Direct file_exists check in storage/app/private, storage/app/public, and storage/app/
-        $directCandidates = [
+        $candidates = [
             storage_path('app/private/' . $cleanPath),
             storage_path('app/public/' . $cleanPath),
             storage_path('app/' . $cleanPath),
-            storage_path('app/private/personel/photos/' . basename($cleanPath)),
-            storage_path('app/public/personel/photos/' . basename($cleanPath)),
-            storage_path('app/private/personel/documents/' . basename($cleanPath)),
-            storage_path('app/public/personel/documents/' . basename($cleanPath)),
+            storage_path('app/private/personel/photos/' . $filename),
+            storage_path('app/public/personel/photos/' . $filename),
+            storage_path('app/personel/photos/' . $filename),
+            storage_path('app/private/personel/documents/' . $filename),
+            storage_path('app/public/personel/documents/' . $filename),
+            storage_path('app/personel/documents/' . $filename),
+            public_path('storage/' . $cleanPath),
+            public_path('storage/personel/photos/' . $filename),
+            public_path('storage/personel/documents/' . $filename),
+            '/www/wwwroot/sisfopers.site/storage/app/private/' . $cleanPath,
+            '/www/wwwroot/sisfopers.site/storage/app/public/' . $cleanPath,
+            '/www/wwwroot/sisfopers.site/storage/app/' . $cleanPath,
+            '/www/wwwroot/sisfopers.site/storage/app/private/personel/photos/' . $filename,
+            '/www/wwwroot/sisfopers.site/storage/app/public/personel/photos/' . $filename,
+            '/www/wwwroot/sisfopers.site/storage/app/private/personel/documents/' . $filename,
+            '/www/wwwroot/sisfopers.site/storage/app/public/personel/documents/' . $filename,
         ];
-        foreach ($directCandidates as $candidate) {
-            if (file_exists($candidate) && is_readable($candidate)) {
-                $mime = @mime_content_type($candidate) ?: 'image/jpeg';
+
+        foreach ($candidates as $candidate) {
+            if (file_exists($candidate) && is_file($candidate) && is_readable($candidate)) {
+                $ext = strtolower(pathinfo($candidate, PATHINFO_EXTENSION));
+                $mimeTypes = [
+                    'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png',
+                    'webp' => 'image/webp', 'gif' => 'image/gif', 'svg' => 'image/svg+xml',
+                    'pdf' => 'application/pdf'
+                ];
+                $mime = $mimeTypes[$ext] ?? (@mime_content_type($candidate) ?: 'image/jpeg');
                 return response()->file($candidate, ['Content-Type' => $mime]);
             }
         }
 
-        abort(404);
+        // Fallback jika file fisik belum ada: Hasilkan SVG Placeholder Cantik agar img tidak pecah!
+        $isDocument = str_contains($path, 'documents') || str_contains($path, 'ktp') || str_contains($path, 'skep');
+        if ($isDocument) {
+            $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="250" viewBox="0 0 400 250" fill="none"><rect width="400" height="250" rx="12" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="2"/><path d="M160 100H240M160 130H240M160 160H210" stroke="#94A3B8" stroke-width="4" stroke-linecap="round"/><text x="200" y="200" text-anchor="middle" fill="#64748B" font-family="sans-serif" font-size="14" font-weight="bold">Lampiran Berkas (Tidak Ada File)</text></svg>';
+            return response($svg, 200)->header('Content-Type', 'image/svg+xml');
+        }
+
+        $avatarSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="250" viewBox="0 0 200 250" fill="none"><rect width="200" height="250" fill="#F1F5F9"/><circle cx="100" cy="90" r="45" fill="#94A3B8"/><path d="M30 220C30 170 60 150 100 150C140 150 170 170 170 220V250H30V220Z" fill="#94A3B8"/><text x="100" y="235" text-anchor="middle" fill="#475569" font-family="sans-serif" font-size="12" font-weight="bold">NO PHOTO</text></svg>';
+        return response($avatarSvg, 200)->header('Content-Type', 'image/svg+xml');
     })->where('path', '.*')->name('personel.document.download');
 });
 
