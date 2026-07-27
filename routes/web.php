@@ -97,11 +97,28 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/account/settings/mfa/verify', [ProfileController::class, 'verifyMfa'])->name('profile.verify-mfa');
     Route::post('/account/settings/mfa/verify-code', [ProfileController::class, 'verifyMfa'])->name('profile.mfa.verify');
 
-    // Redirect fallback jika ada yang mengakses URL lama /documents/private/...
+    // Rute Unduhan & Display Berkas Privat Aman (Multi-Disk Support)
     Route::get('/documents/private/{path}', function ($path) {
+        abort_unless(auth()->check(), 403);
+        
         $cleanPath = ltrim($path, '/');
         $cleanPath = preg_replace('/^(app\/private\/|private\/|storage\/|public\/)+/', '', $cleanPath);
-        return redirect('/storage/' . $cleanPath);
+
+        // 1. Cek ketersediaan di disk private
+        if (\Illuminate\Support\Facades\Storage::disk('private')->exists($cleanPath)) {
+            $fullPath = \Illuminate\Support\Facades\Storage::disk('private')->path($cleanPath);
+            $mime = @mime_content_type($fullPath) ?: 'image/jpeg';
+            return response()->file($fullPath, ['Content-Type' => $mime]);
+        }
+
+        // 2. Fallback cek di disk public (untuk berkas terlanjur publik)
+        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($cleanPath)) {
+            $fullPath = \Illuminate\Support\Facades\Storage::disk('public')->path($cleanPath);
+            $mime = @mime_content_type($fullPath) ?: 'image/jpeg';
+            return response()->file($fullPath, ['Content-Type' => $mime]);
+        }
+
+        abort(404);
     })->where('path', '.*')->name('personel.document.download');
 });
 
