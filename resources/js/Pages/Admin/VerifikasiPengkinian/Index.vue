@@ -445,6 +445,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { ref } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
+import axios from 'axios';
 import { useSwal } from '@/Composables/useSwal';
 
 const props = defineProps({
@@ -577,11 +578,10 @@ const onSearchPersonelInput = () => {
   isSearching.value = true;
   searchTimeout = setTimeout(async () => {
     try {
-      const response = await fetch('/admin/verifikasi-pengkinian/search-personel?query=' + encodeURIComponent(personelSearchQuery.value));
-      if (response.ok) {
-        const data = await response.json();
-        searchResults.value = data;
-      }
+      const response = await axios.get('/admin/verifikasi-pengkinian/search-personel', {
+        params: { query: personelSearchQuery.value }
+      });
+      searchResults.value = response.data || [];
     } catch (err) {
       console.error('Search failed:', err);
     } finally {
