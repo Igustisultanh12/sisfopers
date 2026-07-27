@@ -19,7 +19,7 @@
           <div class="absolute -right-10 -top-10 w-28 h-28 rounded-full bg-blue-600/20 blur-2xl"></div>
           <div class="absolute -left-10 -bottom-10 w-28 h-28 rounded-full bg-indigo-500/20 blur-2xl"></div>
 
-          <img :src="personel.photo_profile ? `/storage/${personel.photo_profile}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(personel?.full_name || 'PERS')}&background=e2e8f0&color=334155`" class="w-14 h-14 object-cover rounded-2xl border-2 border-white/20 shadow-md shrink-0 z-10" />
+          <img :src="personel.photo_profile ? `/documents/private-stream?path=${encodeURIComponent(personel.photo_profile)}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(personel?.full_name || 'PERS')}&background=e2e8f0&color=334155`" class="w-14 h-14 object-cover rounded-2xl border-2 border-white/20 shadow-md shrink-0 z-10" />
           <div class="space-y-0.5 z-10 flex-1 min-w-0">
             <p class="text-blue-400 font-extrabold tracking-widest text-[8px] uppercase">KOMPONEN CADANGAN</p>
             <h2 class="text-xs font-medium text-slate-300">Selamat Datang,</h2>
@@ -201,7 +201,7 @@
               
               <div class="p-6 space-y-5 text-xs">
                 <div class="flex flex-col sm:flex-row gap-5 items-center sm:items-start bg-slate-50/50 p-4 border border-[#E2E8F0] rounded-xl">
-                  <img :src="personel.photo_profile ? `/storage/${personel.photo_profile}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(personel?.full_name || 'PERS')}&background=e2e8f0&color=334155`" class="w-20 h-26 object-cover rounded-xl border border-[#E2E8F0] bg-white shadow-xs" />
+                  <img :src="personel.photo_profile ? `/documents/private-stream?path=${encodeURIComponent(personel.photo_profile)}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(personel?.full_name || 'PERS')}&background=e2e8f0&color=334155`" class="w-20 h-26 object-cover rounded-xl border border-[#E2E8F0] bg-white shadow-xs" />
                   <div class="space-y-1.5 text-center sm:text-left">
                     <h5 class="text-sm font-bold text-slate-800">{{ personel.full_name }}</h5>
                     <p class="text-slate-400 font-medium">Nomor Induk Kependudukan: <span class="text-slate-700 font-bold">{{ personel.nik }}</span></p>
