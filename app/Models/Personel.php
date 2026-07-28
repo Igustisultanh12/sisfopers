@@ -141,17 +141,13 @@ class Personel extends Model
     public function ensureKomcadEducationExists(): void
     {
         // Pengecekan apakah personel ini sudah memiliki catatan Pendidikan Militer SKEP
-        $hasMilitaryEdu = $this->riwayatPendidikan()
+        $existing = $this->riwayatPendidikan()
             ->where(function($q) {
                 $q->where('jenis', 'MILITER')
                   ->orWhere('jenjang', 'LIKE', '%Komcad%')
-                  ->orWhere('program_studi', 'LIKE', '%Latsarmil%');
+                  ->orWhere('program_studi', 'LIKE', '%Komponen Cadangan%');
             })
-            ->exists();
-
-        if ($hasMilitaryEdu) {
-            return;
-        }
+            ->first();
 
         // Tentukan jenjang pendidikan militer dasar berdasarkan pangkat SKEP personel
         $pangkatLower = strtolower($this->pangkat ?? '');
@@ -165,19 +161,39 @@ class Personel extends Model
             $jenjang = 'Latsarmil Komcad';
         }
 
-        $matraName = match (strtoupper($this->matra ?? 'AD')) {
-            'AL' => 'TNI AL',
-            'AU' => 'TNI AU',
-            default => 'TNI AD',
+        $matraLongName = match (strtoupper($this->matra ?? 'AD')) {
+            'AL' => 'Matra Laut',
+            'AU' => 'Matra Udara',
+            default => 'Matra Darat',
         };
+
+        $programStudi = 'Pendidikan Militer Komponen Cadangan';
+        $namaInstitusi = 'Kementerian Pertahanan RI - Komponen Cadangan ' . $matraLongName;
+        $nomorIjazah = $this->nikc ?? $this->nik;
+        $tahunLulus = $this->angkatan ?: date('Y');
+
+        if ($existing) {
+            // Update jika ada entri lama agar formatnya persis seragam
+            $existing->update([
+                'jenis' => 'MILITER',
+                'jenjang' => $jenjang,
+                'program_studi' => $programStudi,
+                'nama_institusi' => $namaInstitusi,
+                'nomor_ijazah' => $existing->nomor_ijazah ?: $nomorIjazah,
+                'tahun_lulus' => $existing->tahun_lulus ?: $tahunLulus,
+                'verified_at' => $existing->verified_at ?: now(),
+            ]);
+            return;
+        }
 
         // Buat entri pendidikan militer utama secara otomatis
         $this->riwayatPendidikan()->create([
             'jenis' => 'MILITER',
             'jenjang' => $jenjang,
-            'program_studi' => 'Latihan Dasar Militer (Latsarmil)',
-            'nama_institusi' => 'Pusdiklat / Rindam ' . $matraName,
-            'tahun_lulus' => $this->angkatan ?: date('Y'),
+            'program_studi' => $programStudi,
+            'nama_institusi' => $namaInstitusi,
+            'nomor_ijazah' => $nomorIjazah,
+            'tahun_lulus' => $tahunLulus,
             'verified_at' => now(),
         ]);
     }

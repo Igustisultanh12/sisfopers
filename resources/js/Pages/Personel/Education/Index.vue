@@ -81,35 +81,44 @@
         </div>
         <div class="divide-y divide-[#E2E8F0]">
           <article v-for="item in items" :key="item.id" class="p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4 hover:bg-slate-50/50 transition">
-            <div class="space-y-1">
-              <div class="flex flex-wrap items-center gap-2">
-                <span class="text-[9px] font-bold px-2 py-0.5 rounded bg-blue-50 text-[#2563EB] border border-blue-100">{{ item.jenis }}</span>
-                <span class="text-[9px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">{{ item.jenjang }}</span>
-                <span v-if="item.verified_at" class="text-[9px] font-bold px-2 py-0.5 rounded bg-green-50 text-green-700 border border-green-200 flex items-center gap-1">
-                  ✓ TERVERIFIKASI
-                </span>
-                <span v-else class="text-[9px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1">
-                  ⏳ MENUNGGU VERIFIKASI
-                </span>
-              </div>
+            <div class="flex items-start gap-3.5">
+              <!-- Indikator Lingkaran Status Hijau/Kuning -->
+              <div :class="item.verified_at ? 'bg-emerald-500 ring-4 ring-emerald-100' : 'bg-amber-500 ring-4 ring-amber-100'" class="w-3 h-3 rounded-full shrink-0 mt-1.5"></div>
               
-              <!-- Judul / Nama Pendidikan Clickable -->
-              <h4 
-                @click="openModal(item)" 
-                class="font-bold text-slate-800 text-sm mt-2 cursor-pointer hover:text-[#2563EB] transition inline-flex items-center gap-2 group"
-                title="Klik untuk lihat detail / verifikasi"
-              >
-                <span>{{ item.program_studi || item.nama_institusi || item.jenjang }}</span>
-                <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-[#2563EB] transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-              </h4>
+              <div class="space-y-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <!-- Judul Program Studi / Nama Pendidikan -->
+                  <h4 
+                    @click="openModal(item)" 
+                    class="font-bold text-slate-800 text-sm cursor-pointer hover:text-[#2563EB] transition inline-flex items-center gap-1.5 group"
+                    title="Klik untuk lihat detail / verifikasi"
+                  >
+                    <span>{{ item.program_studi || item.nama_institusi || item.jenjang }}</span>
+                  </h4>
 
-              <p class="text-xs text-slate-500">{{ item.nama_institusi || '-' }} · Lulus Tahun {{ item.tahun_lulus || '-' }}</p>
-              <p v-if="item.front_title || item.suffix_gelar" class="text-xs text-slate-500">
-                Gelar Tersimpan: <span class="font-semibold text-slate-700">{{ [item.front_title, item.suffix_gelar].filter(Boolean).join(' / ') }}</span>
-              </p>
-              <p v-if="item.nomor_ijazah" class="text-xs text-slate-400">No. Ijazah/Sertifikat: {{ item.nomor_ijazah }}</p>
+                  <!-- Badge Jenis, Jenjang, & Verification Status -->
+                  <span class="text-[9px] font-bold px-2 py-0.5 rounded bg-blue-50 text-[#2563EB] border border-blue-100 uppercase">{{ item.jenis }}</span>
+                  <span class="text-[9px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">{{ item.jenjang }}</span>
+                  <span v-if="item.verified_at" class="text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    Terverifikasi
+                  </span>
+                  <span v-else class="text-[9px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
+                    Menunggu Verifikasi
+                  </span>
+                </div>
+
+                <!-- Subtitle Nama Institusi -->
+                <p class="text-xs font-semibold text-slate-600">{{ item.nama_institusi || '-' }}</p>
+
+                <!-- Detail Tahun Lulus & Nomor Ijazah -->
+                <p class="text-[11px] text-slate-400">
+                  Tahun Lulus: {{ item.tahun_lulus || '-' }}
+                  <span v-if="item.nomor_ijazah"> | No. Ijazah: {{ item.nomor_ijazah }}</span>
+                </p>
+                <p v-if="item.front_title || item.suffix_gelar" class="text-xs text-slate-500">
+                  Gelar Tersimpan: <span class="font-semibold text-slate-700">{{ [item.front_title, item.suffix_gelar].filter(Boolean).join(' / ') }}</span>
+                </p>
+              </div>
             </div>
             
             <div class="flex items-center gap-3 text-xs">
