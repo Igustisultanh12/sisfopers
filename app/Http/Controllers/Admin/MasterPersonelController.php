@@ -250,6 +250,8 @@ class MasterPersonelController extends Controller
                 'address' => '-', 'city' => '-', 'district' => '-', 'village' => '-', 'postal_code' => '-'
             ]));
 
+            $personel->ensureKomcadEducationExists();
+
             Registration::create([
                 'personel_id' => $personel->id,
                 'status_verification' => 'APPROVED',

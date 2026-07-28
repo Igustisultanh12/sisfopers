@@ -218,7 +218,10 @@ $ktpPath = $request->file('ktp_document')->store('personel/documents', 'private'
                 'asn_sk' => $asnSkPath,
             ]);
 
-            // 3b. Sync Job History if registered as ASN
+            // 3b. Auto-create Pendidikan Militer Utama Komcad
+            $personel->ensureKomcadEducationExists();
+
+            // 3c. Sync Job History if registered as ASN
             if ($personel->is_asn) {
                 \App\Models\JobHistory::create([
                     'personel_id' => $personel->id,
