@@ -140,8 +140,46 @@ class Personel extends Model
 
     public function ensureKomcadEducationExists(): void
     {
-        // Fitur auto-create DIKBATSIS_KOMCAD dinonaktifkan sesuai permintaan user
-        return;
+        // Pengecekan apakah personel ini sudah memiliki catatan Pendidikan Militer SKEP
+        $hasMilitaryEdu = $this->riwayatPendidikan()
+            ->where(function($q) {
+                $q->where('jenis', 'MILITER')
+                  ->orWhere('jenjang', 'LIKE', '%Komcad%')
+                  ->orWhere('program_studi', 'LIKE', '%Latsarmil%');
+            })
+            ->exists();
+
+        if ($hasMilitaryEdu) {
+            return;
+        }
+
+        // Tentukan jenjang pendidikan militer dasar berdasarkan pangkat SKEP personel
+        $pangkatLower = strtolower($this->pangkat ?? '');
+        if (str_contains($pangkatLower, 'perwira') || str_contains($pangkatLower, 'letda') || str_contains($pangkatLower, 'lettu') || str_contains($pangkatLower, 'kapten') || str_contains($pangkatLower, 'mayor') || str_contains($pangkatLower, 'letkol') || str_contains($pangkatLower, 'kolonel')) {
+            $jenjang = 'Perwira Komcad';
+        } elseif (str_contains($pangkatLower, 'bintara') || str_contains($pangkatLower, 'serda') || str_contains($pangkatLower, 'sertu') || str_contains($pangkatLower, 'serka') || str_contains($pangkatLower, 'serma') || str_contains($pangkatLower, 'pelda') || str_contains($pangkatLower, 'peltu')) {
+            $jenjang = 'Bintara Komcad';
+        } elseif (str_contains($pangkatLower, 'tamtama') || str_contains($pangkatLower, 'prada') || str_contains($pangkatLower, 'pratu') || str_contains($pangkatLower, 'praka') || str_contains($pangkatLower, 'kopda') || str_contains($pangkatLower, 'koptu') || str_contains($pangkatLower, 'kopka')) {
+            $jenjang = 'Tamtama Komcad';
+        } else {
+            $jenjang = 'Latsarmil Komcad';
+        }
+
+        $matraName = match (strtoupper($this->matra ?? 'AD')) {
+            'AL' => 'TNI AL',
+            'AU' => 'TNI AU',
+            default => 'TNI AD',
+        };
+
+        // Buat entri pendidikan militer utama secara otomatis
+        $this->riwayatPendidikan()->create([
+            'jenis' => 'MILITER',
+            'jenjang' => $jenjang,
+            'program_studi' => 'Latihan Dasar Militer (Latsarmil)',
+            'nama_institusi' => 'Pusdiklat / Rindam ' . $matraName,
+            'tahun_lulus' => $this->angkatan ?: date('Y'),
+            'verified_at' => now(),
+        ]);
     }
 
     public static function purgePersonelCompletely(Personel $personel): void
