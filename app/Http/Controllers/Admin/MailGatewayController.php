@@ -185,17 +185,32 @@ class MailGatewayController extends Controller
             return;
         }
 
-        $content = file_get_contents($envFile);
-
-        foreach ($data as $key => $value) {
-            $pattern = "/^{$key}=.*/m";
-            if (preg_match($pattern, $content)) {
-                $content = preg_replace($pattern, "{$key}={$value}", $content);
-            } else {
-                $content .= "\n{$key}={$value}";
-            }
+        if (!is_writable($envFile)) {
+            try {
+                @chmod($envFile, 0666);
+            } catch (\Throwable $e) {}
         }
 
-        file_put_contents($envFile, $content);
+        if (!is_writable($envFile)) {
+            \Illuminate\Support\Facades\Log::warning("File .env tidak memiliki izin tulis (Permission Denied). Pengaturan Mail Gateway tetap disimpan di database.");
+            return;
+        }
+
+        try {
+            $content = file_get_contents($envFile);
+
+            foreach ($data as $key => $value) {
+                $pattern = "/^{$key}=.*/m";
+                if (preg_match($pattern, $content)) {
+                    $content = preg_replace($pattern, "{$key}={$value}", $content);
+                } else {
+                    $content .= "\n{$key}={$value}";
+                }
+            }
+
+            file_put_contents($envFile, $content);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("Gagal file_put_contents .env: " . $e->getMessage());
+        }
     }
 }
