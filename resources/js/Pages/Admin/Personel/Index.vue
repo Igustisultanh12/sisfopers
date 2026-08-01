@@ -29,10 +29,10 @@
     </div>
 
     <!-- TAMPILAN 1: TABEL DESKTOP (hidden pada HP, tampil di md) -->
-    <div class="hidden md:block bg-white border border-[#E2E8F0] rounded-2xl shadow-sm overflow-hidden">
+    <div class="hidden md:block bg-white border border-[#E2E8F0] rounded-2xl shadow-sm overflow-x-auto">
       <table class="w-full text-left border-collapse">
         <thead>
-          <tr class="bg-slate-50 text-slate-400 font-bold text-[11px] border-b border-[#E2E8F0] uppercase tracking-wider select-none">
+          <tr class="bg-slate-50 text-slate-400 font-bold text-[11px] border-b border-[#E2E8F0] uppercase tracking-wider select-none whitespace-nowrap">
             <th class="p-4">Pasfoto</th>
             <th class="p-4">Identitas Resmi</th>
             <th class="p-4">Matra</th>
@@ -43,19 +43,19 @@
         </thead>
         <tbody class="divide-y divide-[#E2E8F0] text-sm text-slate-600">
           <tr v-for="personel in personels.data" :key="personel.id" class="hover:bg-slate-50/30 transition">
-            <td class="p-4">
+            <td class="p-4 whitespace-nowrap">
               <img :src="personel.photo_profile ? `/documents/private-stream?path=${encodeURIComponent(personel.photo_profile)}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(personel?.full_name || 'PERS')}&background=e2e8f0&color=334155`" class="w-9 h-12 object-cover rounded-lg bg-slate-100 shadow-sm border border-[#E2E8F0]" />
             </td>
-            <td class="p-4">
+            <td class="p-4 whitespace-nowrap">
               <div class="flex items-center gap-2">
                 <button @click="view360Profil(personel)" class="font-bold text-slate-800 hover:text-[#2563EB] hover:underline transition text-left cursor-pointer">
                   {{ personel.full_name }}
                 </button>
-                <span class="px-1.5 py-0.5 rounded-md text-[10px] font-extrabold bg-slate-100 text-slate-600 border border-slate-200 uppercase tracking-wide select-none">
+                <span class="px-1.5 py-0.5 rounded-md text-[10px] font-extrabold bg-slate-100 text-slate-600 border border-slate-200 uppercase tracking-wide select-none shrink-0">
                   {{ personel.pangkat || '-' }}
                 </span>
               </div>
-              <div class="text-xs text-slate-400 mt-1 flex flex-wrap items-center gap-1.5">
+              <div class="text-xs text-slate-400 mt-1 flex items-center gap-1.5 whitespace-nowrap">
                 <span>NIK: <span class="font-medium text-slate-600">{{ personel.nik }}</span></span>
                 <span class="text-slate-300">|</span>
                 <span>
@@ -67,18 +67,18 @@
                 </span>
               </div>
             </td>
-            <td class="p-4">
-              <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-blue-50 text-[#2563EB] border border-blue-100/40">
+            <td class="p-4 whitespace-nowrap">
+              <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-blue-50 text-[#2563EB] border border-blue-100/40 inline-block whitespace-nowrap">
                 TNI {{ personel.matra }}
               </span>
             </td>
-            <td class="p-4 font-semibold text-slate-700">{{ personel.angkatan }}</td>
-            <td class="p-4">
-              <span :class="personel.face_verified ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-amber-50 text-amber-700 border border-amber-100'" class="px-2.5 py-0.5 rounded text-[11px] font-semibold">
+            <td class="p-4 font-semibold text-slate-700 whitespace-nowrap">{{ personel.angkatan }}</td>
+            <td class="p-4 whitespace-nowrap">
+              <span :class="personel.face_verified ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-amber-50 text-amber-700 border border-amber-100'" class="px-2.5 py-0.5 rounded text-[11px] font-semibold inline-block whitespace-nowrap">
                 {{ personel.face_verified ? 'OTP Verified' : 'Belum Verifikasi OTP' }}
               </span>
             </td>
-            <td class="p-4 text-right space-x-2.5">
+            <td class="p-4 text-right whitespace-nowrap space-x-2.5">
               <button @click="handlePrintPdf(personel)" class="text-xs font-semibold text-amber-600 hover:underline cursor-pointer">Cetak PDF</button>
               <Link :href="route('admin.personel.education.index', personel.uuid)" class="text-xs font-semibold text-emerald-600 hover:underline">Pendidikan</Link>
               <Link :href="route('admin.personel.edit', personel.uuid)" class="text-xs font-semibold text-[#2563EB] hover:underline">Edit</Link>
