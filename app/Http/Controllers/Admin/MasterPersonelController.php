@@ -36,6 +36,18 @@ class MasterPersonelController extends Controller
             'riwayatPendidikan'
         ]);
 
+        $authUser = auth()->user();
+        if ($authUser->hasRole('kordinator_matra') && $authUser->matra) {
+            $query->where('matra', $authUser->matra);
+        } elseif ($authUser->hasRole('kordinator_angkatan')) {
+            if ($authUser->matra) {
+                $query->where('matra', $authUser->matra);
+            }
+            if ($authUser->angkatan) {
+                $query->where('angkatan', $authUser->angkatan);
+            }
+        }
+
         // Search Handlers
         if ($request->filled('search')) {
             $search = $request->search;
@@ -300,7 +312,21 @@ class MasterPersonelController extends Controller
      */
     public function edit($uuid)
     {
+        $authUser = auth()->user();
         $personel = Personel::where('uuid', $uuid)->with('user.role')->firstOrFail();
+
+        if ($authUser->hasRole('kordinator_matra') && $authUser->matra && $personel->matra !== $authUser->matra) {
+            abort(403, 'Anda tidak berwenang mengedit personel di luar matra Anda.');
+        }
+        if ($authUser->hasRole('kordinator_angkatan')) {
+            if ($authUser->matra && $personel->matra !== $authUser->matra) {
+                abort(403, 'Anda tidak berwenang mengedit personel di luar matra Anda.');
+            }
+            if ($authUser->angkatan && $personel->angkatan != $authUser->angkatan) {
+                abort(403, 'Anda tidak berwenang mengedit personel di luar angkatan Anda.');
+            }
+        }
+
         return Inertia::render('Admin/Personel/Edit', [
             'personel' => $personel,
             'pangkatOptions' => MasterKepangkatan::where('is_active', true)
@@ -314,6 +340,28 @@ class MasterPersonelController extends Controller
      */
     public function update(Request $request, $uuid)
     {
+        $authUser = auth()->user();
+        $personel = Personel::where('uuid', $uuid)->firstOrFail();
+        $user = User::findOrFail($personel->user_id);
+
+        if ($authUser->hasRole('kordinator_matra') && $authUser->matra && $personel->matra !== $authUser->matra) {
+            abort(403, 'Anda tidak berwenang mengubah personel di luar matra Anda.');
+        }
+        if ($authUser->hasRole('kordinator_angkatan')) {
+            if ($authUser->matra && $personel->matra !== $authUser->matra) {
+                abort(403, 'Anda tidak berwenang mengubah personel di luar matra Anda.');
+            }
+            if ($authUser->angkatan && $personel->angkatan != $authUser->angkatan) {
+                abort(403, 'Anda tidak berwenang mengubah personel di luar angkatan Anda.');
+            }
+        }
+
+        // Jika bukan Administrator, kunci role agar tidak dapat diubah oleh Koordinator
+        if (!$authUser->hasRole('admin')) {
+            $existingRoleName = $user->role ? $user->role->name : 'personel';
+            $request->merge(['role' => $existingRoleName]);
+        }
+
         if ($request->has('nikc')) {
             $request->merge(['nikc' => SkepData::reconstructNikc($request->nikc)]);
         }
@@ -323,9 +371,6 @@ class MasterPersonelController extends Controller
                 'pangkat' => MasterKepangkatan::canonicalName($request->input('pangkat')),
             ]);
         }
-
-        $personel = Personel::where('uuid', $uuid)->firstOrFail();
-        $user = User::findOrFail($personel->user_id);
 
         $validated = $request->validate([
             'full_name' => 'required|string|max:150',

@@ -61,12 +61,13 @@
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Peran Akun</label>
-              <select v-model="form.role" class="w-full px-4 py-2 border border-[#E2E8F0] bg-white rounded-xl text-sm outline-none focus:border-[#2563EB] text-slate-700 font-medium" required>
+              <select v-model="form.role" :disabled="$page.props.auth.user?.role?.name !== 'admin'" class="w-full px-4 py-2 border border-[#E2E8F0] bg-white rounded-xl text-sm outline-none focus:border-[#2563EB] text-slate-700 font-medium disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed" required>
                 <option value="personel">Anggota Komcad</option>
                 <option value="kordinator_angkatan">Koordinator Angkatan</option>
                 <option value="kordinator_matra">Koordinator Matra</option>
                 <option value="admin">Administrator Sistem</option>
               </select>
+              <p v-if="$page.props.auth.user?.role?.name !== 'admin'" class="text-[10px] text-amber-600 font-semibold mt-1">⚠️ Peran akun dikunci & hanya dapat diubah oleh Administrator Sistem.</p>
             </div>
           </div>
 
