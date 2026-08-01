@@ -95,7 +95,7 @@ class TicketController extends Controller
 
             foreach ($admins as $adminUser) {
                 if ($adminUser->personel && $adminUser->personel->phone_number) {
-                    $msg = "🎫 *OPEN TIKET PENGADUAN BARU*\n\n"
+                    $msg = "*OPEN TIKET PENGADUAN BARU*\n\n"
                         . "Nomor Tiket: *{$ticket->ticket_number}*\n"
                         . "Pendaftar: {$personel->full_name} ({$personel->nikc})\n"
                         . "Kategori: {$categoryName}\n"

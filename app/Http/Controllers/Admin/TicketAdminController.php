@@ -128,7 +128,7 @@ class TicketAdminController extends Controller
             }
 
             if ($personel && $personel->phone_number) {
-                $msg = "🎫 *STATUS TIKET PENGADUAN PERBARUAN*\n\n"
+                $msg = "*STATUS TIKET PENGADUAN PERBARUAN*\n\n"
                     . "Nomor Tiket: *{$ticket->ticket_number}*\n"
                     . "Status Baru: *{$statusStr}*\n";
                 if ($newStatus === 'DITOLAK' && $request->rejection_reason) {

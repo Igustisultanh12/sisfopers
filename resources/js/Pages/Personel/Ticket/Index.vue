@@ -29,11 +29,9 @@
 
       <!-- Flash Messages -->
       <div v-if="$page.props.flash?.success" class="flex items-start gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 text-xs font-semibold shadow-xs">
-        <span class="text-base">✅</span>
         <span>{{ $page.props.flash.success }}</span>
       </div>
       <div v-if="$page.props.flash?.error" class="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-2xl text-red-800 text-xs font-semibold shadow-xs">
-        <span class="text-base">⚠️</span>
         <span>{{ $page.props.flash.error }}</span>
       </div>
 
@@ -89,7 +87,7 @@
                     target="_blank"
                     class="text-[#2563EB] font-bold hover:underline bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100 text-[11px] inline-flex items-center gap-1"
                   >
-                    📎 Berkas
+                    Lihat Berkas
                   </a>
                   <span v-else class="text-slate-300">-</span>
                 </td>
@@ -157,9 +155,9 @@
               class="w-full px-4 py-2.5 border border-[#E2E8F0] bg-white rounded-xl text-xs font-bold outline-none focus:border-[#2563EB] text-slate-700"
               required
             >
-              <option value="UBAH_FOTO">📸 Pengajuan Ubah Pasfoto Profil</option>
-              <option value="UBAH_DATA">📝 Pengajuan Perubahan Biodata / Data Pribadi</option>
-              <option value="CETAK_KTA">🪪 Pengajuan Cetak Ulang KTA</option>
+              <option value="UBAH_FOTO">Pengajuan Ubah Pasfoto Profil</option>
+              <option value="UBAH_DATA">Pengajuan Perubahan Biodata / Data Pribadi</option>
+              <option value="CETAK_KTA">Pengajuan Cetak Ulang KTA</option>
             </select>
           </div>
 
@@ -175,7 +173,7 @@
               :placeholder="form.category === 'UBAH_DATA' ? 'Tuliskan secara jelas data apa saja yang ingin diubah (contoh: Alamat domisili, NIK, Status) beserta alasannya...' : (form.category === 'CETAK_KTA' ? 'Jelaskan alasan pengajuan cetak ulang KTA (contoh: KTA Hilang / Rusak / Perubahan Pangkat)...' : 'Catatan opsional untuk admin...')"
               :required="form.category !== 'UBAH_FOTO'"
             ></textarea>
-            <div v-if="form.errors.description" class="text-red-500 text-[11px] mt-1 font-semibold">⚠️ {{ form.errors.description }}</div>
+            <div v-if="form.errors.description" class="text-red-500 text-[11px] mt-1 font-semibold">{{ form.errors.description }}</div>
           </div>
 
           <!-- FILE UPLOAD BASED ON CATEGORY -->
@@ -193,7 +191,7 @@
             <p class="text-[10px] text-slate-400 italic">
               {{ form.category === 'UBAH_FOTO' ? 'Foto baru ini akan menggantikan foto profil lama Anda di server secara permanen jika disetujui.' : 'Mendukung format PDF, JPG, PNG hingga 5MB.' }}
             </p>
-            <div v-if="form.errors.attachment" class="text-red-500 text-[11px] mt-1 font-semibold">⚠️ {{ form.errors.attachment }}</div>
+            <div v-if="form.errors.attachment" class="text-red-500 text-[11px] mt-1 font-semibold">{{ form.errors.attachment }}</div>
           </div>
 
           <div class="flex justify-end gap-3 pt-3 border-t border-slate-100">
@@ -251,9 +249,9 @@ function submitTicket() {
 
 function formatCategory(cat) {
   const map = {
-    UBAH_FOTO: '📸 Pengajuan Ubah Pasfoto',
-    UBAH_DATA: '📝 Pengajuan Perubahan Biodata',
-    CETAK_KTA: '🪪 Pengajuan Cetak Ulang KTA',
+    UBAH_FOTO: 'Pengajuan Ubah Pasfoto',
+    UBAH_DATA: 'Pengajuan Perubahan Biodata',
+    CETAK_KTA: 'Pengajuan Cetak Ulang KTA',
   };
   return map[cat] || cat;
 }

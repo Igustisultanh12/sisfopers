@@ -14,11 +14,9 @@
 
       <!-- Flash messages -->
       <div v-if="$page.props.flash?.success" class="flex items-start gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 text-xs font-semibold shadow-xs">
-        <span class="text-base">✅</span>
         <span>{{ $page.props.flash.success }}</span>
       </div>
       <div v-if="$page.props.flash?.error" class="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-2xl text-red-800 text-xs font-semibold shadow-xs">
-        <span class="text-base">⚠️</span>
         <span>{{ $page.props.flash.error }}</span>
       </div>
 
@@ -37,9 +35,9 @@
           class="px-4 py-2.5 border border-[#E2E8F0] bg-white rounded-xl text-xs outline-none focus:border-[#2563EB] text-slate-700 font-medium"
         >
           <option value="">Semua Kategori</option>
-          <option value="UBAH_FOTO">📸 Pengajuan Ubah Pasfoto</option>
-          <option value="UBAH_DATA">📝 Pengajuan Perubahan Data</option>
-          <option value="CETAK_KTA">🪪 Pengajuan Cetak KTA</option>
+          <option value="UBAH_FOTO">Pengajuan Ubah Pasfoto</option>
+          <option value="UBAH_DATA">Pengajuan Perubahan Data</option>
+          <option value="CETAK_KTA">Pengajuan Cetak KTA</option>
         </select>
         <select
           v-model="filterStatus"
@@ -106,7 +104,7 @@
                   target="_blank"
                   class="text-[#2563EB] font-bold hover:underline bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100 text-[11px] inline-flex items-center gap-1"
                 >
-                  📎 Lihat File
+                  Lihat File
                 </a>
                 <span v-else class="text-slate-300">-</span>
               </td>
@@ -164,7 +162,6 @@
             <p class="text-slate-700 leading-relaxed font-medium bg-white p-2.5 rounded-xl border border-slate-200">{{ selectedTicket.description }}</p>
           </div>
           <div v-if="selectedTicket.category === 'UBAH_FOTO'" class="p-3 bg-blue-50 border border-blue-200 rounded-xl text-blue-800 text-[11px] font-semibold flex items-start gap-2">
-            <span>ℹ️</span>
             <span>Jika Anda memilih status <strong>DISETUJUI</strong>, foto profil lama personel di server akan dihapus secara otomatis dan digantikan dengan foto baru yang dilampirkan.</span>
           </div>
         </div>
@@ -177,10 +174,10 @@
               class="w-full px-4 py-2.5 border border-[#E2E8F0] bg-white rounded-xl text-xs font-bold outline-none focus:border-[#2563EB] text-slate-700"
               required
             >
-              <option value="DIPROSES">⏳ DIPROSES (Dalam Penanganan)</option>
-              <option value="DISETUJUI">✅ DISETUJUI (Permohonan Diterima)</option>
-              <option value="SELESAI">🎉 SELESAI (Proses Tuntas)</option>
-              <option value="DITOLAK">❌ DITOLAK (Kembalikan / Tolak)</option>
+              <option value="DIPROSES">DIPROSES (Dalam Penanganan)</option>
+              <option value="DISETUJUI">DISETUJUI (Permohonan Diterima)</option>
+              <option value="SELESAI">SELESAI (Proses Tuntas)</option>
+              <option value="DITOLAK">DITOLAK (Kembalikan / Tolak)</option>
             </select>
           </div>
 
@@ -267,9 +264,9 @@ function submitVerify() {
 
 function formatCategory(cat) {
   const map = {
-    UBAH_FOTO: '📸 Ubah Pasfoto',
-    UBAH_DATA: '📝 Perubahan Biodata',
-    CETAK_KTA: '🪪 Cetak Ulang KTA',
+    UBAH_FOTO: 'Ubah Pasfoto',
+    UBAH_DATA: 'Perubahan Biodata',
+    CETAK_KTA: 'Cetak Ulang KTA',
   };
   return map[cat] || cat;
 }
