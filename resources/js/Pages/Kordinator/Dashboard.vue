@@ -113,8 +113,8 @@
             </td>
             <td class="p-4 font-semibold text-slate-700" v-if="role === 'kordinator_matra'">{{ personel.angkatan }}</td>
             <td class="p-4">
-              <span :class="(personel.face_verified || personel.manual_otp) ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-amber-50 text-amber-700 border border-amber-100'" class="px-2.5 py-0.5 rounded text-[11px] font-semibold">
-                {{ (personel.face_verified || personel.manual_otp) ? 'OTP Verified' : 'Belum Verifikasi OTP' }}
+              <span :class="personel.face_verified ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-amber-50 text-amber-700 border border-amber-100'" class="px-2.5 py-0.5 rounded text-[11px] font-semibold">
+                {{ personel.face_verified ? 'OTP Verified' : 'Belum Verifikasi OTP' }}
               </span>
             </td>
             <td class="p-4">
