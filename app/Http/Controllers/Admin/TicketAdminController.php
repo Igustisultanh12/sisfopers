@@ -101,8 +101,19 @@ class TicketAdminController extends Controller
             }
         }
 
+        // FITUR OTOMATIS: Jika pengajuan DITOLAK, hapus berkas lampiran yang diunggah dari server disk agar tidak memenuhi memori!
+        if ($newStatus === 'DITOLAK' && $ticket->attachment_path) {
+            if (Storage::disk('private')->exists($ticket->attachment_path)) {
+                try {
+                    Storage::disk('private')->delete($ticket->attachment_path);
+                } catch (\Exception $e) {}
+            }
+            $ticket->attachment_path = null;
+        }
+
         $ticket->update([
             'status'           => $newStatus,
+            'attachment_path'  => $ticket->attachment_path,
             'rejection_reason' => $newStatus === 'DITOLAK' ? $request->rejection_reason : null,
             'verified_by'      => $user->id,
             'verified_at'      => now(),
@@ -150,6 +161,11 @@ class TicketAdminController extends Controller
         abort_unless($user->hasRole('admin'), 403);
 
         $ticket = Ticket::findOrFail($id);
+        if ($ticket->attachment_path && Storage::disk('private')->exists($ticket->attachment_path)) {
+            try {
+                Storage::disk('private')->delete($ticket->attachment_path);
+            } catch (\Exception $e) {}
+        }
         $ticket->delete();
 
         return back()->with('success', 'Data tiket berhasil dihapus.');
