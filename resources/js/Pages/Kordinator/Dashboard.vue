@@ -25,10 +25,10 @@
       </div>
       <div class="bg-white border border-[#E2E8F0] p-6 rounded-2xl shadow-xs flex items-center justify-between">
         <div>
-          <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Pemindaian Biometrik</p>
+          <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Terverifikasi OTP</p>
           <h3 class="text-2xl font-extrabold text-[#2563EB] mt-2">{{ stats.total_verified }}</h3>
         </div>
-        <span class="text-3xl bg-blue-50 p-3 rounded-2xl">📸</span>
+        <span class="text-3xl bg-blue-50 p-3 rounded-2xl">🔑</span>
       </div>
     </div>
 
@@ -77,7 +77,7 @@
             <th class="p-4">Identitas Resmi</th>
             <th class="p-4" v-if="role === 'kordinator_angkatan'">Matra</th>
             <th class="p-4" v-if="role === 'kordinator_matra'">Angkatan</th>
-            <th class="p-4">Biometrik Wajah</th>
+            <th class="p-4">OTP Verification</th>
             <th class="p-4">Catatan Pembinaan</th>
             <th class="p-4 text-right">Opsi</th>
           </tr>
@@ -113,8 +113,8 @@
             </td>
             <td class="p-4 font-semibold text-slate-700" v-if="role === 'kordinator_matra'">{{ personel.angkatan }}</td>
             <td class="p-4">
-              <span :class="personel.face_verified ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-amber-50 text-amber-700 border border-amber-100'" class="px-2.5 py-0.5 rounded text-[11px] font-semibold">
-                {{ personel.face_verified ? 'Face Verified' : 'Belum Pemindaian' }}
+              <span :class="(personel.face_verified || personel.manual_otp) ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-amber-50 text-amber-700 border border-amber-100'" class="px-2.5 py-0.5 rounded text-[11px] font-semibold">
+                {{ (personel.face_verified || personel.manual_otp) ? 'OTP Verified' : 'Belum Verifikasi OTP' }}
               </span>
             </td>
             <td class="p-4">

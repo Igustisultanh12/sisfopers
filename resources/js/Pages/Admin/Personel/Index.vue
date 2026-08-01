@@ -37,7 +37,7 @@
             <th class="p-4">Identitas Resmi</th>
             <th class="p-4">Matra</th>
             <th class="p-4">Angkatan</th>
-            <th class="p-4">Biometrik Wajah</th>
+            <th class="p-4">OTP Verification</th>
             <th class="p-4 text-right">Opsi Operasi</th>
           </tr>
         </thead>
@@ -74,8 +74,8 @@
             </td>
             <td class="p-4 font-semibold text-slate-700">{{ personel.angkatan }}</td>
             <td class="p-4">
-              <span :class="personel.face_verified ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-amber-50 text-amber-700 border border-amber-100'" class="px-2.5 py-0.5 rounded text-[11px] font-semibold">
-                {{ personel.face_verified ? 'Face Verified' : 'Belum Pemindaian' }}
+              <span :class="(personel.face_verified || personel.manual_otp) ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-amber-50 text-amber-700 border border-amber-100'" class="px-2.5 py-0.5 rounded text-[11px] font-semibold">
+                {{ (personel.face_verified || personel.manual_otp) ? 'OTP Verified' : 'Belum Verifikasi OTP' }}
               </span>
             </td>
             <td class="p-4 text-right space-x-2.5">
@@ -127,8 +127,8 @@
             <span class="font-semibold text-slate-500">Angkatan {{ personel.angkatan }}</span>
           </div>
           
-          <span :class="personel.face_verified ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-amber-50 text-amber-700 border border-amber-100'" class="px-2 py-0.5 rounded text-[10px] font-bold border">
-            {{ personel.face_verified ? 'Verified' : 'Belum Scan' }}
+          <span :class="(personel.face_verified || personel.manual_otp) ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-amber-50 text-amber-700 border border-amber-100'" class="px-2 py-0.5 rounded text-[10px] font-bold border">
+            {{ (personel.face_verified || personel.manual_otp) ? 'OTP Verified' : 'Belum OTP' }}
           </span>
         </div>
 
