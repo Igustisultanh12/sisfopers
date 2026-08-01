@@ -75,7 +75,6 @@
                   title="Klik untuk melihat riwayat proses tiket"
                 >
                   <span>{{ t.ticket_number }}</span>
-                  <span class="text-[10px] opacity-70">📋</span>
                 </button>
                 <p class="text-[10px] text-slate-400 mt-1">{{ formatDate(t.created_at) }}</p>
               </td>
