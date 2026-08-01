@@ -138,6 +138,11 @@ class Personel extends Model
         return $this->hasMany(BroadcastResponse::class, 'personel_id');
     }
 
+    public function tickets(): HasMany
+    {
+        return $this->hasMany(Ticket::class, 'personel_id');
+    }
+
     public function ensureKomcadEducationExists(): void
     {
         // Pengecekan apakah personel ini sudah memiliki catatan Pendidikan Militer SKEP

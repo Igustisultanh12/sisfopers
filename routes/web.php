@@ -362,6 +362,11 @@ Route::middleware(['auth', 'role:admin,kordinator_matra,kordinator_angkatan'])->
     Route::post('/otp-reset-password/generate-all', [OtpResetPasswordController::class, 'generateAll'])->name('otp.reset-password.generate-all');
     Route::get('/otp-reset-password/{id}/pdf', [OtpResetPasswordController::class, 'printPdf'])->name('otp.reset-password.pdf');
     Route::get('/otp-reset-password/bulk-pdf', [OtpResetPasswordController::class, 'printBulkPdf'])->name('otp.reset-password.bulk-pdf');
+
+    // Modul Open Tiket Pengaduan & Verifikasi (Admin & Koordinator)
+    Route::get('/tickets', [\App\Http\Controllers\Admin\TicketAdminController::class, 'index'])->name('tickets.index');
+    Route::post('/tickets/{id}/status', [\App\Http\Controllers\Admin\TicketAdminController::class, 'updateStatus'])->name('tickets.update-status');
+    Route::delete('/tickets/{id}', [\App\Http\Controllers\Admin\TicketAdminController::class, 'destroy'])->name('tickets.destroy');
 });
 
 /*
@@ -420,6 +425,10 @@ Route::middleware(['auth', 'role:personel,admin,kordinator_angkatan,kordinator_m
         Route::post('/pekerjaan/otp-verify', [JobHistoryController::class, 'verifyOtp'])->name('job.otp-verify');
         Route::post('/pekerjaan', [JobHistoryController::class, 'store'])->name('job.store');
         Route::post('/pekerjaan/phk', [JobHistoryController::class, 'phk'])->name('job.phk');
+
+        // Modul Open Tiket Pengaduan Personel (Ganti Foto, Ubah Data, Cetak KTA)
+        Route::get('/tickets', [\App\Http\Controllers\Personel\TicketController::class, 'index'])->name('tickets.index');
+        Route::post('/tickets', [\App\Http\Controllers\Personel\TicketController::class, 'store'])->name('tickets.store');
     });
 });
 
