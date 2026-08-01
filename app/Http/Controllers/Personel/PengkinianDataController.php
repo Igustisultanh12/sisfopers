@@ -108,7 +108,7 @@ class PengkinianDataController extends Controller
     public function searchPersonel(Request $request)
     {
         $user = $request->user();
-        abort_unless($user->hasRole('admin'), 403);
+        abort_unless($user->hasRole('admin') || $user->hasRole('kordinator_matra') || $user->hasRole('kordinator_angkatan'), 403);
 
         $q = trim($request->input('query', ''));
         if (!$q) {
@@ -310,7 +310,7 @@ class PengkinianDataController extends Controller
     public function adminStore(Request $request)
     {
         $user = $request->user();
-        abort_unless($user->hasRole('admin'), 403);
+        abort_unless($user->hasRole('admin') || $user->hasRole('kordinator_matra') || $user->hasRole('kordinator_angkatan'), 403);
 
         $request->validate([
             'personel_id'      => 'nullable|exists:personels,id',
@@ -460,7 +460,24 @@ class PengkinianDataController extends Controller
 
     public function adminIndex(Request $request)
     {
+        $user = $request->user();
         $query = PengkinianData::with(['personel.user', 'verifier']);
+
+        // Scope otomatis untuk Koordinator
+        if ($user->hasRole('kordinator_matra') && $user->matra) {
+            $query->whereHas('personel', function ($q) use ($user) {
+                $q->where('matra', $user->matra);
+            });
+        } elseif ($user->hasRole('kordinator_angkatan')) {
+            $query->whereHas('personel', function ($q) use ($user) {
+                if ($user->matra) {
+                    $q->where('matra', $user->matra);
+                }
+                if ($user->angkatan) {
+                    $q->where('angkatan', $user->angkatan);
+                }
+            });
+        }
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -489,7 +506,7 @@ class PengkinianDataController extends Controller
     public function verify(Request $request, int $id)
     {
         $user = $request->user();
-        abort_unless($user->hasRole('admin'), 403);
+        abort_unless($user->hasRole('admin') || $user->hasRole('kordinator_matra') || $user->hasRole('kordinator_angkatan'), 403);
 
         $item = PengkinianData::with('personel.user')->findOrFail($id);
 
@@ -553,7 +570,7 @@ class PengkinianDataController extends Controller
     public function reject(Request $request, int $id)
     {
         $user = $request->user();
-        abort_unless($user->hasRole('admin'), 403);
+        abort_unless($user->hasRole('admin') || $user->hasRole('kordinator_matra') || $user->hasRole('kordinator_angkatan'), 403);
 
         $request->validate([
             'reason' => 'required|string|max:500',

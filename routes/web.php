@@ -269,7 +269,7 @@ Route::get('/storage/{path}', function ($path) {
 | 1. Role: Admin System Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'role:admin,kordinator_matra,kordinator_angkatan'])->prefix('admin')->name('admin.')->group(function () {
     
     // Dashboard & Statistik Inti
     Route::get('/dashboard', [DashboardAdminController::class, 'index'])->name('dashboard');

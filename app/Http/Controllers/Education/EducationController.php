@@ -113,12 +113,25 @@ class EducationController extends Controller
      */
     public function adminVerifList(Request $request)
     {
+        $user = Auth::user();
         $query = Personel::with(['riwayatPendidikan' => function ($q) {
             $q->whereNull('verified_at')->with('verifier');
         }])
         ->whereHas('riwayatPendidikan', function ($q) {
             $q->whereNull('verified_at');
         });
+
+        // Scope otomatis untuk Koordinator
+        if ($user->hasRole('kordinator_matra') && $user->matra) {
+            $query->where('matra', $user->matra);
+        } elseif ($user->hasRole('kordinator_angkatan')) {
+            if ($user->matra) {
+                $query->where('matra', $user->matra);
+            }
+            if ($user->angkatan) {
+                $query->where('angkatan', $user->angkatan);
+            }
+        }
 
         // Filter pencarian
         if ($request->filled('search')) {
@@ -263,7 +276,21 @@ class EducationController extends Controller
         if (!$user) {
             return false;
         }
-        return $user->hasRole('koordinator') || $user->hasRole('wakil koordinator');
+        if ($user->hasRole('kordinator_matra') || $user->hasRole('kordinator_angkatan') || $user->hasRole('koordinator') || $user->hasRole('wakil koordinator')) {
+            $personel = Personel::find($personelId);
+            if (!$personel) return false;
+
+            if ($user->hasRole('kordinator_matra')) {
+                return !$user->matra || $personel->matra === $user->matra;
+            }
+            if ($user->hasRole('kordinator_angkatan')) {
+                $matraMatch = !$user->matra || $personel->matra === $user->matra;
+                $angkatanMatch = !$user->angkatan || $personel->angkatan == $user->angkatan;
+                return $matraMatch && $angkatanMatch;
+            }
+            return true;
+        }
+        return false;
     }
 
     private function validatePayload(Request $request, bool $isUpdate = false): array

@@ -19,9 +19,22 @@ class VerificationController extends Controller
      */
     public function index(Request $request)
     {
+        $user = Auth::user();
         $query = Personel::whereHas('registration', function ($q) {
             $q->where('status_verification', 'PENDING');
         })->with(['user', 'registration', 'jobHistories']);
+
+        // Scope otomatis untuk Koordinator
+        if ($user->hasRole('kordinator_matra') && $user->matra) {
+            $query->where('matra', $user->matra);
+        } elseif ($user->hasRole('kordinator_angkatan')) {
+            if ($user->matra) {
+                $query->where('matra', $user->matra);
+            }
+            if ($user->angkatan) {
+                $query->where('angkatan', $user->angkatan);
+            }
+        }
 
         // Handler Filter Pencarian Taktis
         if ($request->filled('search')) {
@@ -49,8 +62,21 @@ class VerificationController extends Controller
      */
     public function show($uuid)
     {
+        $user = Auth::user();
         $personel = Personel::where('uuid', $uuid)->with(['user', 'registration'])->firstOrFail();
         
+        if ($user->hasRole('kordinator_matra') && $user->matra && $personel->matra !== $user->matra) {
+            abort(403, 'Anda tidak berwenang mengakses data pendaftar di luar matra Anda.');
+        }
+        if ($user->hasRole('kordinator_angkatan')) {
+            if ($user->matra && $personel->matra !== $user->matra) {
+                abort(403, 'Anda tidak berwenang mengakses data pendaftar di luar matra Anda.');
+            }
+            if ($user->angkatan && $personel->angkatan != $user->angkatan) {
+                abort(403, 'Anda tidak berwenang mengakses data pendaftar di luar angkatan Anda.');
+            }
+        }
+
         return Inertia::render('Admin/Verification/Show', [
             'pendaftar' => $personel
         ]);

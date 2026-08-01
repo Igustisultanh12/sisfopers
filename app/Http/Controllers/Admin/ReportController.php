@@ -112,13 +112,26 @@ class ReportController extends Controller
             })
             ->all();
 
-        $data['personels'] = Personel::where(function ($query) {
-                $query->whereDoesntHave('registration')
-                      ->orWhereHas('registration', function ($q) {
-                          $q->where('status_verification', 'APPROVED');
-                      });
-            })
-            ->with(['user'])
+        $user = auth()->user();
+        $query = Personel::where(function ($q) {
+            $q->whereDoesntHave('registration')
+              ->orWhereHas('registration', function ($sub) {
+                  $sub->where('status_verification', 'APPROVED');
+              });
+        });
+
+        if ($user && $user->hasRole('kordinator_matra') && $user->matra) {
+            $query->where('matra', $user->matra);
+        } elseif ($user && $user->hasRole('kordinator_angkatan')) {
+            if ($user->matra) {
+                $query->where('matra', $user->matra);
+            }
+            if ($user->angkatan) {
+                $query->where('angkatan', $user->angkatan);
+            }
+        }
+
+        $data['personels'] = $query->with(['user'])
             ->get()
             ->sortByDesc(function($personel) use ($rankOrder) {
                 $parts = explode(' ', trim($personel->pangkat));
