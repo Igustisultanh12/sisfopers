@@ -60,9 +60,14 @@
             <tbody class="divide-y divide-[#E2E8F0] text-xs text-slate-600">
               <tr v-for="t in tickets" :key="t.id" class="hover:bg-slate-50/40 transition">
                 <td class="p-4 whitespace-nowrap">
-                  <span class="font-mono font-bold text-[#2563EB] bg-blue-50 px-2 py-1 rounded-lg border border-blue-100/60 text-[11px]">
-                    {{ t.ticket_number }}
-                  </span>
+                  <button
+                    @click="openDetailModal(t)"
+                    class="font-mono font-bold text-[#2563EB] bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg border border-blue-200 text-[11px] hover:underline cursor-pointer transition inline-flex items-center gap-1.5"
+                    title="Klik untuk melihat riwayat proses tiket"
+                  >
+                    <span>{{ t.ticket_number }}</span>
+                    <span class="text-[10px] opacity-70">📋</span>
+                  </button>
                 </td>
                 <td class="p-4 whitespace-nowrap">
                   <span class="font-bold text-slate-800">
@@ -213,6 +218,82 @@
         </form>
       </div>
     </div>
+
+    <!-- MODAL DETAIL & TIMELINE RIWAYAT PROSES TIKET -->
+    <div v-if="detailTicket" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+      <div class="bg-white border border-slate-200 rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-6 my-auto">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div>
+            <span class="text-[10px] font-extrabold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100 uppercase tracking-widest">
+              RIWAYAT PROSES TIKET
+            </span>
+            <h3 class="font-mono text-base font-black text-slate-800 mt-1">{{ detailTicket.ticket_number }}</h3>
+          </div>
+          <button @click="detailTicket = null" class="text-slate-400 hover:text-slate-600 text-lg font-bold p-1 cursor-pointer">✕</button>
+        </div>
+
+        <!-- Informational Summary -->
+        <div class="grid grid-cols-2 gap-3 text-xs bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+          <div>
+            <span class="text-slate-400 font-bold uppercase text-[10px] block">Kategori Layanan</span>
+            <span class="font-bold text-slate-800">{{ formatCategory(detailTicket.category) }}</span>
+          </div>
+          <div>
+            <span class="text-slate-400 font-bold uppercase text-[10px] block">Tanggal Pengajuan</span>
+            <span class="font-semibold text-slate-700">{{ formatDate(detailTicket.created_at) }}</span>
+          </div>
+          <div class="col-span-2 border-t border-slate-200/60 pt-2" v-if="detailTicket.description">
+            <span class="text-slate-400 font-bold uppercase text-[10px] block mb-0.5">Keterangan / Alasan</span>
+            <p class="text-slate-700 leading-relaxed font-medium bg-white p-2.5 rounded-xl border border-slate-200">{{ detailTicket.description }}</p>
+          </div>
+        </div>
+
+        <!-- TIMELINE RIWAYAT PROSES (CHRONOLOGICAL) -->
+        <div class="space-y-3">
+          <h4 class="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Tahapan & Riwayat Pemrosesan Tiket</h4>
+          
+          <div class="relative border-l-2 border-slate-200 ml-3 space-y-6 py-1">
+            <div
+              v-for="(log, idx) in (detailTicket.logs && detailTicket.logs.length > 0 ? detailTicket.logs : generateFallbackLogs(detailTicket))"
+              :key="idx"
+              class="relative pl-6"
+            >
+              <!-- Timeline Dot -->
+              <div
+                :class="statusBadgeClass(log.status)"
+                class="absolute -left-[9px] top-0.5 w-4 h-4 rounded-full border-2 border-white ring-2 ring-slate-100 shrink-0"
+              ></div>
+
+              <!-- Content -->
+              <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                  <span :class="statusBadgeClass(log.status)" class="px-2 py-0.5 rounded-lg text-[10px] font-bold border">
+                    {{ log.status }}
+                  </span>
+                  <span class="text-[11px] text-slate-400 font-medium">{{ formatDate(log.created_at) }}</span>
+                </div>
+
+                <p class="text-xs font-semibold text-slate-800">{{ log.note }}</p>
+
+                <!-- Verifikator / Pelaku Info -->
+                <p class="text-[11px] text-slate-500 font-medium">
+                  Oleh: <span class="font-bold text-slate-700">{{ getLogUserLabel(log, detailTicket) }}</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end pt-3 border-t border-slate-100">
+          <button
+            @click="detailTicket = null"
+            class="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl transition cursor-pointer"
+          >
+            Tutup Riwayat
+          </button>
+        </div>
+      </div>
+    </div>
   </AuthenticatedLayout>
 </template>
 
@@ -227,12 +308,17 @@ const props = defineProps({
 });
 
 const showModal = ref(false);
+const detailTicket = ref(null);
 
 const form = useForm({
   category: 'UBAH_FOTO',
   description: '',
   attachment: null,
 });
+
+function openDetailModal(ticket) {
+  detailTicket.value = ticket;
+}
 
 function handleFileChange(e) {
   form.attachment = e.target.files[0] || null;
@@ -282,6 +368,47 @@ function statusBadgeClass(st) {
 function formatDate(dt) {
   if (!dt) return '-';
   const d = new Date(dt);
-  return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' WIB';
+}
+
+function getLogUserLabel(log, ticket) {
+  if (log.user?.personel?.full_name) {
+    const roleName = log.user?.role?.name ? ` (${log.user.role.name.toUpperCase().replace('_', ' ')})` : '';
+    return `${log.user.personel.full_name}${roleName}`;
+  }
+  if (log.user_id && log.user_id === ticket.personel?.user_id) {
+    return `${ticket.personel?.full_name || 'Personel Pemohon'} (PERSONEL)`;
+  }
+  return 'Administrator / Verifikator Sistem';
+}
+
+function generateFallbackLogs(ticket) {
+  const logs = [];
+  logs.push({
+    status: 'DIPROSES',
+    created_at: ticket.created_at,
+    note: 'Tiket pengaduan berhasil diajukan oleh personel.',
+    user_id: ticket.personel?.user_id,
+  });
+
+  if (ticket.verified_at && ticket.status !== 'DIPROSES') {
+    let noteStr = `Status tiket diperbarui menjadi ${ticket.status}.`;
+    if (ticket.status === 'DITOLAK' && ticket.rejection_reason) {
+      noteStr = `Pengajuan ditolak. Alasan: ${ticket.rejection_reason}`;
+    } else if (ticket.status === 'DISETUJUI') {
+      noteStr = 'Pengajuan disetujui oleh verifikator.';
+    } else if (ticket.status === 'SELESAI') {
+      noteStr = 'Proses tiket pengaduan selesai.';
+    }
+
+    logs.push({
+      status: ticket.status,
+      created_at: ticket.verified_at,
+      note: noteStr,
+      user: ticket.verifier,
+    });
+  }
+
+  return logs;
 }
 </script>

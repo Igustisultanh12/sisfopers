@@ -21,7 +21,7 @@ class TicketController extends Controller
         }
 
         $tickets = Ticket::where('personel_id', $personel->id)
-            ->with('verifier')
+            ->with(['verifier', 'logs.user.personel', 'logs.user.role'])
             ->latest()
             ->get();
 
@@ -77,6 +77,13 @@ class TicketController extends Controller
             'description'     => $validated['description'] ?? null,
             'attachment_path' => $attachmentPath,
             'status'          => 'DIPROSES',
+        ]);
+
+        \App\Models\TicketLog::create([
+            'ticket_id' => $ticket->id,
+            'status'    => 'DIPROSES',
+            'note'      => 'Tiket pengaduan berhasil diajukan oleh personel.',
+            'user_id'   => $user->id,
         ]);
 
         // Kirim Notifikasi WA ke Koordinator & Admin terkait

@@ -14,7 +14,7 @@ class TicketAdminController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $query = Ticket::with(['personel.user', 'verifier']);
+        $query = Ticket::with(['personel.user', 'verifier', 'logs.user.personel', 'logs.user.role']);
 
         // Scope otomatis untuk Koordinator Matra & Angkatan
         if ($user->hasRole('kordinator_matra') && $user->matra) {
@@ -117,6 +117,21 @@ class TicketAdminController extends Controller
             'rejection_reason' => $newStatus === 'DITOLAK' ? $request->rejection_reason : null,
             'verified_by'      => $user->id,
             'verified_at'      => now(),
+        ]);
+
+        // Rekam Audit Log Riwayat Proses Tiket
+        $note = match ($newStatus) {
+            'DITOLAK'   => "Pengajuan ditolak. Alasan: " . ($request->rejection_reason ?? '-'),
+            'DISETUJUI' => "Pengajuan disetujui oleh verifikator.",
+            'SELESAI'   => "Proses tiket pengaduan selesai.",
+            default     => "Status tiket diperbarui menjadi {$newStatus}.",
+        };
+
+        \App\Models\TicketLog::create([
+            'ticket_id' => $ticket->id,
+            'status'    => $newStatus,
+            'note'      => $note,
+            'user_id'   => $user->id,
         ]);
 
         // Kirim Notifikasi Sistem & WA ke Personel Pembuat Tiket

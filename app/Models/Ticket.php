@@ -87,4 +87,9 @@ class Ticket extends Model
     {
         return $this->belongsTo(User::class, 'verified_by');
     }
+
+    public function logs()
+    {
+        return $this->hasMany(TicketLog::class, 'ticket_id')->with('user.personel', 'user.role')->orderBy('created_at', 'asc');
+    }
 }
