@@ -20,13 +20,38 @@ class MonitoringController extends Controller
         return Inertia::render('Admin/Monitoring/LoginLogs', ['logs' => $logs]);
     }
 
-    public function activityLogs()
+    public function activityLogs(Request $request)
     {
-        $logs = AuditLog::with('user')
-            ->latest()
-            ->paginate(15);
+        $query = AuditLog::with(['user.personel', 'user.role']);
 
-        return Inertia::render('Admin/Monitoring/ActivityLogs', ['logs' => $logs]);
+        if ($request->filled('search')) {
+            $search = trim($request->search);
+            $query->where(function($q) use ($search) {
+                $q->where('action', 'like', "%{$search}%")
+                  ->orWhere('model_type', 'like', "%{$search}%")
+                  ->orWhere('ip_address', 'like', "%{$search}%")
+                  ->orWhereHas('user', function($u) use ($search) {
+                      $u->where('username', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhereHas('personel', function($p) use ($search) {
+                            $p->where('full_name', 'like', "%{$search}%")
+                              ->orWhere('nikc', 'like', "%{$search}%")
+                              ->orWhere('matra', 'like', "%{$search}%");
+                        });
+                  });
+            });
+        }
+
+        if ($request->filled('action')) {
+            $query->where('action', $request->action);
+        }
+
+        $logs = $query->latest()->paginate(20)->withQueryString();
+
+        return Inertia::render('Admin/Monitoring/ActivityLogs', [
+            'logs' => $logs,
+            'filters' => $request->only(['search', 'action'])
+        ]);
     }
 
     public function whatsappLogs()

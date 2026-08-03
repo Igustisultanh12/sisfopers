@@ -85,9 +85,14 @@
             <div class="space-y-1 pt-3 border-t border-slate-100/60 mt-3">
               <p class="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest px-5 pb-1">Laporan & Auditing</p>
               
-              <Link :href="route('admin.monitoring.login')" :class="route().current('admin.monitoring.*') ? 'bg-[#2563EB]/5 text-[#2563EB] font-bold shadow-sm shadow-blue-500/[0.02]' : 'text-[#64748B] hover:text-slate-800 font-medium'" class="group flex items-center gap-4 px-5 py-3.5 rounded-2xl text-[14px] transition duration-150">
+              <Link :href="route('admin.monitoring.activity')" :class="route().current('admin.monitoring.activity') ? 'bg-[#2563EB]/5 text-[#2563EB] font-bold shadow-sm shadow-blue-500/[0.02]' : 'text-[#64748B] hover:text-slate-800 font-medium'" class="group flex items-center gap-4 px-5 py-3.5 rounded-2xl text-[14px] transition duration-150">
+                <svg class="w-5 h-5 opacity-80 group-hover:opacity-100" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Aktivitas Sistem (Audit Trail)
+              </Link>
+
+              <Link :href="route('admin.monitoring.login')" :class="route().current('admin.monitoring.login') ? 'bg-[#2563EB]/5 text-[#2563EB] font-bold shadow-sm shadow-blue-500/[0.02]' : 'text-[#64748B] hover:text-slate-800 font-medium'" class="group flex items-center gap-4 px-5 py-3.5 rounded-2xl text-[14px] transition duration-150">
                 <svg class="w-5 h-5 opacity-80 group-hover:opacity-100" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
-                Monitoring Log
+                Log Login & Sesi
               </Link>
 
               <Link :href="route('admin.report.index')" :class="route().current('admin.report.*') ? 'bg-[#2563EB]/5 text-[#2563EB] font-bold shadow-sm shadow-blue-500/[0.02]' : 'text-[#64748B] hover:text-slate-800 font-medium'" class="group flex items-center gap-4 px-5 py-3.5 rounded-2xl text-[14px] transition duration-150">

@@ -18,4 +18,22 @@ class AuditLog extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public static function record(string $action, ?string $modelType = null, ?int $modelId = null, ?array $oldValues = null, ?array $newValues = null): void
+    {
+        try {
+            static::create([
+                'user_id' => auth()->id(),
+                'action' => strtoupper($action),
+                'model_type' => $modelType ? class_basename($modelType) : null,
+                'model_id' => $modelId,
+                'old_values' => $oldValues,
+                'new_values' => $newValues,
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("Gagal mencatat Audit Log: " . $e->getMessage());
+        }
+    }
 }
