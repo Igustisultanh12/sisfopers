@@ -354,6 +354,7 @@ Route::middleware(['auth', 'role:admin,kordinator_matra,kordinator_angkatan'])->
     Route::post('/pju-management', [\App\Http\Controllers\Admin\PjuManagementController::class, 'store'])->name('pju.store');
     Route::put('/pju-management/{id}', [\App\Http\Controllers\Admin\PjuManagementController::class, 'update'])->name('pju.update');
     Route::delete('/pju-management/{id}', [\App\Http\Controllers\Admin\PjuManagementController::class, 'destroy'])->name('pju.destroy');
+    Route::get('/pju-management/{id}/print-account', [\App\Http\Controllers\Admin\PjuManagementController::class, 'printAccountPdf'])->name('pju.print-account');
 
     // OTP Manual — Generate & Cetak PDF untuk personel yang belum verifikasi OTP
     Route::get('/otp-manual', [OtpManualController::class, 'index'])->name('otp.index');

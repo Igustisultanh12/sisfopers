@@ -34,8 +34,9 @@ class PjuManagementController extends Controller
         $pjuUsers = $query->latest()->paginate(15)->withQueryString();
 
         return Inertia::render('Admin/Pju/Index', [
-            'pjuUsers' => $pjuUsers,
-            'filters'  => $request->only(['search', 'role']),
+            'pjuUsers'   => $pjuUsers,
+            'filters'    => $request->only(['search', 'role']),
+            'createdPju' => session('created_pju'),
         ]);
     }
 
@@ -62,11 +63,14 @@ class PjuManagementController extends Controller
             'jabatan_pju'    => 'required|string|max:150',
             'matra'          => 'nullable|in:AD,AL,AU',
             'satuan_wilayah' => 'nullable|string|max:150',
-            'password'       => 'required|string|min:8',
+            'password'       => 'nullable|string|min:6',
         ]);
 
         try {
             $username = explode('@', $validated['email'])[0] . '_pju' . rand(100, 999);
+
+            // Auto Generate Password jika tidak diisi manual
+            $plainPassword = $validated['password'] ?? ('Pju@' . Str::random(6) . rand(10, 99));
 
             $pju = Pju::create([
                 'uuid'           => Str::uuid(),
@@ -74,7 +78,7 @@ class PjuManagementController extends Controller
                 'username'       => $username,
                 'email'          => $validated['email'],
                 'phone_number'   => $validated['phone_number'],
-                'password'       => Hash::make($validated['password']),
+                'password'       => Hash::make($plainPassword),
                 'role_pju'       => $validated['role'],
                 'jabatan_pju'    => $validated['jabatan_pju'],
                 'matra'          => $validated['matra'] ?? null,
@@ -89,7 +93,17 @@ class PjuManagementController extends Controller
                 'jabatan_pju' => $validated['jabatan_pju'],
             ]);
 
-            return back()->with('success', "Akun PJU Terpisah {$validated['full_name']} ({$validated['jabatan_pju']}) berhasil dibuat.");
+            return back()->with([
+                'success'     => "Akun PJU {$validated['full_name']} ({$validated['jabatan_pju']}) berhasil dibuat secara otomatis.",
+                'created_pju' => [
+                    'id'          => $pju->id,
+                    'full_name'   => $pju->full_name,
+                    'jabatan_pju' => $pju->jabatan_pju,
+                    'username'    => $username,
+                    'email'       => $pju->email,
+                    'password'    => $plainPassword,
+                ]
+            ]);
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Gagal membuat akun PJU: ' . $e->getMessage()]);
         }
@@ -120,7 +134,7 @@ class PjuManagementController extends Controller
             'jabatan_pju'    => 'required|string|max:150',
             'matra'          => 'nullable|in:AD,AL,AU',
             'satuan_wilayah' => 'nullable|string|max:150',
-            'password'       => 'nullable|string|min:8',
+            'password'       => 'nullable|string|min:6',
         ]);
 
         try {
@@ -162,9 +176,20 @@ class PjuManagementController extends Controller
 
             \App\Models\AuditLog::record('DELETE', 'Pju', $id, null, ['full_name' => $name]);
 
-            return back()->with('success', "Akun PJU {$name} berhasil dihapus dari tabel terpisah PJU.");
+            return back()->with('success', "Akun PJU {$name} berhasil dihapus.");
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Gagal menghapus akun PJU: ' . $e->getMessage()]);
         }
+    }
+
+    public function printAccountPdf(int $id)
+    {
+        $pju = Pju::findOrFail($id);
+        $settings = \App\Models\Setting::pluck('value', 'key')->all();
+        $plainPassword = request()->query('pass', '********');
+
+        $html = view('pdf.pju_account', compact('pju', 'settings', 'plainPassword'))->render();
+
+        return response($html)->header('Content-Type', 'text/html');
     }
 }

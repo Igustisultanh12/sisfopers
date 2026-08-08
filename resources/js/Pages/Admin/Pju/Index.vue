@@ -12,9 +12,9 @@
         </div>
         <button
           @click="openCreateModal"
-          class="px-5 py-2.5 bg-[#2563EB] hover:bg-blue-600 text-white font-bold text-xs rounded-xl shadow-md transition cursor-pointer self-start sm:self-auto"
+          class="px-5 py-2.5 bg-[#2563EB] hover:bg-blue-600 text-white font-bold text-xs rounded-xl shadow-md transition cursor-pointer self-start sm:self-auto flex items-center gap-2"
         >
-          + Tambah Akun PJU Baru
+          <span>+</span> Tambah Akun PJU Baru
         </button>
       </div>
 
@@ -73,10 +73,10 @@
               <td class="p-4 whitespace-nowrap">
                 <div class="flex items-center gap-3">
                   <div class="w-9 h-9 rounded-xl bg-blue-100 border border-blue-200 text-blue-700 flex items-center justify-center font-black text-sm uppercase shrink-0">
-                    {{ (user.personel?.full_name || user.username || 'PJU').charAt(0) }}
+                    {{ (user.full_name || user.username || 'PJU').charAt(0) }}
                   </div>
                   <div>
-                    <p class="font-extrabold text-slate-800">{{ user.personel?.full_name || user.username }}</p>
+                    <p class="font-extrabold text-slate-800">{{ user.full_name }}</p>
                     <p class="text-[10px] text-slate-400 font-mono">Username: {{ user.username }}</p>
                   </div>
                 </div>
@@ -86,9 +86,9 @@
               </td>
               <td class="p-4 whitespace-nowrap">
                 <span class="px-2.5 py-1 rounded-xl text-[10px] font-extrabold border bg-blue-50 text-blue-700 border-blue-200 uppercase inline-block">
-                  {{ formatRoleLabel(user.role?.name) }}
+                  {{ formatRoleLabel(user.role_pju) }}
                 </span>
-                <span v-if="user.role?.name === 'pembina_matra'" class="ml-1.5 px-2 py-0.5 rounded-lg text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200 uppercase inline-block">
+                <span v-if="user.role_pju === 'pembina_matra'" class="ml-1.5 px-2 py-0.5 rounded-lg text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200 uppercase inline-block">
                   + Broadcast Kegiatan
                 </span>
               </td>
@@ -104,9 +104,16 @@
               </td>
               <td class="p-4 whitespace-nowrap text-slate-600">
                 <p class="font-semibold">{{ user.email }}</p>
-                <p class="text-[10px] text-slate-400">{{ user.personel?.phone_number || '-' }}</p>
+                <p class="text-[10px] text-slate-400">{{ user.phone_number || '-' }}</p>
               </td>
-              <td class="p-4 text-right whitespace-nowrap space-x-2">
+              <td class="p-4 text-right whitespace-nowrap space-x-1.5">
+                <a
+                  :href="route('admin.pju.print-account', user.id)"
+                  target="_blank"
+                  class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold rounded-lg border border-emerald-200 transition inline-block"
+                >
+                  Cetak Akun
+                </a>
                 <button
                   @click="openEditModal(user)"
                   class="px-3 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 text-[11px] font-bold rounded-lg border border-amber-200 transition cursor-pointer"
@@ -248,18 +255,38 @@
             </div>
           </div>
 
+          <!-- KATA SANDI OTOMATIS TERGENERATE -->
           <div>
-            <label class="block font-bold text-slate-700 mb-1">
-              Kata Sandi (Password)
-              <span v-if="isEditing" class="font-normal text-slate-400">(Kosongkan jika tidak diubah)</span>
-            </label>
-            <input
-              v-model="form.password"
-              type="password"
-              :required="!isEditing"
-              placeholder="Minimal 8 Karakter Kombinasi Aman"
-              class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl outline-none focus:border-[#2563EB]"
-            />
+            <div class="flex items-center justify-between mb-1">
+              <label class="font-bold text-slate-700">
+                Kata Sandi (Password)
+                <span v-if="!isEditing" class="text-blue-600 font-extrabold ml-1">(Otomatis Ter-generate)</span>
+                <span v-else class="font-normal text-slate-400">(Kosongkan jika tidak diubah)</span>
+              </label>
+              <button
+                v-if="!isEditing"
+                type="button"
+                @click="generatePassword"
+                class="text-[10px] font-bold text-blue-600 hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                🔄 Acak Ulang Password
+              </button>
+            </div>
+            <div class="relative">
+              <input
+                v-model="form.password"
+                :type="showPasswordText ? 'text' : 'password'"
+                :placeholder="isEditing ? 'Minimal 6 karakter kombinasi' : 'Password otomatis'"
+                class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl outline-none focus:border-[#2563EB] font-mono text-slate-800 font-bold bg-slate-50/50"
+              />
+              <button
+                type="button"
+                @click="showPasswordText = !showPasswordText"
+                class="absolute right-3 top-2.5 text-[10px] font-bold text-slate-400 hover:text-slate-600"
+              >
+                {{ showPasswordText ? 'Sembunyikan' : 'Tampilkan' }}
+              </button>
+            </div>
           </div>
 
           <div class="flex justify-end gap-3 pt-3 border-t border-slate-100">
@@ -281,18 +308,73 @@
         </form>
       </div>
     </div>
+
+    <!-- MODAL SUKSES PEMBUATAN AKUN & CETAK KREDENSIAL PJU -->
+    <div v-if="createdPjuModal" class="fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+      <div class="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-6 my-auto text-left relative animate-in fade-in zoom-in duration-200">
+        <div class="text-center space-y-2">
+          <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 mx-auto flex items-center justify-center font-black text-2xl shadow-xs">
+            ✓
+          </div>
+          <span class="text-[10px] font-extrabold uppercase tracking-widest bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-lg inline-block">
+            AKUN PJU BERHASIL DIBUAT
+          </span>
+          <h3 class="text-lg font-black text-slate-800 tracking-tight">
+            {{ createdPjuModal.full_name }}
+          </h3>
+          <p class="text-xs text-slate-500">
+            {{ createdPjuModal.jabatan_pju }}
+          </p>
+        </div>
+
+        <!-- Box Kredensial PJU -->
+        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3 text-xs">
+          <div class="flex justify-between items-center pb-2 border-b border-slate-200/60">
+            <span class="text-slate-400 font-bold uppercase tracking-wide text-[10px]">Username Login</span>
+            <span class="font-mono font-bold text-slate-800">{{ createdPjuModal.username }}</span>
+          </div>
+          <div class="flex justify-between items-center pb-2 border-b border-slate-200/60">
+            <span class="text-slate-400 font-bold uppercase tracking-wide text-[10px]">Email Dinas</span>
+            <span class="font-mono font-bold text-slate-800">{{ createdPjuModal.email }}</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-slate-400 font-bold uppercase tracking-wide text-[10px]">Password Otomatis</span>
+            <span class="font-mono font-black text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded">{{ createdPjuModal.password }}</span>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="space-y-2 pt-2">
+          <a
+            :href="route('admin.pju.print-account', { id: createdPjuModal.id, pass: createdPjuModal.password })"
+            target="_blank"
+            class="w-full py-3 bg-[#2563EB] hover:bg-blue-600 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <span>🖨️</span> Cetak Lembar Informasi Akun PJU
+          </a>
+          <button
+            @click="createdPjuModal = null"
+            class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition cursor-pointer"
+          >
+            Tutup Dialog
+          </button>
+        </div>
+      </div>
+    </div>
+
   </AuthenticatedLayout>
 </template>
 
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Link, useForm, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 
 const props = defineProps({
   pjuUsers: Object,
   roles: Array,
   filters: Object,
+  createdPju: Object,
 });
 
 const searchQuery = ref(props.filters?.search || '');
@@ -300,6 +382,14 @@ const filterRole = ref(props.filters?.role || '');
 const showModal = ref(false);
 const isEditing = ref(false);
 const editingUserId = ref(null);
+const showPasswordText = ref(true);
+const createdPjuModal = ref(props.createdPju || null);
+
+watch(() => props.createdPju, (val) => {
+  if (val) {
+    createdPjuModal.value = val;
+  }
+});
 
 const form = useForm({
   full_name: '',
@@ -311,6 +401,15 @@ const form = useForm({
   satuan_wilayah: '',
   password: '',
 });
+
+function generatePassword() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$';
+  let result = 'Pju@';
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  form.password = result;
+}
 
 function handleSearch() {
   router.get(
@@ -327,16 +426,17 @@ function openCreateModal() {
   isEditing.value = false;
   editingUserId.value = null;
   form.reset();
+  generatePassword();
   showModal.value = true;
 }
 
 function openEditModal(user) {
   isEditing.value = true;
   editingUserId.value = user.id;
-  form.full_name = user.personel?.full_name || '';
+  form.full_name = user.full_name || '';
   form.email = user.email || '';
-  form.phone_number = user.personel?.phone_number || '';
-  form.role = user.role?.name || 'ka_bacadnas';
+  form.phone_number = user.phone_number || '';
+  form.role = user.role_pju || 'ka_bacadnas';
   form.jabatan_pju = user.jabatan_pju || '';
   form.matra = user.matra || null;
   form.satuan_wilayah = user.satuan_wilayah || '';
@@ -354,8 +454,11 @@ function submitForm() {
     });
   } else {
     form.post(route('admin.pju.store'), {
-      onSuccess: () => {
+      onSuccess: (page) => {
         showModal.value = false;
+        if (page.props.createdPju) {
+          createdPjuModal.value = page.props.createdPju;
+        }
         form.reset();
       },
     });
@@ -363,7 +466,7 @@ function submitForm() {
 }
 
 function deleteUser(user) {
-  const name = user.personel?.full_name || user.username;
+  const name = user.full_name || user.username;
   if (confirm(`Apakah Anda yakin ingin menghapus akun PJU ${name}?`)) {
     router.delete(route('admin.pju.destroy', user.id));
   }
