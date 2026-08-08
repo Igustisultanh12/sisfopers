@@ -88,7 +88,9 @@
         <div>Dikeluarkan di: Surabaya</div>
         <div>Pada tanggal: @tanggalId</div>
         <div style="margin-top: 10px;">{{ $signerHeader }}</div>
+        @if(!empty($signerJabatan))
         <div style="font-weight: bold; margin-bottom: 6px;">{{ $signerJabatan }},</div>
+        @endif
 
         @if(isset($qrCodeBase64) && $qrCodeBase64)
         <div style="margin: 6px auto; text-align: center;">
@@ -99,7 +101,9 @@
         @endif
 
         <div style="margin-top: 6px; font-weight: bold; text-decoration: underline;">{{ $signerName }}</div>
+        @if(!empty($showDetail) && ($signerPangkat || $signerNikc))
         <div>{{ $signerPangkat }} NIKC. {{ $signerNikc }}</div>
+        @endif
     </div>
 </body>
 </html>

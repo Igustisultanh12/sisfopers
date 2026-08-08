@@ -32,27 +32,51 @@ class ReportController extends Controller
         $defaultJabatan = $settings['app_signer_jabatan'] ?? 'KOMANDAN KOMPONEN CADANGAN';
 
         if ($user && isset($user->role_pju)) {
+            $rolePju = $user->role_pju;
+
+            if ($rolePju === 'ka_bacadnas') {
+                return [
+                    'name'        => $user->full_name,
+                    'pangkat'     => null,
+                    'nikc'        => null,
+                    'jabatan'     => null,
+                    'header'      => 'Kepala Badan Cadangan Nasional,',
+                    'show_detail' => false,
+                ];
+            }
+
+            $isWilayahMiliter = in_array($rolePju, [
+                'pembina_kodam',
+                'pembina_kodaeral',
+                'pembina_kodau',
+                'pembina_kodim',
+                'pembina_lanal',
+                'pembina_lanud',
+            ]);
+
             return [
-                'name'    => $user->full_name,
-                'pangkat' => Personel::formatLongRank($user->jabatan_pju ?? 'PEJABAT UTAMA'),
-                'nikc'    => $user->nrp ?? $user->username ?? '-',
-                'jabatan' => strtoupper($user->jabatan_pju ?? 'PEJABAT UTAMA'),
-                'header'  => 'a.n. Komandan Komponen Cadangan,',
+                'name'        => $user->full_name,
+                'pangkat'     => $isWilayahMiliter ? Personel::formatLongRank($user->jabatan_pju ?? 'PEMBINA KEWILAYAHAN') : null,
+                'nikc'        => $isWilayahMiliter ? ($user->nrp ?? $user->username ?? '-') : null,
+                'jabatan'     => strtoupper($user->jabatan_pju ?? 'PEJABAT UTAMA'),
+                'header'      => 'a.n. Kepala Badan Cadangan Nasional,',
+                'show_detail' => $isWilayahMiliter,
             ];
         }
 
-        if ($user && $user->hasRole('komandan')) {
+        if ($user && method_exists($user, 'hasRole') && $user->hasRole('komandan')) {
             $rawPangkat = $personel ? $personel->pangkat : $defaultPangkat;
             return [
-                'name'    => $personel ? $personel->full_name : ($user->name ?? $defaultName),
-                'pangkat' => Personel::formatLongRank($rawPangkat),
-                'nikc'    => $personel ? ($personel->nikc ?? $personel->nik ?? $defaultNikc) : $defaultNikc,
-                'jabatan' => 'KOMANDAN KOMPONEN CADANGAN',
-                'header'  => 'Komandan Komponen Cadangan,'
+                'name'        => $personel ? $personel->full_name : ($user->name ?? $defaultName),
+                'pangkat'     => Personel::formatLongRank($rawPangkat),
+                'nikc'        => $personel ? ($personel->nikc ?? $personel->nik ?? $defaultNikc) : $defaultNikc,
+                'jabatan'     => 'KOMANDAN KOMPONEN CADANGAN',
+                'header'      => 'a.n. Kepala Badan Cadangan Nasional,',
+                'show_detail' => true,
             ];
         }
 
-        if ($user && ($user->hasRole('kordinator_matra') || $user->hasRole('kordinator_angkatan'))) {
+        if ($user && method_exists($user, 'hasRole') && ($user->hasRole('kordinator_matra') || $user->hasRole('kordinator_angkatan'))) {
             $matraOrAngkatan = '';
             if ($user->hasRole('kordinator_matra') && $personel) {
                 $matraOrAngkatan = 'MATRA ' . strtoupper($personel->matra ?? '');
@@ -63,31 +87,34 @@ class ReportController extends Controller
             $rawPangkat = $personel ? $personel->pangkat : 'KOORDINATOR';
 
             return [
-                'name'    => $personel ? $personel->full_name : ($user->name ?? 'KOORDINATOR'),
-                'pangkat' => Personel::formatLongRank($rawPangkat),
-                'nikc'    => $personel ? ($personel->nikc ?? $personel->nik ?? '-') : '-',
-                'jabatan' => 'KOORDINATOR ' . trim($matraOrAngkatan),
-                'header'  => 'a.n. Komandan Komponen Cadangan,'
+                'name'        => $personel ? $personel->full_name : ($user->name ?? 'KOORDINATOR'),
+                'pangkat'     => Personel::formatLongRank($rawPangkat),
+                'nikc'        => $personel ? ($personel->nikc ?? $personel->nik ?? '-') : '-',
+                'jabatan'     => 'KOORDINATOR ' . trim($matraOrAngkatan),
+                'header'      => 'a.n. Kepala Badan Cadangan Nasional,',
+                'show_detail' => true,
             ];
         }
 
-        if ($user && $user->hasRole('admin')) {
+        if ($user && method_exists($user, 'hasRole') && $user->hasRole('admin')) {
             $rawPangkat = $personel ? $personel->pangkat : $defaultPangkat;
             return [
-                'name'    => $personel ? $personel->full_name : ($user->name ?? $defaultName),
-                'pangkat' => Personel::formatLongRank($rawPangkat),
-                'nikc'    => $personel ? ($personel->nikc ?? $personel->nik ?? $defaultNikc) : $defaultNikc,
-                'jabatan' => 'ADMINISTRATOR SISFOPERS',
-                'header'  => 'a.n. Komandan Komponen Cadangan,'
+                'name'        => $personel ? $personel->full_name : ($user->name ?? $defaultName),
+                'pangkat'     => Personel::formatLongRank($rawPangkat),
+                'nikc'        => $personel ? ($personel->nikc ?? $personel->nik ?? $defaultNikc) : $defaultNikc,
+                'jabatan'     => 'ADMINISTRATOR SISFOPERS',
+                'header'      => 'a.n. Kepala Badan Cadangan Nasional,',
+                'show_detail' => true,
             ];
         }
 
         return [
-            'name'    => $defaultName,
-            'pangkat' => Personel::formatLongRank($defaultPangkat),
-            'nikc'    => $defaultNikc,
-            'jabatan' => $defaultJabatan,
-            'header'  => 'a.n. Komandan Komponen Cadangan,'
+            'name'        => $defaultName,
+            'pangkat'     => Personel::formatLongRank($defaultPangkat),
+            'nikc'        => $defaultNikc,
+            'jabatan'     => $defaultJabatan,
+            'header'      => 'a.n. Kepala Badan Cadangan Nasional,',
+            'show_detail' => true,
         ];
     }
 
@@ -157,6 +184,7 @@ class ReportController extends Controller
         $data['signerNikc']    = $signer['nikc'];
         $data['signerJabatan'] = $signer['jabatan'];
         $data['signerHeader']  = $signer['header'];
+        $data['showDetail']    = $signer['show_detail'];
 
         $romans = [1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI', 7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'];
         $data['nomorSurat'] = 'R/001/PERS/' . $romans[date('n')] . '/' . date('Y');
@@ -240,6 +268,7 @@ class ReportController extends Controller
             'signerNikc'    => $signer['nikc'],
             'signerJabatan' => $signer['jabatan'],
             'signerHeader'  => $signer['header'],
+            'showDetail'    => $signer['show_detail'],
             'nomorSurat'    => $nomorSurat,
             'verifyCode'    => $docVerif->verify_code,
             'verifyUrl'     => $verifyUrl,
@@ -320,6 +349,7 @@ class ReportController extends Controller
             'signerNikc'     => $signer['nikc'],
             'signerJabatan'  => $signer['jabatan'],
             'signerHeader'   => $signer['header'],
+            'showDetail'     => $signer['show_detail'],
             'nomorSurat'     => $nomorSurat,
             'keteranganList' => $keteranganList,
             'verifyCode'     => $docVerif->verify_code,

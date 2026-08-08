@@ -118,7 +118,9 @@
         <div>Dikeluarkan di: Jakarta</div>
         <div>Pada tanggal: {{ date('d F Y') }}</div>
         <div style="margin-top: 8px;">{{ $signerHeader }}</div>
+        @if(!empty($signerJabatan))
         <div>{{ $signerJabatan }},</div>
+        @endif
         
         <div style="margin-top: 15px; margin-bottom: 10px;">
             <img src="{{ $qrCodeBase64 }}" style="width: 75px; height: 75px;" /><br>
@@ -126,7 +128,9 @@
         </div>
         
         <div style="font-weight: bold; text-decoration: underline;">{{ $signerName }}</div>
+        @if(!empty($showDetail) && ($signerPangkat || $signerNikc))
         <div>{{ $signerPangkat }} NIKC. {{ $signerNikc }}</div>
+        @endif
     </div>
 </body>
 </html>
