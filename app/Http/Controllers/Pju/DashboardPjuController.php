@@ -138,8 +138,22 @@ class DashboardPjuController extends Controller
         ]);
 
         $broadcast = Broadcast::create([
-            }
+            'uuid'         => (string) \Illuminate\Support\Str::uuid(),
+            'created_by'   => $user ? $user->id : null,
+            'title'        => $validated['title'],
+            'content'      => $validated['content'],
+            'category'     => $validated['category'],
+            'event_date'   => $validated['event_date'] ?? null,
+            'matra'        => ($user && $user->matra) ? $user->matra : ($validated['matra'] ?? null),
+            'target_scope' => ($user && $user->matra) ? 'MATRA' : 'SEMUA',
+            'status'       => 'PUBLISHED',
+        ]);
 
+        try {
+            $personelQuery = Personel::query();
+            if ($broadcast->matra) {
+                $personelQuery->where('matra', $broadcast->matra);
+            }
             $personels = $personelQuery->get();
 
             foreach ($personels as $pers) {
