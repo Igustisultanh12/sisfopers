@@ -39,6 +39,8 @@ class KewilayahanController extends Controller
             'is_kewilayahan_updated' => true,
         ]);
 
+        $user->unsetRelation('personel');
+
         \App\Models\AuditLog::record('UPDATE', 'Personel', $personel->id, null, [
             'kotama'             => $validated['kotama'],
             'satuan_kewilayahan' => $validated['satuan_kewilayahan'],

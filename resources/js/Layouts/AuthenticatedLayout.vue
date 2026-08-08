@@ -607,7 +607,7 @@
 
   <!-- GLOBAL MODAL SWEETALERT-STYLE: PEMUTAKHIRAN DATA KEWILAYAHAN (1X PENGISIAN) -->
   <div
-    v-if="needKewilayahanUpdate"
+    v-if="needKewilayahanUpdate && !showSuccessModal"
     class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
   >
     <div class="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-6 my-auto text-left relative animate-float-card">
@@ -680,12 +680,45 @@
           <button
             type="submit"
             :disabled="kewilayahanForm.processing || !kewilayahanForm.satuan_kewilayahan"
-            class="w-full py-3 bg-[#2563EB] hover:bg-blue-600 disabled:opacity-60 text-white font-bold text-xs rounded-xl shadow-md transition cursor-pointer"
+            class="w-full py-3 bg-[#2563EB] hover:bg-blue-600 disabled:opacity-60 text-white font-bold text-xs rounded-xl shadow-md transition cursor-pointer flex items-center justify-center gap-2"
           >
-            Simpan Data Kewilayahan
+            <svg v-if="kewilayahanForm.processing" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>{{ kewilayahanForm.processing ? 'Menyimpan Data Kewilayahan...' : 'Simpan Data Kewilayahan' }}</span>
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL SUKSES PENGISIAN DATA KEWILAYAHAN -->
+  <div
+    v-if="showSuccessModal"
+    class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
+  >
+    <div class="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl space-y-6 my-auto text-center relative animate-float-card">
+      <div class="w-16 h-16 rounded-full bg-blue-50 text-[#2563EB] border border-blue-100 mx-auto flex items-center justify-center shadow-xs">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+        </svg>
+      </div>
+
+      <div class="space-y-2">
+        <h3 class="text-lg font-black text-slate-800 tracking-tight">Data Berhasil Disimpan</h3>
+        <p class="text-xs text-slate-500 leading-relaxed">
+          Yth. <strong class="text-slate-800">{{ authProps?.personel?.full_name || authProps?.user?.username }}</strong>, data Komando Utama ({{ kewilayahanForm.kotama }}) dan Satuan Kewilayahan ({{ kewilayahanForm.satuan_kewilayahan }}) Anda telah berhasil disimpan ke dalam sistem.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        @click="closeSuccessModal"
+        class="w-full py-3 bg-[#2563EB] hover:bg-blue-600 text-white font-bold text-xs rounded-xl shadow-md transition cursor-pointer uppercase tracking-wider"
+      >
+        OK
+      </button>
     </div>
   </div>
 </template>
@@ -893,6 +926,8 @@ const currentSatuanOptions = computed(() => {
   return currentUnitConfig.value.kotama[kewilayahanForm.kotama] || [];
 });
 
+const showSuccessModal = ref(false);
+
 const kewilayahanForm = useForm({
   kotama: '',
   satuan_kewilayahan: '',
@@ -903,7 +938,17 @@ function onKotamaChange() {
 }
 
 function submitKewilayahan() {
-  kewilayahanForm.post(route('personel.kewilayahan.update'));
+  kewilayahanForm.post(route('personel.kewilayahan.update'), {
+    preserveScroll: true,
+    onSuccess: () => {
+      showSuccessModal.value = true;
+    }
+  });
+}
+
+function closeSuccessModal() {
+  showSuccessModal.value = false;
+  router.reload({ only: ['auth'] });
 }
 
 const getNotificationStyles = (iconKey) => {

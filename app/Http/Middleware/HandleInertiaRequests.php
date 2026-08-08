@@ -35,6 +35,9 @@ class HandleInertiaRequests extends Middleware
             $user = \Illuminate\Support\Facades\Auth::guard('pju')->user();
         }
 
+        if ($user && method_exists($user, 'unsetRelation')) {
+            $user->unsetRelation('personel');
+        }
         $personel = ($user && method_exists($user, 'getPersonelOrAutoCreate')) ? $user->getPersonelOrAutoCreate() : null;
         $needKewilayahanUpdate = false;
         if ($user && method_exists($user, 'hasRole') && $user->hasRole('personel') && $personel) {
