@@ -95,7 +95,8 @@ class Personel extends Model
         'manual_otp', 'manual_otp_expired_at', 'manual_otp_printed_at',
         'reset_password_otp', 'reset_password_otp_expired_at', 'reset_password_otp_printed_at',
         'photo_profile', 'ktp_document', 'skep_file',
-        'is_asn', 'asn_nip', 'asn_jenis', 'asn_tmt', 'asn_sk'
+        'is_asn', 'asn_nip', 'asn_jenis', 'asn_tmt', 'asn_sk',
+        'kotama', 'satuan_kewilayahan', 'is_kewilayahan_updated'
     ];
 
     public function user(): BelongsTo
