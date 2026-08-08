@@ -349,6 +349,12 @@ Route::middleware(['auth', 'role:admin,kordinator_matra,kordinator_angkatan'])->
     Route::delete('/skep/{id}', [SkepController::class, 'destroy'])->name('skep.destroy');
     Route::post('/skep/verify/{id}', [SkepController::class, 'verify'])->name('skep.verify');
 
+    // Manajemen Akun Pejabat Utama (PJU)
+    Route::get('/pju-management', [\App\Http\Controllers\Admin\PjuManagementController::class, 'index'])->name('pju.index');
+    Route::post('/pju-management', [\App\Http\Controllers\Admin\PjuManagementController::class, 'store'])->name('pju.store');
+    Route::put('/pju-management/{id}', [\App\Http\Controllers\Admin\PjuManagementController::class, 'update'])->name('pju.update');
+    Route::delete('/pju-management/{id}', [\App\Http\Controllers\Admin\PjuManagementController::class, 'destroy'])->name('pju.destroy');
+
     // OTP Manual — Generate & Cetak PDF untuk personel yang belum verifikasi OTP
     Route::get('/otp-manual', [OtpManualController::class, 'index'])->name('otp.index');
     Route::post('/otp-manual/{id}/generate', [OtpManualController::class, 'generate'])->name('otp.generate');
@@ -441,12 +447,24 @@ Route::middleware(['auth', 'role:kordinator_angkatan,kordinator_matra'])->prefix
     Route::get('/dashboard', [DashboardKordinatorController::class, 'index'])->name('dashboard');
     Route::post('/personel/{uuid}/catatan', [DashboardKordinatorController::class, 'updateNotes'])->name('personel.catatan');
     
-    // Broadcast Khusus Koordinator Matra & Angkatan
-    Route::middleware('role:kordinator_matra,kordinator_angkatan')->group(function () {
+        Route::middleware('role:kordinator_matra,kordinator_angkatan')->group(function () {
         Route::get('/broadcast', [BroadcastKoordinatorController::class, 'index'])->name('broadcast.index');
         Route::get('/broadcast/create', [BroadcastKoordinatorController::class, 'create'])->name('broadcast.create');
         Route::post('/broadcast', [BroadcastKoordinatorController::class, 'store'])->name('broadcast.store');
     });
+});
+
+/*
+|--------------------------------------------------------------------------
+| 5. Role: Pejabat Utama (PJU) Routes (Ka Bacadnas, Ses Bacadnas, Kapus Komcad, Pembina Matra, Pembina Kodam/Kodaeral/Kodau/Kodim/Lanal/Lanud)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:ka_bacadnas,ses_bacadnas,kapus_komcad,pembina_matra,pembina_kodam,pembina_kodaeral,pembina_kodau,pembina_kodim,pembina_lanal,pembina_lanud,admin'])->prefix('pju')->name('pju.')->group(function () {
+    Route::get('/dashboard', [\App\Http\Controllers\Pju\DashboardPjuController::class, 'index'])->name('dashboard');
+    Route::get('/personel', [\App\Http\Controllers\Pju\DashboardPjuController::class, 'personelIndex'])->name('personel.index');
+    Route::get('/broadcast', [\App\Http\Controllers\Pju\DashboardPjuController::class, 'broadcastIndex'])->name('broadcast.index');
+    Route::get('/broadcast/create', [\App\Http\Controllers\Pju\DashboardPjuController::class, 'broadcastCreate'])->name('broadcast.create');
+    Route::post('/broadcast', [\App\Http\Controllers\Pju\DashboardPjuController::class, 'broadcastStore'])->name('broadcast.store');
 });
 
 // API Proxy Wilayah.id (Bypass CORS, SSL & Rate limits with Cache & Safe Fallbacks)
