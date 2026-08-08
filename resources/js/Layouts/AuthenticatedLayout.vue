@@ -610,11 +610,15 @@
     v-if="needKewilayahanUpdate"
     class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
   >
-    <div class="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-6 my-auto text-left relative">
+    <div class="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-6 my-auto text-left relative animate-kendut">
       <!-- Header Banner -->
       <div class="text-center space-y-2">
-        <div class="w-12 h-12 rounded-2xl bg-blue-50 text-[#2563EB] border border-blue-100 mx-auto flex items-center justify-center font-black text-xs shadow-xs uppercase tracking-widest">
-          TNI
+        <div class="w-16 h-16 rounded-2xl bg-white border border-slate-200 mx-auto flex items-center justify-center p-2 shadow-xs">
+          <img
+            :src="page.props.settings?.logo_tni || 'https://upload.wikimedia.org/wikipedia/commons/b/b5/Tentara_Nasional_Indonesia_insignia.svg'"
+            alt="Logo TNI"
+            class="w-full h-full object-contain"
+          />
         </div>
         <span class="text-[10px] font-extrabold uppercase tracking-widest bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-lg inline-block">
           PEMUTAKHIRAN DATA KEWILAYAHAN (1X PENGISIAN)
@@ -957,3 +961,20 @@ const logout = () => {
   router.post(route('logout'));
 };
 </script>
+
+<style scoped>
+@keyframes kendut {
+  0%, 100% {
+    transform: scale(1) translateY(0);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 0 20px rgba(37, 99, 235, 0.15);
+  }
+  50% {
+    transform: scale(1.025) translateY(-5px);
+    box-shadow: 0 25px 30px -5px rgba(0, 0, 0, 0.15), 0 0 35px rgba(37, 99, 235, 0.35);
+  }
+}
+
+.animate-kendut {
+  animation: kendut 2.2s ease-in-out infinite;
+}
+</style>
