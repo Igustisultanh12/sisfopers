@@ -212,6 +212,14 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                   <div class="p-3 bg-white border border-[#E2E8F0] rounded-xl">
+                    <p class="text-slate-400 font-bold uppercase tracking-wide text-[10px]">Komando Utama (Kotama)</p>
+                    <p class="font-bold text-blue-700 mt-1">{{ personel.kotama || '-' }}</p>
+                  </div>
+                  <div class="p-3 bg-white border border-[#E2E8F0] rounded-xl">
+                    <p class="text-slate-400 font-bold uppercase tracking-wide text-[10px]">Satuan Kewilayahan</p>
+                    <p class="font-bold text-blue-700 mt-1">{{ personel.satuan_kewilayahan || '-' }}</p>
+                  </div>
+                  <div class="p-3 bg-white border border-[#E2E8F0] rounded-xl">
                     <p class="text-slate-400 font-bold uppercase tracking-wide text-[10px]">Tempat, Tanggal Lahir</p>
                     <p class="font-semibold text-slate-800 mt-1">{{ personel.pob }}, {{ formatDate(personel.dob) }}</p>
                   </div>

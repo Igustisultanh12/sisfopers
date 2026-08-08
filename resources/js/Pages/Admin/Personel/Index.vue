@@ -212,6 +212,8 @@
                   <div class="grid grid-cols-2 gap-3.5">
                     <div><p class="text-slate-400">NIK Pokok</p><p class="font-semibold text-slate-700 mt-0.5">{{ selectedPersonel.nik }}</p></div>
                     <div><p class="text-slate-400">Tempat, Tanggal Lahir</p><p class="font-semibold text-slate-700 mt-0.5">{{ selectedPersonel.pob }}, {{ selectedPersonel.dob }}</p></div>
+                    <div><p class="text-slate-400">Komando Utama (Kotama)</p><p class="font-bold text-blue-700 mt-0.5">{{ selectedPersonel.kotama || '-' }}</p></div>
+                    <div><p class="text-slate-400">Satuan Kewilayahan</p><p class="font-bold text-blue-700 mt-0.5">{{ selectedPersonel.satuan_kewilayahan || '-' }}</p></div>
                     <div><p class="text-slate-400">Jenis Kelamin</p><p class="font-semibold text-slate-700 mt-0.5">{{ selectedPersonel.gender === 'L' ? 'Laki-laki' : 'Perempuan' }}</p></div>
                     <div><p class="text-slate-400">Kode Pos</p><p class="font-semibold text-slate-700 mt-0.5">{{ selectedPersonel.postal_code }}</p></div>
                     <div class="col-span-2"><p class="text-slate-400">Alamat Rumah Tinggal</p><p class="font-semibold text-slate-700 mt-0.5 leading-relaxed">{{ selectedPersonel.address }}, KEL. {{ selectedPersonel.village }}, KEC. {{ selectedPersonel.district }}, {{ selectedPersonel.city }}, {{ selectedPersonel.province }}</p></div>
