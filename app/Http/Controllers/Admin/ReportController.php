@@ -22,14 +22,24 @@ class ReportController extends Controller
 
     private function getSignerData()
     {
-        $user = auth()->user();
-        $personel = $user?->personel;
+        $user = auth()->user() ?: \Illuminate\Support\Facades\Auth::guard('pju')->user();
+        $personel = ($user && method_exists($user, 'getPersonelOrAutoCreate')) ? $user->getPersonelOrAutoCreate() : null;
         $settings = Setting::pluck('value', 'key')->all();
 
         $defaultName    = $settings['app_signer_name'] ?? 'HERMAN SUSILO, S.I.P.';
         $defaultPangkat = $settings['app_signer_pangkat'] ?? 'KOLONEL INF';
         $defaultNikc    = $settings['app_signer_nikc'] ?? '112233445566';
         $defaultJabatan = $settings['app_signer_jabatan'] ?? 'KOMANDAN KOMPONEN CADANGAN';
+
+        if ($user && isset($user->role_pju)) {
+            return [
+                'name'    => $user->full_name,
+                'pangkat' => Personel::formatLongRank($user->jabatan_pju ?? 'PEJABAT UTAMA'),
+                'nikc'    => $user->nrp ?? $user->username ?? '-',
+                'jabatan' => strtoupper($user->jabatan_pju ?? 'PEJABAT UTAMA'),
+                'header'  => 'a.n. Komandan Komponen Cadangan,',
+            ];
+        }
 
         if ($user && $user->hasRole('komandan')) {
             $rawPangkat = $personel ? $personel->pangkat : $defaultPangkat;
@@ -112,7 +122,7 @@ class ReportController extends Controller
             })
             ->all();
 
-        $user = auth()->user();
+        $user = auth()->user() ?: \Illuminate\Support\Facades\Auth::guard('pju')->user();
         $query = Personel::where(function ($q) {
             $q->whereDoesntHave('registration')
               ->orWhereHas('registration', function ($sub) {
@@ -120,9 +130,11 @@ class ReportController extends Controller
               });
         });
 
-        if ($user && $user->hasRole('kordinator_matra') && $user->matra) {
+        if ($user && isset($user->matra) && $user->matra) {
             $query->where('matra', $user->matra);
-        } elseif ($user && $user->hasRole('kordinator_angkatan')) {
+        } elseif ($user && method_exists($user, 'hasRole') && $user->hasRole('kordinator_matra') && $user->matra) {
+            $query->where('matra', $user->matra);
+        } elseif ($user && method_exists($user, 'hasRole') && $user->hasRole('kordinator_angkatan')) {
             if ($user->matra) {
                 $query->where('matra', $user->matra);
             }

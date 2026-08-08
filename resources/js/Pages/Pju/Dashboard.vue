@@ -64,7 +64,7 @@
         </Link>
 
         <Link
-          :href="route('admin.report.index')"
+          :href="route('pju.report.index')"
           class="bg-white border border-slate-200/80 hover:border-blue-300 p-6 rounded-2xl shadow-xs transition group cursor-pointer space-y-3"
         >
           <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-lg">

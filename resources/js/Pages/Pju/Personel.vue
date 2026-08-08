@@ -49,14 +49,14 @@
 
         <div class="flex items-center gap-2.5 w-full sm:w-auto flex-wrap sm:flex-nowrap">
           <a
-            :href="route('admin.report.personel.excel')"
+            :href="route('pju.report.personel.excel')"
             target="_blank"
             class="flex-1 sm:flex-none text-center px-4 py-2 bg-white border border-[#E2E8F0] hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-xl transition shadow-xs"
           >
             Ekspor Excel
           </a>
           <a
-            :href="route('admin.report.personel.pdf')"
+            :href="route('pju.report.personel.pdf')"
             target="_blank"
             class="flex-1 sm:flex-none text-center px-4 py-2 bg-white border border-[#E2E8F0] hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-xl transition shadow-xs"
           >

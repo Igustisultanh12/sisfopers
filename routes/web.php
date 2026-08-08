@@ -84,7 +84,7 @@ Route::get('/maintenance', function () {
     ]);
 })->name('maintenance');
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth:web,pju'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     // Manajemen Profil & Pengaturan Akun (dengan Alias Rute Ziggy Lengkap)
@@ -469,6 +469,13 @@ Route::middleware(['auth:pju,web', 'role:ka_bacadnas,ses_bacadnas,kapus_komcad,p
     Route::get('/broadcast', [\App\Http\Controllers\Pju\DashboardPjuController::class, 'broadcastIndex'])->name('broadcast.index');
     Route::get('/broadcast/create', [\App\Http\Controllers\Pju\DashboardPjuController::class, 'broadcastCreate'])->name('broadcast.create');
     Route::post('/broadcast', [\App\Http\Controllers\Pju\DashboardPjuController::class, 'broadcastStore'])->name('broadcast.store');
+    
+    // Ekspor Data Laporan (PDF & Excel Engine PJU)
+    Route::get('/laporan', [\App\Http\Controllers\Admin\ReportController::class, 'index'])->name('report.index');
+    Route::get('/laporan/personel/pdf', [\App\Http\Controllers\Admin\ReportController::class, 'personelPdf'])->name('report.personel.pdf');
+    Route::get('/laporan/personel/excel', [\App\Http\Controllers\Admin\ReportController::class, 'personelExcel'])->name('report.personel.excel');
+    Route::get('/laporan/wilayah/pdf', [\App\Http\Controllers\Admin\ReportController::class, 'regionPdf'])->name('report.region.pdf');
+    Route::get('/laporan/wilayah/excel', [\App\Http\Controllers\Admin\ReportController::class, 'regionExcel'])->name('report.region.excel');
 });
 
 // API Proxy Wilayah.id (Bypass CORS, SSL & Rate limits with Cache & Safe Fallbacks)

@@ -157,7 +157,7 @@
               <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
               Master Personel Jajaran
             </Link>
-            <Link :href="route('admin.report.index')" :class="route().current('admin.report.*') ? 'bg-[#2563EB]/5 text-[#2563EB] font-bold' : 'text-[#64748B] hover:text-slate-800 font-medium'" class="flex items-center gap-4 px-5 py-3.5 rounded-2xl text-[14px] transition duration-150">
+            <Link :href="route('pju.report.index')" :class="route().current('pju.report.*') ? 'bg-[#2563EB]/5 text-[#2563EB] font-bold' : 'text-[#64748B] hover:text-slate-800 font-medium'" class="flex items-center gap-4 px-5 py-3.5 rounded-2xl text-[14px] transition duration-150">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
               Laporan Pelaporan
             </Link>
