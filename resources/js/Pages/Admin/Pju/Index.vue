@@ -109,13 +109,13 @@
                 <p class="text-[10px] text-slate-400">{{ user.phone_number || '-' }}</p>
               </td>
               <td class="p-4 text-right whitespace-nowrap space-x-1.5">
-                <a
-                  :href="route('admin.pju.print-account', user.id)"
-                  target="_blank"
-                  class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold rounded-lg border border-emerald-200 transition inline-block"
+                <button
+                  type="button"
+                  @click="openPrintModal(user)"
+                  class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold rounded-lg border border-emerald-200 transition inline-block cursor-pointer"
                 >
                   Cetak Akun
-                </a>
+                </button>
                 <button
                   @click="openEditModal(user)"
                   class="px-3 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 text-[11px] font-bold rounded-lg border border-amber-200 transition cursor-pointer"
@@ -374,6 +374,72 @@
             Tutup Dialog
           </button>
         </div>
+    <!-- MODAL KONFIRMASI CETAK DENGAN PASSWORD BARU -->
+    <div v-if="showPrintModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+      <div class="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 my-auto text-left relative animate-in fade-in zoom-in duration-200">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <h3 class="text-base font-extrabold text-slate-800">
+            Cetak Informasi Akun PJU
+          </h3>
+          <button @click="showPrintModal = false" class="text-slate-400 hover:text-slate-600 text-lg font-bold p-1 cursor-pointer">✕</button>
+        </div>
+
+        <div class="space-y-3 text-xs text-slate-600">
+          <p>
+            Yth. Administrator, demi menjaga keamanan data pertahanan negara, kata sandi disimpan menggunakan enkripsi satu arah (hash) dan <strong>tidak dapat dibaca kembali</strong> secara langsung.
+          </p>
+          <p class="font-bold text-slate-700 bg-amber-50 border border-amber-200 p-2.5 rounded-xl">
+            Untuk mencetak lembar informasi kredensial login dengan password baru, silakan gunakan kata sandi yang telah di-generate di bawah atau masukkan kata sandi baru.
+          </p>
+          
+          <div class="space-y-1 bg-slate-50 p-3 rounded-xl border border-slate-100">
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400 font-bold uppercase tracking-wide text-[9px]">Nama Pejabat</span>
+              <span class="font-extrabold text-slate-800">{{ printTargetUser?.full_name }}</span>
+            </div>
+            <div class="flex justify-between items-center pt-1 border-t border-slate-200/50">
+              <span class="text-slate-400 font-bold uppercase tracking-wide text-[9px]">Username</span>
+              <span class="font-mono text-slate-800">{{ printTargetUser?.username }}</span>
+            </div>
+          </div>
+
+          <div class="pt-2">
+            <div class="flex items-center justify-between mb-1">
+              <label class="font-bold text-slate-700">Kata Sandi Baru</label>
+              <button
+                type="button"
+                @click="generatePrintPassword"
+                class="text-[10px] font-bold text-blue-600 hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                Acak Ulang Password
+              </button>
+            </div>
+            <input
+              v-model="printPassword"
+              type="text"
+              required
+              class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl outline-none focus:border-[#2563EB] font-mono text-slate-800 font-bold bg-slate-50/50"
+            />
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-3 border-t border-slate-100 text-xs">
+          <button
+            type="button"
+            @click="showPrintModal = false"
+            class="px-4 py-2.5 text-slate-500 hover:text-slate-800 font-bold cursor-pointer"
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            @click="submitPrintAndReset"
+            :disabled="isPrintingReset"
+            class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition cursor-pointer flex items-center gap-2"
+          >
+            <span>{{ isPrintingReset ? 'Memproses...' : 'Update Sandi & Cetak' }}</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -487,6 +553,72 @@ function deleteUser(user) {
   if (confirm(`Apakah Anda yakin ingin menghapus akun PJU ${name}?`)) {
     router.delete(route('admin.pju.destroy', user.id));
   }
+}
+
+// CETAK DENGAN RE-GENERATE PASSWORD BARU FLOW
+const showPrintModal = ref(false);
+const printTargetUser = ref(null);
+const printPassword = ref('');
+const isPrintingReset = ref(false);
+
+function openPrintModal(user) {
+  printTargetUser.value = user;
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$';
+  let randPass = 'Pju@';
+  for (let i = 0; i < 6; i++) {
+    randPass += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  printPassword.value = randPass;
+  showPrintModal.value = true;
+}
+
+function generatePrintPassword() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$';
+  let randPass = 'Pju@';
+  for (let i = 0; i < 6; i++) {
+    randPass += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  printPassword.value = randPass;
+}
+
+function submitPrintAndReset() {
+  if (!printPassword.value || printPassword.value.length < 6) {
+    alert('Kata sandi baru minimal 6 karakter!');
+    return;
+  }
+
+  isPrintingReset.value = true;
+  router.put(
+    route('admin.pju.update', printTargetUser.value.id),
+    {
+      full_name: printTargetUser.value.full_name,
+      nrp: printTargetUser.value.nrp,
+      email: printTargetUser.value.email,
+      phone_number: printTargetUser.value.phone_number,
+      role: printTargetUser.value.role_pju,
+      jabatan_pju: printTargetUser.value.jabatan_pju,
+      matra: printTargetUser.value.matra,
+      satuan_wilayah: printTargetUser.value.satuan_wilayah,
+      password: printPassword.value,
+    },
+    {
+      onSuccess: () => {
+        isPrintingReset.value = false;
+        showPrintModal.value = false;
+        
+        // Buka tab cetak pdf dengan password baru
+        const printUrl = route('admin.pju.print-account', {
+          id: printTargetUser.value.id,
+          pass: printPassword.value
+        });
+        window.open(printUrl, '_blank');
+      },
+      onError: (errors) => {
+        isPrintingReset.value = false;
+        alert('Gagal mengupdate sandi: ' + Object.values(errors).join(', '));
+      }
+    }
+  );
 }
 
 function formatRoleLabel(roleName) {
