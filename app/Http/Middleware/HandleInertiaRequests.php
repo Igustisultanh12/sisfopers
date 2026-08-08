@@ -31,9 +31,13 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
-        $personel = $user ? $user->getPersonelOrAutoCreate() : null;
+        if (!$user && \Illuminate\Support\Facades\Auth::guard('pju')->check()) {
+            $user = \Illuminate\Support\Facades\Auth::guard('pju')->user();
+        }
+
+        $personel = ($user && method_exists($user, 'getPersonelOrAutoCreate')) ? $user->getPersonelOrAutoCreate() : null;
         $needKewilayahanUpdate = false;
-        if ($user && $user->role && $user->role->name === 'personel' && $personel) {
+        if ($user && method_exists($user, 'hasRole') && $user->hasRole('personel') && $personel) {
             $needKewilayahanUpdate = (!$personel->is_kewilayahan_updated || empty($personel->kotama) || empty($personel->satuan_kewilayahan));
         }
 
@@ -45,13 +49,15 @@ class HandleInertiaRequests extends Middleware
                 'user' => $user ? [
                     'id'               => $user->id,
                     'username'         => $user->username,
+                    'full_name'        => $user->full_name ?? $user->username,
                     'email'            => $user->email,
-                    'whatsapp_number'  => $user->whatsapp_number,
-                    'role'             => $user->role ? [
-                        'id'   => $user->role->id,
-                        'name' => $user->role->name,
-                    ] : null,
-                    'email_verified'   => $user->hasVerifiedEmail(), 
+                    'whatsapp_number'  => $user->phone_number ?? $user->whatsapp_number ?? '-',
+                    'jabatan_pju'      => $user->jabatan_pju ?? null,
+                    'satuan_wilayah'   => $user->satuan_wilayah ?? null,
+                    'role'             => (object)[
+                        'name' => is_object($user->role) ? $user->role->name : ($user->role_pju ?? 'pju'),
+                    ],
+                    'email_verified'   => method_exists($user, 'hasVerifiedEmail') ? $user->hasVerifiedEmail() : true, 
                 ] : null,
 
                 'personel' => $personel ? [

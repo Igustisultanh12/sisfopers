@@ -75,6 +75,21 @@ class AuthController extends Controller
             }
         }
 
+        // 2. Cek Login Akun PJU (Tabel Terpisah pjus)
+        $pjuAttempt = Auth::guard('pju')->attempt(['email' => $credentials['username'], 'password' => $credentials['password']], $request->boolean('remember'))
+            || Auth::guard('pju')->attempt(['username' => $credentials['username'], 'password' => $credentials['password']], $request->boolean('remember'));
+
+        if ($pjuAttempt) {
+            $pju = Auth::guard('pju')->user();
+            if (!$pju->is_active) {
+                Auth::guard('pju')->logout();
+                return back()->withErrors(['username' => 'Akun PJU Anda dalam status non-aktif. Sila hubungi Administrator.']);
+            }
+
+            $request->session()->regenerate();
+            return redirect()->intended(route('pju.dashboard'));
+        }
+
         return back()->withErrors(['username' => 'Kredensial login tidak cocok dengan data kami.']);
     }
 

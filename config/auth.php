@@ -42,6 +42,10 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        'pju' => [
+            'driver' => 'session',
+            'provider' => 'pjus',
+        ],
     ],
 
     /*
@@ -65,6 +69,11 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', User::class),
+        ],
+
+        'pjus' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Pju::class,
         ],
 
         // 'users' => [

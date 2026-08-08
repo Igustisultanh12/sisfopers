@@ -13,11 +13,16 @@ use Inertia\Inertia;
 
 class DashboardPjuController extends Controller
 {
+    private function getPjuUser(Request $request)
+    {
+        return $request->user('pju') ?? $request->user() ?? \Illuminate\Support\Facades\Auth::guard('pju')->user();
+    }
+
     public function index(Request $request)
     {
-        $user = $request->user();
-        $matra = $user->matra;
-        $satuan = $user->satuan_wilayah;
+        $user = $this->getPjuUser($request);
+        $matra = $user ? $user->matra : null;
+        $satuan = $user ? $user->satuan_wilayah : null;
 
         $query = Personel::query();
         if ($matra) {
@@ -52,10 +57,10 @@ class DashboardPjuController extends Controller
 
     public function personelIndex(Request $request)
     {
-        $user = $request->user();
+        $user = $this->getPjuUser($request);
         $query = Personel::with(['user', 'sinyalmen', 'riwayatPendidikan']);
 
-        if ($user->matra) {
+        if ($user && $user->matra) {
             $query->where('matra', $user->matra);
         }
 
@@ -68,7 +73,7 @@ class DashboardPjuController extends Controller
             });
         }
 
-        if ($request->filled('matra') && !$user->matra) {
+        if ($request->filled('matra') && (!$user || !$user->matra)) {
             $query->where('matra', $request->matra);
         }
 
@@ -78,74 +83,61 @@ class DashboardPjuController extends Controller
 
         $personels = $query->paginate(15)->withQueryString();
 
+        $roleName = $user ? (is_object($user->role) ? $user->role->name : ($user->role_pju ?? 'pju')) : 'pju';
+
         return Inertia::render('Pju/Personel', [
             'personels' => $personels,
             'filters'   => $request->only(['search', 'matra', 'angkatan']),
-            'userRole'  => $user->role ? $user->role->name : 'pju',
+            'userRole'  => $roleName,
         ]);
     }
 
     public function broadcastIndex(Request $request)
     {
-        $user = $request->user();
+        $user = $this->getPjuUser($request);
         $query = Broadcast::with(['creator', 'responses']);
 
-        if ($user->matra) {
+        if ($user && $user->matra) {
             $query->where(function($q) use ($user) {
                 $q->whereNull('matra')->orWhere('matra', $user->matra);
             });
         }
 
         $broadcasts = $query->latest()->paginate(10)->withQueryString();
+        $roleName = $user ? (is_object($user->role) ? $user->role->name : ($user->role_pju ?? '')) : '';
 
         return Inertia::render('Pju/Broadcast/Index', [
             'broadcasts' => $broadcasts,
-            'canCreate'  => in_array($user->role ? $user->role->name : '', ['pembina_matra', 'admin']),
+            'canCreate'  => in_array($roleName, ['pembina_matra', 'admin']),
         ]);
     }
 
     public function broadcastCreate(Request $request)
     {
-        $user = $request->user();
-        abort_unless(in_array($user->role ? $user->role->name : '', ['pembina_matra', 'admin']), 403, 'Akses terbatas untuk Pembina Matra dan Admin.');
+        $user = $this->getPjuUser($request);
+        $roleName = $user ? (is_object($user->role) ? $user->role->name : ($user->role_pju ?? '')) : '';
+        abort_unless(in_array($roleName, ['pembina_matra', 'admin']), 403, 'Akses terbatas untuk Pembina Matra dan Admin.');
 
         return Inertia::render('Pju/Broadcast/Create', [
-            'userMatra' => $user->matra,
+            'userMatra' => $user->matra ?? null,
         ]);
     }
 
     public function broadcastStore(Request $request)
     {
-        $user = $request->user();
-        abort_unless(in_array($user->role ? $user->role->name : '', ['pembina_matra', 'admin']), 403);
+        $user = $this->getPjuUser($request);
+        $roleName = $user ? (is_object($user->role) ? $user->role->name : ($user->role_pju ?? '')) : '';
+        abort_unless(in_array($roleName, ['pembina_matra', 'admin']), 403, 'Akses terbatas untuk Pembina Matra dan Admin.');
 
         $validated = $request->validate([
-            'title'       => 'required|string|max:200',
-            'content'     => 'required|string',
-            'target_type' => 'required|in:ALL,MATRA,ANGKATAN',
-            'matra'       => 'nullable|in:AD,AL,AU',
-            'angkatan'    => 'nullable|digits:4',
+            'title'      => 'required|string|max:200',
+            'content'    => 'required|string',
+            'category'   => 'required|string',
+            'event_date' => 'nullable|date',
+            'matra'      => 'nullable|in:AD,AL,AU',
         ]);
 
         $broadcast = Broadcast::create([
-            'uuid'        => \Illuminate\Support\Str::uuid(),
-            'sender_id'   => $user->id,
-            'title'       => $validated['title'],
-            'content'     => $validated['content'],
-            'target_type' => $validated['target_type'],
-            'matra'       => $validated['matra'] ?? $user->matra,
-            'angkatan'    => $validated['angkatan'] ?? null,
-            'sent_at'     => now(),
-        ]);
-
-        // Kirim Notifikasi WA ke Personel Jajaran
-        try {
-            $personelQuery = Personel::query();
-            if ($broadcast->matra) {
-                $personelQuery->where('matra', $broadcast->matra);
-            }
-            if ($broadcast->angkatan) {
-                $personelQuery->where('angkatan', $broadcast->angkatan);
             }
 
             $personels = $personelQuery->get();
