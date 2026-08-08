@@ -14,6 +14,7 @@ class Pju extends Authenticatable
     protected $fillable = [
         'uuid',
         'full_name',
+        'nrp',
         'username',
         'email',
         'phone_number',

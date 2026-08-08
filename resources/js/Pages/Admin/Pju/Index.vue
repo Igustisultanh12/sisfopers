@@ -25,7 +25,7 @@
             v-model="searchQuery"
             @keyup.enter="handleSearch"
             type="text"
-            placeholder="Cari kata kunci: Nama Pejabat, Email, Jabatan PJU, Satuan..."
+            placeholder="Cari kata kunci: Nama Pejabat, NRP, Email, Jabatan PJU, Satuan..."
             class="w-full pl-4 pr-10 py-2.5 border border-[#E2E8F0] bg-white rounded-xl text-xs outline-none focus:border-[#2563EB]"
           />
           <button
@@ -77,7 +77,9 @@
                   </div>
                   <div>
                     <p class="font-extrabold text-slate-800">{{ user.full_name }}</p>
-                    <p class="text-[10px] text-slate-400 font-mono">Username: {{ user.username }}</p>
+                    <p class="text-[10px] text-slate-400 font-mono">
+                      <span v-if="user.nrp">NRP: {{ user.nrp }} | </span>Username: {{ user.username }}
+                    </p>
                   </div>
                 </div>
               </td>
@@ -165,15 +167,28 @@
         </div>
 
         <form @submit.prevent="submitForm" class="space-y-4 text-xs">
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Nama Lengkap Pejabat & Pangkat</label>
-            <input
-              v-model="form.full_name"
-              type="text"
-              required
-              placeholder="Contoh: Mayjen TNI Dr. H. Ahmad, S.I.P."
-              class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl outline-none focus:border-[#2563EB]"
-            />
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="sm:col-span-2">
+              <label class="block font-bold text-slate-700 mb-1">Nama Lengkap Pejabat & Pangkat</label>
+              <input
+                v-model="form.full_name"
+                type="text"
+                required
+                placeholder="Contoh: Mayjen TNI Dr. H. Ahmad, S.I.P."
+                class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl outline-none focus:border-[#2563EB]"
+              />
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">
+                NRP <span class="font-normal text-slate-400">(Opsional)</span>
+              </label>
+              <input
+                v-model="form.nrp"
+                type="text"
+                placeholder="Contoh: 11020034"
+                class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl outline-none focus:border-[#2563EB]"
+              />
+            </div>
           </div>
 
           <div class="grid grid-cols-2 gap-3">
@@ -323,7 +338,7 @@
             {{ createdPjuModal.full_name }}
           </h3>
           <p class="text-xs text-slate-500">
-            {{ createdPjuModal.jabatan_pju }}
+            {{ createdPjuModal.jabatan_pju }} <span v-if="createdPjuModal.nrp">| NRP: {{ createdPjuModal.nrp }}</span>
           </p>
         </div>
 
@@ -368,7 +383,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Link, useForm, router } from '@inertiajs/vue3';
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch } from 'vue';
 
 const props = defineProps({
   pjuUsers: Object,
@@ -393,6 +408,7 @@ watch(() => props.createdPju, (val) => {
 
 const form = useForm({
   full_name: '',
+  nrp: '',
   email: '',
   phone_number: '',
   role: 'ka_bacadnas',
@@ -434,6 +450,7 @@ function openEditModal(user) {
   isEditing.value = true;
   editingUserId.value = user.id;
   form.full_name = user.full_name || '';
+  form.nrp = user.nrp || '';
   form.email = user.email || '';
   form.phone_number = user.phone_number || '';
   form.role = user.role_pju || 'ka_bacadnas';

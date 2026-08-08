@@ -57,6 +57,7 @@ class PjuManagementController extends Controller
 
         $validated = $request->validate([
             'full_name'      => 'required|string|max:150',
+            'nrp'            => 'nullable|string|max:50',
             'email'          => 'required|email|unique:pjus,email',
             'phone_number'   => 'required|string|max:20',
             'role'           => ['required', 'string', Rule::in($pjuRoles)],
@@ -75,6 +76,7 @@ class PjuManagementController extends Controller
             $pju = Pju::create([
                 'uuid'           => Str::uuid(),
                 'full_name'      => $validated['full_name'],
+                'nrp'            => $validated['nrp'] ?? null,
                 'username'       => $username,
                 'email'          => $validated['email'],
                 'phone_number'   => $validated['phone_number'],
@@ -98,6 +100,7 @@ class PjuManagementController extends Controller
                 'created_pju' => [
                     'id'          => $pju->id,
                     'full_name'   => $pju->full_name,
+                    'nrp'         => $pju->nrp,
                     'jabatan_pju' => $pju->jabatan_pju,
                     'username'    => $username,
                     'email'       => $pju->email,
@@ -128,6 +131,7 @@ class PjuManagementController extends Controller
 
         $validated = $request->validate([
             'full_name'      => 'required|string|max:150',
+            'nrp'            => 'nullable|string|max:50',
             'email'          => 'required|email|unique:pjus,email,' . $pju->id,
             'phone_number'   => 'required|string|max:20',
             'role'           => ['required', 'string', Rule::in($pjuRoles)],
@@ -140,6 +144,7 @@ class PjuManagementController extends Controller
         try {
             $updateData = [
                 'full_name'      => $validated['full_name'],
+                'nrp'            => $validated['nrp'] ?? null,
                 'email'          => $validated['email'],
                 'phone_number'   => $validated['phone_number'],
                 'role_pju'       => $validated['role'],

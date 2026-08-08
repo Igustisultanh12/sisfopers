@@ -190,6 +190,10 @@
             <td>{{ $pju->full_name }}</td>
         </tr>
         <tr>
+            <th>Nomor Registrasi Pokok (NRP)</th>
+            <td>{{ $pju->nrp ?? '-' }}</td>
+        </tr>
+        <tr>
             <th>Jabatan Kedinasan PJU</th>
             <td>{{ $pju->jabatan_pju }}</td>
         </tr>
