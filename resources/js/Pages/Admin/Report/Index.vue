@@ -10,10 +10,20 @@
           <p class="text-xs text-slate-400 leading-relaxed">Ekspor seluruh database induk anggota komponen cadangan nasional yang aktif terverifikasi biometrik.</p>
         </div>
         <div class="flex gap-2 pt-2">
-          <a :href="route('admin.report.personel.excel')" @click="triggerSwalDownload" class="flex-1 py-2.5 text-center bg-white border border-[#E2E8F0] hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl transition shadow-sm cursor-pointer">
+          <a
+            :href="getReportRoute('personel.excel')"
+            target="_blank"
+            @click="triggerSwalDownload"
+            class="flex-1 py-2.5 text-center bg-white border border-[#E2E8F0] hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl transition shadow-sm cursor-pointer"
+          >
             Unduh Excel (.xlsx)
           </a>
-          <a :href="route('admin.report.personel.pdf')" @click="triggerSwalDownload" class="flex-1 py-2.5 text-center bg-[#2563EB] hover:bg-[#1E40AF] text-white text-xs font-semibold rounded-xl transition shadow-md shadow-blue-500/10 cursor-pointer">
+          <a
+            :href="getReportRoute('personel.pdf')"
+            target="_blank"
+            @click="triggerSwalDownload"
+            class="flex-1 py-2.5 text-center bg-[#2563EB] hover:bg-[#1E40AF] text-white text-xs font-semibold rounded-xl transition shadow-md shadow-blue-500/10 cursor-pointer"
+          >
             Unduh Cetak PDF
           </a>
         </div>
@@ -39,10 +49,20 @@
           <p class="text-xs text-slate-400 leading-relaxed">Ekspor rekapitulasi data kekuatan personel komponen cadangan nasional yang dikelompokkan secara hierarki per Provinsi, Kota/Kabupaten domisili, Abituren (Angkatan), dan Sumber Rekrutmen (Reguler, SPPI, PNS).</p>
         </div>
         <div class="flex gap-3 pt-2 max-w-md">
-          <a :href="route('admin.report.region.excel')" @click="triggerSwalDownload" class="flex-1 py-2.5 text-center bg-white border border-[#E2E8F0] hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl transition shadow-sm cursor-pointer">
+          <a
+            :href="getReportRoute('region.excel')"
+            target="_blank"
+            @click="triggerSwalDownload"
+            class="flex-1 py-2.5 text-center bg-white border border-[#E2E8F0] hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl transition shadow-sm cursor-pointer"
+          >
             Unduh Excel (.xlsx)
           </a>
-          <a :href="route('admin.report.region.pdf')" @click="triggerSwalDownload" class="flex-1 py-2.5 text-center bg-[#2563EB] hover:bg-[#1E40AF] text-white text-xs font-semibold rounded-xl transition shadow-md shadow-blue-500/10 cursor-pointer">
+          <a
+            :href="getReportRoute('region.pdf')"
+            target="_blank"
+            @click="triggerSwalDownload"
+            class="flex-1 py-2.5 text-center bg-[#2563EB] hover:bg-[#1E40AF] text-white text-xs font-semibold rounded-xl transition shadow-md shadow-blue-500/10 cursor-pointer"
+          >
             Unduh Cetak PDF
           </a>
         </div>
@@ -57,8 +77,14 @@ import { useSwal } from '@/Composables/useSwal';
 
 const { alertSuccess, alertError } = useSwal();
 
+const getReportRoute = (name) => {
+  const currentRouteName = typeof route === 'function' && route().current() ? route().current() : '';
+  const isPju = currentRouteName.startsWith('pju.');
+  const prefix = isPju ? 'pju.report' : 'admin.report';
+  return route(`${prefix}.${name}`);
+};
+
 const triggerSwalDownload = () => {
-  // Memberikan feedback instan premium saat mesin server melakukan rendering berkas biner
   setTimeout(() => {
     alertSuccess('Permintaan Diterima', 'Berkas dokumen laporan Anda sedang diproses oleh engine server dan diunduh otomatis.');
   }, 300);
