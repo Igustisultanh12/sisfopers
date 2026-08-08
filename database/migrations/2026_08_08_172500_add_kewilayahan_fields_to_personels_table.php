@@ -13,22 +13,13 @@ return new class extends Migration
     {
         Schema::table('personels', function (Blueprint $table) {
             if (!Schema::hasColumn('personels', 'kotama')) {
-                $table->string('kotama')->nullable()->after('angkatan');
+                $table->string('kotama')->nullable();
             }
             if (!Schema::hasColumn('personels', 'satuan_kewilayahan')) {
-                $table->string('satuan_kewilayahan')->nullable()->after('kotama');
+                $table->string('satuan_kewilayahan')->nullable();
             }
             if (!Schema::hasColumn('personels', 'is_kewilayahan_updated')) {
-                $table->boolean('is_kewilayahan_updated')->default(false)->after('satuan_kewilayahan');
-            }
-        });
-
-        Schema::table('registrations', function (Blueprint $table) {
-            if (!Schema::hasColumn('registrations', 'kotama')) {
-                $table->string('kotama')->nullable()->after('angkatan');
-            }
-            if (!Schema::hasColumn('registrations', 'satuan_kewilayahan')) {
-                $table->string('satuan_kewilayahan')->nullable()->after('kotama');
+                $table->boolean('is_kewilayahan_updated')->default(false);
             }
         });
     }
@@ -46,15 +37,6 @@ return new class extends Migration
                 $table->dropColumn('satuan_kewilayahan');
             }
             if (Schema::hasColumn('personels', 'kotama')) {
-                $table->dropColumn('kotama');
-            }
-        });
-
-        Schema::table('registrations', function (Blueprint $table) {
-            if (Schema::hasColumn('registrations', 'satuan_kewilayahan')) {
-                $table->dropColumn('satuan_kewilayahan');
-            }
-            if (Schema::hasColumn('registrations', 'kotama')) {
                 $table->dropColumn('kotama');
             }
         });
