@@ -13,11 +13,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
+            if (!Schema::hasColumn('users', 'matra')) {
+                $table->string('matra', 10)->nullable();
+            }
             if (!Schema::hasColumn('users', 'jabatan_pju')) {
-                $table->string('jabatan_pju')->nullable()->after('matra');
+                $table->string('jabatan_pju')->nullable();
             }
             if (!Schema::hasColumn('users', 'satuan_wilayah')) {
-                $table->string('satuan_wilayah')->nullable()->after('jabatan_pju');
+                $table->string('satuan_wilayah')->nullable();
             }
         });
 
