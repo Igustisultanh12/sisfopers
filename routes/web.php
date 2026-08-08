@@ -435,6 +435,9 @@ Route::middleware(['auth', 'role:personel,admin,kordinator_angkatan,kordinator_m
         // Modul Open Tiket Pengaduan Personel (Ganti Foto, Ubah Data, Cetak KTA)
         Route::get('/tickets', [\App\Http\Controllers\Personel\TicketController::class, 'index'])->name('tickets.index');
         Route::post('/tickets', [\App\Http\Controllers\Personel\TicketController::class, 'store'])->name('tickets.store');
+
+        // Pemutakhiran Data Komando Kewilayahan Personel (1x pengisian)
+        Route::post('/personel/update-kewilayahan', [\App\Http\Controllers\Personel\KewilayahanController::class, 'updateKewilayahan'])->name('personel.kewilayahan.update');
     });
 });
 

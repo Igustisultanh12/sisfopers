@@ -31,6 +31,11 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
+        $personel = $user ? $user->getPersonelOrAutoCreate() : null;
+        $needKewilayahanUpdate = false;
+        if ($user && $user->role && $user->role->name === 'personel' && $personel) {
+            $needKewilayahanUpdate = (!$personel->is_kewilayahan_updated || empty($personel->kotama) || empty($personel->satuan_kewilayahan));
+        }
 
         return [
             ...parent::share($request),
@@ -46,9 +51,19 @@ class HandleInertiaRequests extends Middleware
                         'id'   => $user->role->id,
                         'name' => $user->role->name,
                     ] : null,
-                    // Deteksi verifikasi email agar frontend tidak memantul tanpa alasan
                     'email_verified'   => $user->hasVerifiedEmail(), 
                 ] : null,
+
+                'personel' => $personel ? [
+                    'id'                     => $personel->id,
+                    'full_name'              => $personel->full_name,
+                    'matra'                  => $personel->matra,
+                    'kotama'                 => $personel->kotama,
+                    'satuan_kewilayahan'     => $personel->satuan_kewilayahan,
+                    'is_kewilayahan_updated' => $personel->is_kewilayahan_updated,
+                ] : null,
+
+                'needKewilayahanUpdate' => $needKewilayahanUpdate,
 
                 // HUB SYNC NOTIFIKASI GLOBAL (Bypass Cache Proxy Tunnel via Direct DB Query)
                 'unread_notifications_count' => $user ? DB::table('notifications')->where('notifiable_id', $user->id)->whereNull('read_at')->count() : 0,

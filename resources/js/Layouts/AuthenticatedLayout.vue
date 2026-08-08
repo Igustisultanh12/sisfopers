@@ -604,10 +604,90 @@
       </main>
     </div>
   </div>
+
+  <!-- GLOBAL MODAL SWEETALERT-STYLE: PEMUTAKHIRAN DATA KEWILAYAHAN (1X PENGISIAN) -->
+  <div
+    v-if="needKewilayahanUpdate"
+    class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
+  >
+    <div class="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-6 my-auto text-left relative">
+      <!-- Header Banner -->
+      <div class="text-center space-y-2">
+        <div class="w-14 h-14 rounded-2xl bg-blue-50 text-[#2563EB] border border-blue-100 mx-auto flex items-center justify-center font-black text-xl shadow-xs">
+          🏛️
+        </div>
+        <span class="text-[10px] font-extrabold uppercase tracking-widest bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-lg inline-block">
+          PEMUTAKHIRAN DATA KEWILAYAHAN (1X PENGISIAN)
+        </span>
+        <h2 class="text-lg font-black text-slate-800 tracking-tight">
+          Komando Utama & Satuan Kewilayahan
+        </h2>
+        <p class="text-xs text-slate-500 leading-relaxed">
+          Yth. <strong class="text-slate-800">{{ authProps?.personel?.full_name || authProps?.user?.username }}</strong>, mohon melengkapi data Komando Utama (Kodam / Kodaeral / Kodau) dan Satuan Kewilayahan (Kodim / Lanal / Lanud) Anda.
+        </p>
+      </div>
+
+      <form @submit.prevent="submitKewilayahan" class="space-y-4 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Matra Dinas</label>
+          <input
+            type="text"
+            :value="'TNI ' + (authProps?.personel?.matra || 'AD')"
+            disabled
+            class="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl font-extrabold text-blue-700 text-xs cursor-not-allowed"
+          />
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">
+            {{ currentUnitConfig.label_kotama }} <span class="text-red-500">*</span>
+          </label>
+          <select
+            v-model="kewilayahanForm.kotama"
+            @change="onKotamaChange"
+            required
+            class="w-full px-4 py-2.5 border border-slate-200 rounded-xl outline-none focus:border-[#2563EB] bg-white font-semibold text-xs"
+          >
+            <option value="" disabled>-- Pilih {{ currentUnitConfig.label_kotama }} --</option>
+            <option v-for="(satuans, kotName) in currentUnitConfig.kotama" :key="kotName" :value="kotName">
+              {{ kotName }}
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">
+            {{ currentUnitConfig.label_satuan }} <span class="text-red-500">*</span>
+          </label>
+          <select
+            v-model="kewilayahanForm.satuan_kewilayahan"
+            :disabled="!kewilayahanForm.kotama"
+            required
+            class="w-full px-4 py-2.5 border border-slate-200 rounded-xl outline-none focus:border-[#2563EB] bg-white font-semibold text-xs disabled:bg-slate-100 disabled:cursor-not-allowed"
+          >
+            <option value="" disabled>-- Pilih {{ currentUnitConfig.label_satuan }} --</option>
+            <option v-for="satName in currentSatuanOptions" :key="satName" :value="satName">
+              {{ satName }}
+            </option>
+          </select>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100">
+          <button
+            type="submit"
+            :disabled="kewilayahanForm.processing || !kewilayahanForm.satuan_kewilayahan"
+            class="w-full py-3 bg-[#2563EB] hover:bg-blue-600 disabled:opacity-60 text-white font-bold text-xs rounded-xl shadow-md transition cursor-pointer"
+          >
+            Simpan Data Kewilayahan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 </template>
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { router, Link, usePage } from '@inertiajs/vue3';
+import { router, Link, usePage, useForm } from '@inertiajs/vue3';
 
 const page = usePage();
 const dropdownOpen = ref(false);
@@ -622,7 +702,7 @@ onMounted(() => {
       preserveScroll: true,
       preserveState: true,
     });
-  }, 15000); // Polling notifikasi setiap 15 detik
+  }, 15000);
 });
 
 onUnmounted(() => {
@@ -630,6 +710,83 @@ onUnmounted(() => {
     clearInterval(notificationInterval);
   }
 });
+
+const militaryUnitsData = {
+  AD: {
+    label_kotama: 'Kodam (Komando Daerah Militer)',
+    label_satuan: 'Kodim (Komando Distrik Militer)',
+    kotama: {
+      'Kodam I/Bukit Barisan': ['Kodim 0201/Medan', 'Kodim 0202/Tapanuli Utara', 'Kodim 0203/Langkat', 'Kodim 0204/Deli Serdang', 'Kodim 0209/Labuhanbatu'],
+      'Kodam II/Sriwijaya': ['Kodim 0401/Muba', 'Kodim 0402/OKI', 'Kodim 0403/OKU', 'Kodim 0418/Palembang', 'Kodim 0407/Kota Bengkulu'],
+      'Kodam III/Siliwangi': ['Kodim 0601/Pandeglang', 'Kodim 0602/Serang', 'Kodim 0606/Kota Bogor', 'Kodim 0618/Kota Bandung', 'Kodim 0609/Cimahi'],
+      'Kodam IV/Diponegoro': ['Kodim 0701/Banyumas', 'Kodim 0733/Kota Semarang', 'Kodim 0734/Kota Yogyakarta', 'Kodim 0709/Kebumen'],
+      'Kodam V/Brawijaya': ['Kodim 0801/Pacitan', 'Kodim 0830/Surabaya Utara', 'Kodim 0831/Surabaya Timur', 'Kodim 0832/Surabaya Selatan', 'Kodim 0833/Kota Malang'],
+      'Kodam VI/Mulawarman': ['Kodim 0901/Samarinda', 'Kodim 0905/Balikpapan', 'Kodim 0907/Tarakan', 'Kodim 0908/Bontang'],
+      'Kodam IX/Udayana': ['Kodim 1609/Buleleng', 'Kodim 1611/Badung', 'Kodim 1612/Manggarai', 'Kodim 1606/Mataram', 'Kodim 1604/Kupang'],
+      'Kodam XII/Tanjungpura': ['Kodim 1207/Pontianak', 'Kodim 1201/Mempawah', 'Kodim 1202/Singkawang'],
+      'Kodam XIII/Merdeka': ['Kodim 1309/Manado', 'Kodim 1310/Bitung', 'Kodim 1306/Kota Palu'],
+      'Kodam XIV/Hasanuddin': ['Kodim 1408/Makassar', 'Kodim 1409/Gowa', 'Kodim 1418/Mamuju'],
+      'Kodam XVI/Pattimura': ['Kodim 1504/Ambon', 'Kodim 1508/Tobelo', 'Kodim 1501/Ternate'],
+      'Kodam XVII/Cenderawasih': ['Kodim 1701/Jayapura', 'Kodim 1702/Jayawijaya', 'Kodim 1705/Nabire'],
+      'Kodam XVIII/Kasuari': ['Kodim 1801/Manokwari', 'Kodim 1802/Sorong', 'Kodim 1803/Fakfak'],
+      'Kodam Jaya': ['Kodim 0501/Jakarta Pusat', 'Kodim 0502/Jakarta Utara', 'Kodim 0503/Jakarta Barat', 'Kodim 0504/Jakarta Selatan', 'Kodim 0505/Jakarta Timur', 'Kodim 0506/Tangerang', 'Kodim 0507/Bekasi', 'Kodim 0508/Depok'],
+    }
+  },
+  AL: {
+    label_kotama: 'Kodaeral (Komando Daerah Angkatan Laut)',
+    label_satuan: 'Lanal (Pangkalan TNI Angkatan Laut)',
+    kotama: {
+      'Kodaeral I (Belawan)': ['Lanal Sabang', 'Lanal Lhokseumawe', 'Lanal Tanjung Balai Asahan', 'Lanal Simeulue'],
+      'Kodaeral II (Padang)': ['Lanal Sibolga', 'Lanal Nias', 'Lanal Bengkulu'],
+      'Kodaeral III (Jakarta)': ['Lanal Lampung', 'Lanal Palembang', 'Lanal Cirebon', 'Lanal Bandung', 'Lanal Banten'],
+      'Kodaeral IV (Batam)': ['Lanal Ranai', 'Lanal Tarempa', 'Lanal Dabo Singkep'],
+      'Kodaeral V (Surabaya)': ['Lanal Semarang', 'Lanal Yogyakarta', 'Lanal Cilacap', 'Lanal Malang', 'Lanal Banyuwangi', 'Lanal Denpasar'],
+      'Kodaeral VI (Makassar)': ['Lanal Mamuju', 'Lanal Palu', 'Lanal Kendari'],
+      'Kodaeral VII (Kupang)': ['Lanal Mataram', 'Lanal Maumere', 'Lanal Rote', 'Lanal Waingapu'],
+      'Kodaeral VIII (Manado)': ['Lanal Gorontalo', 'Lanal Tahuna', 'Lanal Melonguane'],
+      'Kodaeral IX (Ambon)': ['Lanal Saumlaki', 'Lanal Aru'],
+      'Kodaeral X (Jayapura)': ['Lanal Biak', 'Lanal Sarmi'],
+      'Kodaeral XI (Merauke)': ['Lanal Timika', 'Lanal Arafuru'],
+      'Kodaeral XII (Pontianak)': ['Lanal Sambas', 'Lanal Ketapang'],
+      'Kodaeral XIII (Tarakan)': ['Lanal Nunukan', 'Lanal Sangatta', 'Lanal Balikpapan'],
+      'Kodaeral XIV (Sorong)': ['Lanal Morotai', 'Lanal Kaimana'],
+    }
+  },
+  AU: {
+    label_kotama: 'Kodau (Komando Daerah Angkatan Udara)',
+    label_satuan: 'Lanud (Pangkalan TNI Angkatan Udara)',
+    kotama: {
+      'Kodau I (Koopsud I)': ['Lanud Halim Perdanakusuma', 'Lanud Atang Sendjaja', 'Lanud Suryadarma', 'Lanud Husein Sastranegara', 'Lanud Roesmin Nurjadin', 'Lanud Soewondo', 'Lanud Sultan Iskandar Muda', 'Lanud Maimun Saleh', 'Lanud Sutan Sjahrir', 'Lanud Sri Mulyono Herlambang', 'Lanud H.AS Hanandjoeddin', 'Lanud Raden Sadjad', 'Lanud Prince M. Bun Yamin'],
+      'Kodau II (Koopsud II)': ['Lanud Sultan Hasanuddin', 'Lanud Iswahjudi', 'Lanud Abdulrachman Saleh', 'Lanud Muljono', 'Lanud DAA', 'Lanud Sam Ratulangi', 'Lanud Dumatubun', 'Lanud Zam', 'Lanud Syamsudin Noor', 'Lanud Anang Busra'],
+      'Kodau III (Koopsud III)': ['Lanud Silas Papare', 'Lanud Manuhua', 'Lanud Johannes Abraham Dimara', 'Lanud Leo Wattimena', 'Lanud Pattimura', 'Lanud El Tari'],
+    }
+  }
+};
+
+const needKewilayahanUpdate = computed(() => page.props.auth?.needKewilayahanUpdate || false);
+const userMatra = computed(() => page.props.auth?.personel?.matra || 'AD');
+
+const currentUnitConfig = computed(() => {
+  return militaryUnitsData[userMatra.value] || militaryUnitsData['AD'];
+});
+
+const currentSatuanOptions = computed(() => {
+  if (!kewilayahanForm.kotama) return [];
+  return currentUnitConfig.value.kotama[kewilayahanForm.kotama] || [];
+});
+
+const kewilayahanForm = useForm({
+  kotama: '',
+  satuan_kewilayahan: '',
+});
+
+function onKotamaChange() {
+  kewilayahanForm.satuan_kewilayahan = '';
+}
+
+function submitKewilayahan() {
+  kewilayahanForm.post(route('personel.kewilayahan.update'));
+}
 
 const getNotificationStyles = (iconKey) => {
   const map = {
