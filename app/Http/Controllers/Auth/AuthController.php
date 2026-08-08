@@ -56,22 +56,22 @@ class AuthController extends Controller
             $request->session()->regenerate();
 
             if ($user->hasRole('admin')) {
-                return redirect()->intended(route('admin.dashboard'));
+                return redirect()->route('admin.dashboard');
             }
 
             if ($user->hasRole('komandan')) {
-                return redirect()->intended(route('komandan.dashboard'));
+                return redirect()->route('komandan.dashboard');
             }
             
             if ($user->hasRole('personel')) {
                 if (!$user->personel || !$user->personel->face_verified) {
                     return redirect()->route('personel.face-verification');
                 }
-                return redirect()->intended(route('personel.dashboard'));
+                return redirect()->route('personel.dashboard');
             }
 
             if ($user->hasRole('kordinator_angkatan') || $user->hasRole('kordinator_matra')) {
-                return redirect()->intended(route('kordinator.dashboard'));
+                return redirect()->route('kordinator.dashboard');
             }
         }
 
@@ -87,7 +87,7 @@ class AuthController extends Controller
             }
 
             $request->session()->regenerate();
-            return redirect()->intended(route('pju.dashboard'));
+            return redirect()->route('pju.dashboard');
         }
 
         return back()->withErrors(['username' => 'Kredensial login tidak cocok dengan data kami.']);
