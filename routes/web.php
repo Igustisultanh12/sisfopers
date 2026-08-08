@@ -463,7 +463,7 @@ Route::middleware(['auth', 'role:kordinator_angkatan,kordinator_matra'])->prefix
 | 5. Role: Pejabat Utama (PJU) Routes (Ka Bacadnas, Ses Bacadnas, Kapus Komcad, Pembina Matra, Pembina Kodam/Kodaeral/Kodau/Kodim/Lanal/Lanud)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'role:ka_bacadnas,ses_bacadnas,kapus_komcad,pembina_matra,pembina_kodam,pembina_kodaeral,pembina_kodau,pembina_kodim,pembina_lanal,pembina_lanud,admin'])->prefix('pju')->name('pju.')->group(function () {
+Route::middleware(['auth:pju,web', 'role:ka_bacadnas,ses_bacadnas,kapus_komcad,pembina_matra,pembina_kodam,pembina_kodaeral,pembina_kodau,pembina_kodim,pembina_lanal,pembina_lanud,admin'])->prefix('pju')->name('pju.')->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\Pju\DashboardPjuController::class, 'index'])->name('dashboard');
     Route::get('/personel', [\App\Http\Controllers\Pju\DashboardPjuController::class, 'personelIndex'])->name('personel.index');
     Route::get('/broadcast', [\App\Http\Controllers\Pju\DashboardPjuController::class, 'broadcastIndex'])->name('broadcast.index');

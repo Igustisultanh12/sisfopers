@@ -11,19 +11,20 @@ class RoleMiddleware
 {
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
-        if (!Auth::check()) {
+        $user = Auth::guard('web')->user() ?: Auth::guard('pju')->user();
+
+        if (!$user) {
             return redirect()->route('login');
         }
 
-        $user = Auth::user();
-        
-        if (!$user->is_active) {
-            Auth::logout();
+        if (isset($user->is_active) && !$user->is_active) {
+            Auth::guard('web')->logout();
+            Auth::guard('pju')->logout();
             return redirect()->route('login')->withErrors(['username' => 'Akun Anda belum aktif atau ditangguhkan.']);
         }
 
         foreach ($roles as $role) {
-            if ($user->hasRole($role)) {
+            if (method_exists($user, 'hasRole') && $user->hasRole($role)) {
                 return $next($request);
             }
         }
