@@ -438,7 +438,7 @@ Route::middleware(['auth', 'role:personel,admin,kordinator_angkatan,kordinator_m
         Route::post('/tickets', [\App\Http\Controllers\Personel\TicketController::class, 'store'])->name('tickets.store');
 
         // Pemutakhiran Data Komando Kewilayahan Personel (1x pengisian)
-        Route::post('/personel/update-kewilayahan', [\App\Http\Controllers\Personel\KewilayahanController::class, 'updateKewilayahan'])->name('personel.kewilayahan.update');
+        Route::post('/update-kewilayahan', [\App\Http\Controllers\Personel\KewilayahanController::class, 'updateKewilayahan'])->name('kewilayahan.update');
     });
 });
 
