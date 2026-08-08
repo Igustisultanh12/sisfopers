@@ -58,7 +58,7 @@ class DashboardPjuController extends Controller
     public function personelIndex(Request $request)
     {
         $user = $this->getPjuUser($request);
-        $query = Personel::with(['user', 'sinyalmen', 'riwayatPendidikan']);
+        $query = Personel::with(['user', 'sinyalmen', 'riwayatPendidikan', 'jobHistories', 'broadcastResponses.broadcast']);
 
         if ($user && $user->matra) {
             $query->where('matra', $user->matra);
