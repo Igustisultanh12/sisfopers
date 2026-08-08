@@ -374,6 +374,9 @@
             Tutup Dialog
           </button>
         </div>
+      </div>
+    </div>
+
     <!-- MODAL KONFIRMASI CETAK DENGAN PASSWORD BARU -->
     <div v-if="showPrintModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
       <div class="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 my-auto text-left relative animate-in fade-in zoom-in duration-200">
