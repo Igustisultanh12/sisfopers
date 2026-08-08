@@ -130,20 +130,20 @@ class MilitaryUnitHelper
                 'label_kotama' => 'Kodaeral (Komando Daerah Angkatan Laut)',
                 'label_satuan' => 'Lanal (Pangkalan TNI Angkatan Laut)',
                 'kotama' => [
-                    'Kodaeral I (Belawan)' => ['Lanal Sabang', 'Lanal Lhokseumawe', 'Lanal Tanjung Balai Asahan', 'Lanal Simeulue', 'Lanal Dumai', 'Lanal Bintan'],
-                    'Kodaeral II (Padang)' => ['Lanal Sibolga', 'Lanal Nias', 'Lanal Bengkulu', 'Lanal Melaboh'],
-                    'Kodaeral III (Jakarta)' => ['Lanal Lampung', 'Lanal Palembang', 'Lanal Cirebon', 'Lanal Bandung', 'Lanal Banten', 'Lanal Pangandaran'],
-                    'Kodaeral IV (Batam)' => ['Lanal Ranai', 'Lanal Tarempa', 'Lanal Dabo Singkep', 'Lanal Tanjung Balai Karimun'],
-                    'Kodaeral V (Surabaya)' => ['Lanal Semarang', 'Lanal Yogyakarta', 'Lanal Cilacap', 'Lanal Malang', 'Lanal Banyuwangi', 'Lanal Denpasar', 'Lanal Batuporon'],
+                    'Kodaeral I (Belawan)' => ['Lanal Sabang', 'Lanal Lhokseumawe', 'Lanal Tanjung Balai Asahan', 'Lanal Simeulue', 'Lanal Dumai', 'Lanal Bintan', 'Lanal Brandan'],
+                    'Kodaeral II (Padang)' => ['Lanal Sibolga', 'Lanal Nias', 'Lanal Bengkulu', 'Lanal Mentawai'],
+                    'Kodaeral III (Jakarta)' => ['Lanal Lampung', 'Lanal Palembang', 'Lanal Bangka Belitung', 'Lanal Cirebon', 'Lanal Bandung', 'Lanal Banten', 'Lanal Sukabumi', 'Lanal Pangandaran'],
+                    'Kodaeral IV (Batam)' => ['Lanal Ranai', 'Lanal Tarempa', 'Lanal Dabo Singkep', 'Lanal Tanjung Balai Karimun', 'Lanal Batam'],
+                    'Kodaeral V (Surabaya)' => ['Lanal Tegal', 'Lanal Semarang', 'Lanal Yogyakarta', 'Lanal Cilacap', 'Lanal Malang', 'Lanal Banyuwangi', 'Lanal Denpasar', 'Lanal Batuporon', 'Lanal Pacitan'],
                     'Kodaeral VI (Makassar)' => ['Lanal Mamuju', 'Lanal Palu', 'Lanal Kendari', 'Lanal Fajar'],
                     'Kodaeral VII (Kupang)' => ['Lanal Mataram', 'Lanal Maumere', 'Lanal Rote', 'Lanal Waingapu', 'Lanal Labuan Bajo'],
                     'Kodaeral VIII (Manado)' => ['Lanal Gorontalo', 'Lanal Tahuna', 'Lanal Melonguane', 'Lanal Tolitoli'],
-                    'Kodaeral IX (Ambon)' => ['Lanal Saumlaki', 'Lanal Aru', 'Lanal Bandanaira'],
+                    'Kodaeral IX (Ambon)' => ['Lanal Tual', 'Lanal Saumlaki', 'Lanal Aru', 'Lanal Bandanaira', 'Lanal Morotai', 'Lanal Ternate'],
                     'Kodaeral X (Jayapura)' => ['Lanal Biak', 'Lanal Sarmi', 'Lanal Nabire'],
-                    'Kodaeral XI (Merauke)' => ['Lanal Timika', 'Lanal Arafuru', 'Lanal Agats'],
-                    'Kodaeral XII (Pontianak)' => ['Lanal Sambas', 'Lanal Ketapang'],
-                    'Kodaeral XIII (Tarakan)' => ['Lanal Nunukan', 'Lanal Sangatta', 'Lanal Balikpapan', 'Lanal Kotabaru'],
-                    'Kodaeral XIV (Sorong)' => ['Lanal Morotai', 'Lanal Kaimana', 'Lanal Fakfak']
+                    'Kodaeral XI (Merauke)' => ['Lanal Timika', 'Lanal Arafuru', 'Lanal Agats', 'Lanal Merauke'],
+                    'Kodaeral XII (Pontianak)' => ['Lanal Sambas', 'Lanal Ketapang', 'Lanal Kumai'],
+                    'Kodaeral XIII (Tarakan)' => ['Lanal Nunukan', 'Lanal Sangatta', 'Lanal Balikpapan', 'Lanal Kotabaru', 'Lanal Banjarmasin'],
+                    'Kodaeral XIV (Sorong)' => ['Lanal Kaimana', 'Lanal Fakfak', 'Lanal Sorong']
                 ]
             ],
             'AU' => [

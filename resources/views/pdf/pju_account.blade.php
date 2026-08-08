@@ -30,7 +30,7 @@
 </head>
 <body>
     <div class="no-print" style="text-align: center;">
-        <button onclick="window.print()" class="btn-print">🖨️ Cetak Dokumen</button>
+        <button onclick="window.print()" class="btn-print">Cetak Dokumen</button>
     </div>
 
     {{-- KOP SURAT --}}

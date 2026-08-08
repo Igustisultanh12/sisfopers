@@ -613,8 +613,8 @@
     <div class="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-6 my-auto text-left relative">
       <!-- Header Banner -->
       <div class="text-center space-y-2">
-        <div class="w-14 h-14 rounded-2xl bg-blue-50 text-[#2563EB] border border-blue-100 mx-auto flex items-center justify-center font-black text-xl shadow-xs">
-          🏛️
+        <div class="w-12 h-12 rounded-2xl bg-blue-50 text-[#2563EB] border border-blue-100 mx-auto flex items-center justify-center font-black text-xs shadow-xs uppercase tracking-widest">
+          TNI
         </div>
         <span class="text-[10px] font-extrabold uppercase tracking-widest bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-lg inline-block">
           PEMUTAKHIRAN DATA KEWILAYAHAN (1X PENGISIAN)
@@ -835,20 +835,20 @@ const militaryUnitsData = {
     label_kotama: 'Kodaeral (Komando Daerah Angkatan Laut)',
     label_satuan: 'Lanal (Pangkalan TNI Angkatan Laut)',
     kotama: {
-      'Kodaeral I (Belawan)': ['Lanal Sabang', 'Lanal Lhokseumawe', 'Lanal Tanjung Balai Asahan', 'Lanal Simeulue', 'Lanal Dumai', 'Lanal Bintan'],
-      'Kodaeral II (Padang)': ['Lanal Sibolga', 'Lanal Nias', 'Lanal Bengkulu', 'Lanal Melaboh'],
-      'Kodaeral III (Jakarta)': ['Lanal Lampung', 'Lanal Palembang', 'Lanal Cirebon', 'Lanal Bandung', 'Lanal Banten', 'Lanal Pangandaran'],
-      'Kodaeral IV (Batam)': ['Lanal Ranai', 'Lanal Tarempa', 'Lanal Dabo Singkep', 'Lanal Tanjung Balai Karimun'],
-      'Kodaeral V (Surabaya)': ['Lanal Semarang', 'Lanal Yogyakarta', 'Lanal Cilacap', 'Lanal Malang', 'Lanal Banyuwangi', 'Lanal Denpasar', 'Lanal Batuporon'],
+      'Kodaeral I (Belawan)': ['Lanal Sabang', 'Lanal Lhokseumawe', 'Lanal Tanjung Balai Asahan', 'Lanal Simeulue', 'Lanal Dumai', 'Lanal Bintan', 'Lanal Brandan'],
+      'Kodaeral II (Padang)': ['Lanal Sibolga', 'Lanal Nias', 'Lanal Bengkulu', 'Lanal Mentawai'],
+      'Kodaeral III (Jakarta)': ['Lanal Lampung', 'Lanal Palembang', 'Lanal Bangka Belitung', 'Lanal Cirebon', 'Lanal Bandung', 'Lanal Banten', 'Lanal Sukabumi', 'Lanal Pangandaran'],
+      'Kodaeral IV (Batam)': ['Lanal Ranai', 'Lanal Tarempa', 'Lanal Dabo Singkep', 'Lanal Tanjung Balai Karimun', 'Lanal Batam'],
+      'Kodaeral V (Surabaya)': ['Lanal Tegal', 'Lanal Semarang', 'Lanal Yogyakarta', 'Lanal Cilacap', 'Lanal Malang', 'Lanal Banyuwangi', 'Lanal Denpasar', 'Lanal Batuporon', 'Lanal Pacitan'],
       'Kodaeral VI (Makassar)': ['Lanal Mamuju', 'Lanal Palu', 'Lanal Kendari', 'Lanal Fajar'],
       'Kodaeral VII (Kupang)': ['Lanal Mataram', 'Lanal Maumere', 'Lanal Rote', 'Lanal Waingapu', 'Lanal Labuan Bajo'],
       'Kodaeral VIII (Manado)': ['Lanal Gorontalo', 'Lanal Tahuna', 'Lanal Melonguane', 'Lanal Tolitoli'],
-      'Kodaeral IX (Ambon)': ['Lanal Saumlaki', 'Lanal Aru', 'Lanal Bandanaira'],
+      'Kodaeral IX (Ambon)': ['Lanal Tual', 'Lanal Saumlaki', 'Lanal Aru', 'Lanal Bandanaira', 'Lanal Morotai', 'Lanal Ternate'],
       'Kodaeral X (Jayapura)': ['Lanal Biak', 'Lanal Sarmi', 'Lanal Nabire'],
-      'Kodaeral XI (Merauke)': ['Lanal Timika', 'Lanal Arafuru', 'Lanal Agats'],
-      'Kodaeral XII (Pontianak)': ['Lanal Sambas', 'Lanal Ketapang'],
-      'Kodaeral XIII (Tarakan)': ['Lanal Nunukan', 'Lanal Sangatta', 'Lanal Balikpapan', 'Lanal Kotabaru'],
-      'Kodaeral XIV (Sorong)': ['Lanal Morotai', 'Lanal Kaimana', 'Lanal Fakfak']
+      'Kodaeral XI (Merauke)': ['Lanal Timika', 'Lanal Arafuru', 'Lanal Agats', 'Lanal Merauke'],
+      'Kodaeral XII (Pontianak)': ['Lanal Sambas', 'Lanal Ketapang', 'Lanal Kumai'],
+      'Kodaeral XIII (Tarakan)': ['Lanal Nunukan', 'Lanal Sangatta', 'Lanal Balikpapan', 'Lanal Kotabaru', 'Lanal Banjarmasin'],
+      'Kodaeral XIV (Sorong)': ['Lanal Kaimana', 'Lanal Fakfak', 'Lanal Sorong']
     }
   },
   AU: {

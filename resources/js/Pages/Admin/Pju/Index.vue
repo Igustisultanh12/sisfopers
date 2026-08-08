@@ -284,7 +284,7 @@
                 @click="generatePassword"
                 class="text-[10px] font-bold text-blue-600 hover:underline flex items-center gap-1 cursor-pointer"
               >
-                🔄 Acak Ulang Password
+                Acak Ulang Password
               </button>
             </div>
             <div class="relative">
@@ -328,8 +328,8 @@
     <div v-if="createdPjuModal" class="fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
       <div class="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-6 my-auto text-left relative animate-in fade-in zoom-in duration-200">
         <div class="text-center space-y-2">
-          <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 mx-auto flex items-center justify-center font-black text-2xl shadow-xs">
-            ✓
+          <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 mx-auto flex items-center justify-center font-black text-xs uppercase tracking-widest shadow-xs">
+            SUKSES
           </div>
           <span class="text-[10px] font-extrabold uppercase tracking-widest bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-lg inline-block">
             AKUN PJU BERHASIL DIBUAT
@@ -365,7 +365,7 @@
             target="_blank"
             class="w-full py-3 bg-[#2563EB] hover:bg-blue-600 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
           >
-            <span>🖨️</span> Cetak Lembar Informasi Akun PJU
+            Cetak Lembar Informasi Akun PJU
           </a>
           <button
             @click="createdPjuModal = null"
