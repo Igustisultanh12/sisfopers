@@ -338,4 +338,81 @@ class EducationController extends Controller
             'jenjang' => ['SD', 'SMP', 'SMA', 'D3', 'D4', 'S1', 'S2', 'S3', 'PROFESI', 'LAIN'],
         ];
     }
+
+    /**
+     * Pencarian referensi perguruan tinggi Indonesia
+     */
+    public function searchUniversities(Request $request)
+    {
+        $query = trim((string) $request->query('q', ''));
+        $path = database_path('data/perguruan_tinggi.json');
+        
+        if (!file_exists($path)) {
+            return response()->json([]);
+        }
+
+        $raw = file_get_contents($path);
+        $raw = preg_replace('/^\xEF\xBB\xBF/', '', $raw);
+        $items = json_decode($raw, true) ?: [];
+
+        if ($query === '') {
+            return response()->json(array_slice($items, 0, 25));
+        }
+
+        $results = [];
+        $qLower = mb_strtolower($query);
+
+        foreach ($items as $item) {
+            $nameLower = mb_strtolower($item['nama']);
+            if (str_contains($nameLower, $qLower)) {
+                $results[] = [
+                    'kode' => $item['kode'] ?? null,
+                    'nama' => $item['nama'],
+                    'bentuk' => $item['bentuk'] ?? null,
+                    'provinsi' => $item['provinsi'] ?? null,
+                ];
+
+                if (count($results) >= 30) {
+                    break;
+                }
+            }
+        }
+
+        return response()->json($results);
+    }
+
+    /**
+     * Pencarian referensi program studi standar Indonesia
+     */
+    public function searchProdi(Request $request)
+    {
+        $query = trim((string) $request->query('q', ''));
+        $path = database_path('data/program_studi.json');
+
+        if (!file_exists($path)) {
+            return response()->json([]);
+        }
+
+        $raw = file_get_contents($path);
+        $raw = preg_replace('/^\xEF\xBB\xBF/', '', $raw);
+        $items = json_decode($raw, true) ?: [];
+
+        if ($query === '') {
+            return response()->json(array_slice($items, 0, 30));
+        }
+
+        $results = [];
+        $qLower = mb_strtolower($query);
+
+        foreach ($items as $prodi) {
+            if (str_contains(mb_strtolower($prodi), $qLower)) {
+                $results[] = $prodi;
+                if (count($results) >= 25) {
+                    break;
+                }
+            }
+        }
+
+        return response()->json($results);
+    }
 }

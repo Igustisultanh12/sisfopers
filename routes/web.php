@@ -712,3 +712,9 @@ Route::prefix('api/wilayah')->name('wilayah.')->group(function () {
         });
     })->name('villages');
 });
+
+// Rute Referensi Perguruan Tinggi & Program Studi Nasional
+Route::middleware(['auth'])->prefix('referensi')->name('referensi.')->group(function () {
+    Route::get('/kampus', [EducationController::class, 'searchUniversities'])->name('kampus');
+    Route::get('/prodi', [EducationController::class, 'searchProdi'])->name('prodi');
+});
