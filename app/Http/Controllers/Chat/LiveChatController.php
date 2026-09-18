@@ -496,6 +496,11 @@ class LiveChatController extends Controller
 
         $message = "Status sesi percakapan berhasil diubah menjadi: {$newStatus}." . ($newStatus === 'CLOSED' ? ' Seluruh berkas lampiran telah otomatis dihapus dari server.' : '');
 
+        // Cegah konflik modal Inertia jika request dikirim melalui router Inertia
+        if ($request->header('X-Inertia')) {
+            return back()->with('success', $message);
+        }
+
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
@@ -516,6 +521,9 @@ class LiveChatController extends Controller
         $personel = $user->personel ?? Personel::where('user_id', $user->id)->first();
 
         if (!$personel) {
+            if ($request->header('X-Inertia')) {
+                return back()->with('error', 'Profil personel tidak ditemukan.');
+            }
             return response()->json(['error' => 'Profil personel tidak ditemukan.'], 404);
         }
 
@@ -525,6 +533,10 @@ class LiveChatController extends Controller
 
         $thread->purgeFiles();
         $thread->update(['status' => 'CLOSED']);
+
+        if ($request->header('X-Inertia')) {
+            return back()->with('success', 'Sesi obrolan berhasil diakhiri dan seluruh berkas lampiran telah otomatis dihapus dari server.');
+        }
 
         return response()->json([
             'success' => true,
@@ -541,6 +553,9 @@ class LiveChatController extends Controller
         $personel = $user->personel ?? Personel::where('user_id', $user->id)->first();
 
         if (!$personel) {
+            if ($request->header('X-Inertia')) {
+                return back()->with('error', 'Profil personel tidak ditemukan.');
+            }
             return response()->json(['error' => 'Profil personel tidak ditemukan.'], 404);
         }
 
@@ -563,6 +578,10 @@ class LiveChatController extends Controller
             'unread_admin' => 0,
             'unread_personel' => 0,
         ]);
+
+        if ($request->header('X-Inertia')) {
+            return back()->with('success', 'Sesi konsultasi baru berhasil dibuka.');
+        }
 
         return response()->json([
             'success' => true,

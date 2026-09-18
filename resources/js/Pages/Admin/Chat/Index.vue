@@ -629,14 +629,13 @@ const toggleStatus = (uuid) => {
   }
 };
 
-const executeToggleStatus = (uuid) => {
-  router.post(`/${getPrefix()}/live-chat/${uuid}/status`, {}, {
-    preserveScroll: true,
-    onSuccess: () => {
+const executeToggleStatus = async (uuid) => {
+  try {
+    const res = await axios.post(`/${getPrefix()}/live-chat/${uuid}/status`);
+    if (res.data.success) {
       if (selectedThread.value) {
-        const wasOpen = selectedThread.value.status === 'OPEN';
-        selectedThread.value.status = wasOpen ? 'CLOSED' : 'OPEN';
-        if (wasOpen) {
+        selectedThread.value.status = res.data.status;
+        if (res.data.status === 'CLOSED') {
           activeMessagesList.value.forEach((msg) => {
             if (msg.attachments) {
               msg.attachments.forEach((att) => {
@@ -647,8 +646,32 @@ const executeToggleStatus = (uuid) => {
           });
         }
       }
-    },
-  });
+
+      // Sinkronisasi status pada item daftar utas di sisi kiri
+      if (props.threads?.data) {
+        const targetThread = props.threads.data.find((t) => t.uuid === uuid);
+        if (targetThread) {
+          targetThread.status = res.data.status;
+        }
+      }
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Status Diperbarui',
+        text: res.data.message,
+        confirmButtonColor: '#2563EB',
+        customClass: { popup: 'rounded-2xl' },
+      });
+    }
+  } catch (err) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Terjadi Hambatan',
+      text: err.response?.data?.error || 'Gagal mengubah status sesi percakapan.',
+      confirmButtonColor: '#2563EB',
+      customClass: { popup: 'rounded-2xl' },
+    });
+  }
 };
 
 onMounted(() => {
