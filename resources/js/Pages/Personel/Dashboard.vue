@@ -113,14 +113,14 @@
             <span class="text-[8px] font-bold text-slate-600 mt-1.5 tracking-tight leading-tight">Formulir</span>
           </Link>
 
-          <!-- Pintasan 6: Live Chat Layanan -->
+          <!-- Pintasan 6: Pusat Layanan Informasi -->
           <Link :href="route('personel.chat.index')" class="flex flex-col items-center justify-center p-1 rounded-2xl hover:bg-slate-50 transition text-center group cursor-pointer">
             <div class="w-9 h-9 rounded-2xl bg-sky-50 text-[#2563EB] flex items-center justify-center shadow-xs border border-sky-100/30 group-hover:scale-105 transition duration-200 select-none">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
             </div>
-            <span class="text-[8px] font-bold text-slate-600 mt-1.5 tracking-tight leading-tight">Live Chat</span>
+            <span class="text-[8px] font-bold text-slate-600 mt-1.5 tracking-tight leading-tight">Layanan Info</span>
           </Link>
         </div>
 

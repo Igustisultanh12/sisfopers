@@ -443,15 +443,20 @@ class LiveChatController extends Controller
             return response()->json(['error' => 'Pesan teks atau berkas lampiran wajib diisi.'], 422);
         }
 
-        $roleName = match (true) {
+        $personelAdmin = $user->personel;
+        $rankAdmin = $personelAdmin ? Personel::formatLongRank($personelAdmin->pangkat) : '';
+        $nameAdmin = $personelAdmin ? $personelAdmin->full_name : ($user->name ?? $user->username);
+
+        $roleTitle = match (true) {
             $user->hasRole('admin') => 'Admin Sisfopers',
             $user->hasRole('pju') => 'PJU Mabes TNI',
-            $user->hasRole('kordinator_angkatan') => 'Koordinator Angkatan',
-            $user->hasRole('kordinator_matra') => 'Koordinator Matra',
+            $user->hasRole('kordinator_angkatan') => 'Koordinator Angkatan' . ($personelAdmin?->angkatan ? " {$personelAdmin->angkatan}" : ''),
+            $user->hasRole('kordinator_matra') => 'Koordinator Matra' . ($personelAdmin?->matra ? " {$personelAdmin->matra}" : ''),
             default => 'Operator Pelayanan',
         };
 
-        $senderName = "{$user->name} ({$roleName})";
+        $parts = array_filter([$roleTitle, $rankAdmin, $nameAdmin]);
+        $senderName = implode(' ', $parts);
 
         $message = LiveChatMessage::create([
             'thread_id' => $thread->id,

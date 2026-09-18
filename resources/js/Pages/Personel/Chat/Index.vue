@@ -1,6 +1,6 @@
 <template>
   <AuthenticatedLayout>
-    <template #header-title>Layanan Live Chat Konsultasi Dinas</template>
+    <template #header-title>Pusat Layanan Informasi</template>
 
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 font-sans space-y-5">
       <!-- 1. Banner Header Militer & Status Sesi -->
@@ -8,31 +8,41 @@
         <div class="absolute -right-10 -top-10 w-44 h-44 rounded-full bg-blue-600/20 blur-3xl pointer-events-none"></div>
 
         <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div class="space-y-1.5">
-            <div class="flex items-center gap-2">
+          <div class="space-y-2">
+            <div class="flex flex-wrap items-center gap-2">
               <span class="px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-widest bg-blue-500/20 border border-blue-400/30 text-blue-300">
-                PUSAT BANTUAN & KONSULTASI SISFOPERS KC
+                SISTEM INFORMASI PERSONEL KOMCAD
+              </span>
+
+              <!-- Status Indikator Sesi / Respon -->
+              <span 
+                v-if="thread?.status === 'CLOSED'"
+                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-slate-500/30 border border-slate-400/30 text-slate-300"
+              >
+                <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                Sesi Ditutup
               </span>
               <span 
-                v-if="thread?.status === 'OPEN'"
-                class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/20 border border-emerald-400/30 text-emerald-300"
+                v-else-if="isAwaitingResponse"
+                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-amber-500/20 border border-amber-400/30 text-amber-300 shadow-sm"
               >
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                Sesi Aktif
+                <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                Menunggu Respon
               </span>
               <span 
                 v-else
-                class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-slate-500/30 border border-slate-400/30 text-slate-300"
+                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 shadow-sm"
               >
-                Sesi Ditutup
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                Anda sedang berbicara dengan {{ activeOperatorName }}
               </span>
             </div>
 
             <h1 class="text-xl sm:text-2xl font-black text-white tracking-tight">
-              Layanan Komunikasi Personel
+              Pusat Layanan Informasi
             </h1>
             <p class="text-xs text-slate-300 max-w-2xl leading-relaxed">
-              Saluran komunikasi dinas langsung dengan Pengelola Sisfopers Mabes TNI dan Satuan Pembina. Seluruh berkas lampiran otomatis dimusnahkan saat sesi diakhiri demi kerahasiaan data militer.
+              Saluran komunikasi dinas langsung dengan Pengelola Sisfopers Mabes TNI dan Satuan Pembina. Seluruh berkas yang dilampirkan akan terhapus saat Anda mengakhiri live chat.
             </p>
           </div>
 
@@ -80,13 +90,28 @@
             </div>
             <div>
               <div class="flex items-center gap-2">
-                <h3 class="text-sm font-bold text-slate-900">Pusat Layanan Konsultasi Komcad</h3>
-                <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
-                  Dinas Aktif
+                <h3 class="text-sm font-bold text-slate-900">Pusat Layanan Informasi</h3>
+                <span 
+                  v-if="thread?.status === 'CLOSED'"
+                  class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200"
+                >
+                  Sesi Ditutup
+                </span>
+                <span 
+                  v-else-if="isAwaitingResponse"
+                  class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 animate-pulse"
+                >
+                  Menunggu Respon
+                </span>
+                <span 
+                  v-else
+                  class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200"
+                >
+                  Terhubung
                 </span>
               </div>
-              <p class="text-[11px] text-slate-500">
-                Prajurit: <strong class="text-slate-700">{{ personel?.pangkat }} {{ personel?.name }}</strong> (NIKC: {{ personel?.nikc }})
+              <p class="text-[11px] text-slate-600 font-medium">
+                <strong class="text-slate-800">{{ personel?.pangkat }} {{ personel?.name }}</strong> <span class="text-slate-500">(NIKC: {{ personel?.nikc }})</span>
               </p>
             </div>
           </div>
@@ -95,6 +120,29 @@
             <span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">Batas Lampiran</span>
             <span class="text-xs font-bold text-slate-700">Maks. 15 MB per Unggahan</span>
           </div>
+        </div>
+
+        <!-- Banner Sub-Header: Status Interaktif Percakapan & Respon -->
+        <div 
+          v-if="thread?.status === 'OPEN'"
+          :class="isAwaitingResponse ? 'bg-amber-50/80 border-b border-amber-200/60 text-amber-900' : 'bg-emerald-50/80 border-b border-emerald-200/60 text-emerald-900'"
+          class="px-6 py-2.5 flex items-center justify-between text-xs transition"
+        >
+          <div class="flex items-center gap-2 font-bold">
+            <span 
+              :class="isAwaitingResponse ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'"
+              class="w-2 h-2 rounded-full shrink-0"
+            ></span>
+            <span v-if="isAwaitingResponse">
+              Menunggu Respon dari Petugas Dinas...
+            </span>
+            <span v-else>
+              Anda sedang berbicara dengan {{ activeOperatorName }}
+            </span>
+          </div>
+          <span class="text-[10px] font-semibold text-slate-500 hidden md:inline">
+            Seluruh berkas yang dilampirkan akan terhapus saat Anda mengakhiri live chat.
+          </span>
         </div>
 
         <!-- Wadah Daftar Pesan -->
@@ -108,10 +156,10 @@
               <svg class="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span>Instruksi Penggunaan Saluran Obrolan Dinas</span>
+              <span>Instruksi Pusat Layanan Informasi</span>
             </div>
             <p class="text-slate-600 leading-relaxed text-[11px]">
-              Gunakan saluran ini untuk berkonsultasi seputar pengisian formulir, permohonan penerbitan SKEP/KTA, koreksi data profil, atau pengaduan penugasan. Anda dapat melampirkan berkas foto atau dokumen (PDF, Word, Excel) maksimal 15MB.
+              Gunakan saluran ini untuk berkonsultasi seputar informasi formulir, kelengkapan administrasi SKEP/KTA, pembaruan data profil, atau koordinasi dinas. Seluruh berkas yang dilampirkan akan terhapus saat Anda mengakhiri live chat.
             </p>
           </div>
 
@@ -158,7 +206,7 @@
                       <svg class="w-3.5 h-3.5 text-blue-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                       </svg>
-                      <span>Berkas telah dimusnahkan dari server karena sesi ditutup.</span>
+                      <span>Berkas telah terhapus dari server saat live chat diakhiri.</span>
                     </div>
 
                     <!-- Gambar -->
@@ -224,7 +272,7 @@
                       <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                       </svg>
-                      <span>Berkas telah dimusnahkan dari server karena sesi ditutup.</span>
+                      <span>Berkas telah terhapus dari server saat live chat diakhiri.</span>
                     </div>
 
                     <!-- Gambar -->
@@ -358,7 +406,7 @@
             <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
-            <span>Sesi percakapan ini telah berakhir dan seluruh berkas lampiran telah dihapus permanen dari server.</span>
+            <span>Sesi percakapan ini telah berakhir. Seluruh berkas yang dilampirkan telah terhapus saat Anda mengakhiri live chat.</span>
           </div>
 
           <button
@@ -405,6 +453,19 @@ const fileInputRef = ref(null);
 
 let pollingTimer = null;
 const maxAllowedBytes = 15 * 1024 * 1024; // 15 Megabytes
+
+// Cari pesan balasan dinas terakhir dari Admin / PJU / Koordinator
+const latestDinasMessage = computed(() => {
+  return [...messagesList.value].reverse().find((m) => m.sender_type !== 'PERSONEL');
+});
+
+const isAwaitingResponse = computed(() => {
+  return thread.value?.status === 'OPEN' && !latestDinasMessage.value;
+});
+
+const activeOperatorName = computed(() => {
+  return latestDinasMessage.value?.sender_name || 'Petugas Layanan';
+});
 
 const totalStagedSize = computed(() => {
   return stagedFiles.value.reduce((acc, f) => acc + (f.size || 0), 0);
@@ -545,7 +606,7 @@ const confirmEndSession = () => {
   Swal.fire({
     icon: 'warning',
     title: 'Akhiri Sesi Percakapan?',
-    text: 'Apakah Anda yakin ingin mengakhiri sesi percakapan ini? Seluruh berkas lampiran yang ada dalam percakapan akan otomatis dihapus secara permanen dari server demi kerahasiaan dinas.',
+    text: 'Apakah Anda yakin ingin mengakhiri sesi percakapan ini? Seluruh berkas yang dilampirkan akan terhapus saat Anda mengakhiri live chat.',
     showCancelButton: true,
     confirmButtonText: 'Ya, Akhiri & Hapus Berkas',
     cancelButtonText: 'Batal',
@@ -584,7 +645,7 @@ const executeEndSession = async () => {
       Swal.fire({
         icon: 'success',
         title: 'Sesi Berhasil Diakhiri',
-        text: 'Seluruh berkas lampiran telah dimusnahkan dari server penyimpanan.',
+        text: 'Seluruh berkas yang dilampirkan telah terhapus dari server penyimpanan saat Anda mengakhiri live chat.',
         confirmButtonColor: '#2563EB',
         customClass: { popup: 'rounded-2xl' },
       });

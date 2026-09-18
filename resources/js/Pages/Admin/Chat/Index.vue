@@ -1,6 +1,6 @@
 <template>
   <AuthenticatedLayout>
-    <template #header-title>Pusat Layanan Live Chat Personel</template>
+    <template #header-title>Pusat Layanan Informasi Personel</template>
 
     <div class="space-y-5">
       <!-- 1. Statistik Ringkasan Obrolan -->
