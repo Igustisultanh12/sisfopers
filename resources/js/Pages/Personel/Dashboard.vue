@@ -11,6 +11,37 @@
 
     <div class="space-y-6 max-w-5xl">
       
+      <!-- PEMBERITAHUAN FORMULIR & REKRUTMEN TERBUKA UNTUK PERSONEL INI -->
+      <div v-if="activeForms && activeForms.length > 0" class="space-y-3">
+        <div 
+          v-for="af in activeForms" 
+          :key="af.id"
+          class="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 rounded-3xl p-5 text-white shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4 border border-blue-400/30"
+        >
+          <div class="flex items-center gap-3.5 text-left w-full sm:w-auto">
+            <div class="w-11 h-11 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center shrink-0 border border-white/20">
+              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+            </div>
+            <div class="space-y-0.5 min-w-0 flex-1">
+              <span class="px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-white/20 tracking-wider">
+                {{ af.category }} TERBUKA
+              </span>
+              <h4 class="text-xs sm:text-sm font-extrabold text-white truncate">{{ af.title }}</h4>
+              <p class="text-[10px] text-blue-100 font-medium">
+                Tenggat: <strong class="text-white">{{ af.deadline ? formatDate(af.deadline) : 'Tidak dibatasi' }}</strong>
+              </p>
+            </div>
+          </div>
+
+          <Link 
+            :href="route('personel.form.show', af.uuid)"
+            class="shrink-0 w-full sm:w-auto text-center px-4 py-2 rounded-xl bg-white text-blue-700 hover:bg-blue-50 text-xs font-extrabold shadow-sm transition"
+          >
+            Isi Formulir
+          </Link>
+        </div>
+      </div>
+
       <!-- 1. TAMPILAN KHUSUS HP / SELULER (lg:hidden) -->
       <div class="lg:hidden space-y-5">
         
@@ -30,46 +61,56 @@
           </div>
         </div>
 
-        <!-- Grid Menu Pintasan 4 Kolom ala Aplikasi Android/iOS dengan Ikon Premium -->
-        <div class="grid grid-cols-4 gap-2 bg-white p-4 rounded-3xl border border-[#E2E8F0] shadow-xs">
+        <!-- Grid Menu Pintasan 5 Kolom ala Aplikasi Android/iOS dengan Ikon Premium -->
+        <div class="grid grid-cols-5 gap-1.5 bg-white p-3.5 rounded-3xl border border-[#E2E8F0] shadow-xs">
           <!-- Pintasan 1: Dashboard (Portal Saya) -->
           <Link :href="route('personel.dashboard')" class="flex flex-col items-center justify-center p-1 rounded-2xl hover:bg-slate-50 transition text-center group cursor-pointer">
-            <div class="w-11 h-11 rounded-2xl bg-blue-50 text-[#2563EB] flex items-center justify-center shadow-xs border border-blue-100/30 group-hover:scale-105 transition duration-200 select-none">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+            <div class="w-10 h-10 rounded-2xl bg-blue-50 text-[#2563EB] flex items-center justify-center shadow-xs border border-blue-100/30 group-hover:scale-105 transition duration-200 select-none">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
               </svg>
             </div>
-            <span class="text-[9px] font-bold text-slate-600 mt-2 tracking-wide leading-tight">Portal Saya</span>
+            <span class="text-[8px] font-bold text-slate-600 mt-1.5 tracking-tight leading-tight">Portal</span>
           </Link>
 
           <!-- Pintasan 2: Riwayat Pekerjaan -->
           <Link :href="route('personel.job.index')" class="flex flex-col items-center justify-center p-1 rounded-2xl hover:bg-slate-50 transition text-center group cursor-pointer">
-            <div class="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-xs border border-emerald-100/30 group-hover:scale-105 transition duration-200 select-none">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+            <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-xs border border-emerald-100/30 group-hover:scale-105 transition duration-200 select-none">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.25c0 .621-.504 1.125-1.125 1.125H4.875c-.621 0-1.125-.504-1.125-1.125v-4.25m16.5 0a2.25 2.25 0 00-2.25-2.25H5.625a2.25 2.25 0 00-2.25 2.25m16.5 0v-1.5A3.375 3.375 0 0017.25 9h-2.625M3.75 14.15v-1.5A3.375 3.375 0 016.75 9h2.625m.002-2.25a3.375 3.375 0 013.373-3.375h1.5a3.375 3.375 0 013.375 3.375v2.25m-8.25 0h8.25" />
               </svg>
             </div>
-            <span class="text-[9px] font-bold text-slate-600 mt-2 tracking-wide leading-tight">Riw. Pekerjaan</span>
+            <span class="text-[8px] font-bold text-slate-600 mt-1.5 tracking-tight leading-tight">Pekerjaan</span>
           </Link>
 
           <!-- Pintasan 3: Broadcast Kegiatan -->
           <Link :href="route('personel.broadcast.index')" class="flex flex-col items-center justify-center p-1 rounded-2xl hover:bg-slate-50 transition text-center group cursor-pointer">
-            <div class="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-xs border border-amber-100/30 group-hover:scale-105 transition duration-200 select-none">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+            <div class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-xs border border-amber-100/30 group-hover:scale-105 transition duration-200 select-none">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
               </svg>
             </div>
-            <span class="text-[9px] font-bold text-slate-600 mt-2 tracking-wide leading-tight">Broad. Kegiatan</span>
+            <span class="text-[8px] font-bold text-slate-600 mt-1.5 tracking-tight leading-tight">Kegiatan</span>
           </Link>
 
           <!-- Pintasan 4: Riwayat Pendidikan -->
           <Link :href="route('personel.education.index')" class="flex flex-col items-center justify-center p-1 rounded-2xl hover:bg-slate-50 transition text-center group cursor-pointer">
-            <div class="w-11 h-11 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center shadow-xs border border-purple-100/30 group-hover:scale-105 transition duration-200 select-none">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+            <div class="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center shadow-xs border border-purple-100/30 group-hover:scale-105 transition duration-200 select-none">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.62 48.62 0 0112 20.904a48.62 48.62 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A5.905 5.905 0 018 3.097V5.25m15.482 4.897a50.57 50.57 0 012.658-.813c.852-.162 1.48-.901 1.48-1.767V5.25m0 0a5.905 5.905 0 00-5.88-5.25h-1.5a5.905 5.905 0 00-5.88 5.25m13.26 0v2.25" />
               </svg>
             </div>
-            <span class="text-[9px] font-bold text-slate-600 mt-2 tracking-wide leading-tight">Riw. Pendidikan</span>
+            <span class="text-[8px] font-bold text-slate-600 mt-1.5 tracking-tight leading-tight">Pendidikan</span>
+          </Link>
+
+          <!-- Pintasan 5: Formulir & Rekrutmen -->
+          <Link :href="route('personel.form.index')" class="flex flex-col items-center justify-center p-1 rounded-2xl hover:bg-slate-50 transition text-center group cursor-pointer">
+            <div class="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-xs border border-indigo-100/30 group-hover:scale-105 transition duration-200 select-none">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <span class="text-[8px] font-bold text-slate-600 mt-1.5 tracking-tight leading-tight">Formulir</span>
           </Link>
         </div>
 
@@ -325,7 +366,8 @@ import { Link } from '@inertiajs/vue3';
 defineProps({
   personel: Object,
   stats: Object,
-  latestBroadcasts: Array
+  latestBroadcasts: Array,
+  activeForms: Array,
 });
 
 const formatDate = (dateString) => {

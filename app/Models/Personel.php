@@ -144,6 +144,21 @@ class Personel extends Model
         return $this->hasMany(Ticket::class, 'personel_id');
     }
 
+    public function customFormResponses(): HasMany
+    {
+        return $this->hasMany(CustomFormResponse::class, 'personel_id');
+    }
+
+    public function liveChatThreads(): HasMany
+    {
+        return $this->hasMany(LiveChatThread::class, 'personel_id');
+    }
+
+    public function activeLiveChatThread(): HasOne
+    {
+        return $this->hasOne(LiveChatThread::class, 'personel_id')->where('status', 'OPEN')->latestOfMany();
+    }
+
     public function ensureKomcadEducationExists(): void
     {
         // Pengecekan apakah personel ini sudah memiliki catatan Pendidikan Militer SKEP

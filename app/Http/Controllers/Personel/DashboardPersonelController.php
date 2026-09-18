@@ -39,6 +39,18 @@ class DashboardPersonelController extends Controller
             ->take(3)
             ->get();
 
+        // Mengambil formulir / rekrutmen aktif yang ditujukan kepada personel ini dan belum diisi
+        $activeForms = \App\Models\CustomForm::where('is_active', true)
+            ->where(function($q) {
+                $q->whereNull('deadline')->orWhere('deadline', '>=', now());
+            })
+            ->latest()
+            ->get()
+            ->filter(function($form) use ($personel) {
+                return $form->isPersonelEligible($personel) && !$form->hasPersonelSubmitted($personel);
+            })
+            ->values();
+
         return Inertia::render('Personel/Dashboard', [
             'personel' => $personel,
             'stats' => [
@@ -46,7 +58,8 @@ class DashboardPersonelController extends Controller
                 'total_hadir'    => $totalHadir,
                 'total_izin'     => $totalIzin,
             ],
-            'latestBroadcasts' => $latestBroadcasts
+            'latestBroadcasts' => $latestBroadcasts,
+            'activeForms' => $activeForms,
         ]);
     }
 }

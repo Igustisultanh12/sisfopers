@@ -318,7 +318,25 @@ Route::middleware(['auth', 'role:admin,kordinator_matra,kordinator_angkatan'])->
     Route::put('/broadcast/{uuid}', [BroadcastController::class, 'update'])->name('broadcast.update');
     Route::delete('/broadcast/{uuid}', [BroadcastController::class, 'destroy'])->name('broadcast.destroy');
 
-    // Monitoring Log Akses, Audit Trail, & Real-time Responses
+    // Modul Formulir & Rekrutmen (Custom Form Builder & Management)
+    Route::get('/formulir', [\App\Http\Controllers\Form\CustomFormController::class, 'index'])->name('form.index');
+    Route::get('/formulir/create', [\App\Http\Controllers\Form\CustomFormController::class, 'create'])->name('form.create');
+    Route::post('/formulir', [\App\Http\Controllers\Form\CustomFormController::class, 'store'])->name('form.store');
+    Route::get('/formulir/{uuid}/edit', [\App\Http\Controllers\Form\CustomFormController::class, 'edit'])->name('form.edit');
+    Route::put('/formulir/{uuid}', [\App\Http\Controllers\Form\CustomFormController::class, 'update'])->name('form.update');
+    Route::delete('/formulir/{uuid}', [\App\Http\Controllers\Form\CustomFormController::class, 'destroy'])->name('form.destroy');
+    Route::patch('/formulir/{uuid}/toggle-status', [\App\Http\Controllers\Form\CustomFormController::class, 'toggleStatus'])->name('form.toggle-status');
+    Route::get('/formulir/{uuid}/responses', [\App\Http\Controllers\Form\CustomFormController::class, 'responses'])->name('form.responses');
+    Route::get('/formulir/{uuid}/responses/{responseUuid}', [\App\Http\Controllers\Form\CustomFormController::class, 'responseDetail'])->name('form.responses.detail');
+    Route::post('/formulir/{uuid}/responses/{responseUuid}/status', [\App\Http\Controllers\Form\CustomFormController::class, 'updateResponseStatus'])->name('form.responses.status');
+
+    // Modul Pusat Layanan Live Chat Personel (Admin)
+    Route::get('/live-chat', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminIndex'])->name('chat.index');
+    Route::get('/live-chat/{uuid}/messages', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminGetMessages'])->name('chat.messages');
+    Route::post('/live-chat/{uuid}/send', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminSendMessage'])->name('chat.send');
+    Route::post('/live-chat/{uuid}/status', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminToggleStatus'])->name('chat.status');
+
+    // Monitoring Log Akses, Audit Trail, & Live Responses
     Route::get('/monitoring/login', [MonitoringController::class, 'loginLogs'])->name('monitoring.login');
     Route::get('/monitoring/aktivitas', [MonitoringController::class, 'activityLogs'])->name('monitoring.activity');
     Route::get('/monitoring/whatsapp', [MonitoringController::class, 'whatsappLogs'])->name('monitoring.whatsapp');
@@ -439,6 +457,16 @@ Route::middleware(['auth', 'role:personel,admin,kordinator_angkatan,kordinator_m
 
         // Pemutakhiran Data Komando Kewilayahan Personel (1x pengisian)
         Route::post('/update-kewilayahan', [\App\Http\Controllers\Personel\KewilayahanController::class, 'updateKewilayahan'])->name('kewilayahan.update');
+
+        // Modul Formulir & Rekrutmen Personel (Pengisian Data & Kuesioner)
+        Route::get('/formulir', [\App\Http\Controllers\Personel\PersonelFormController::class, 'index'])->name('form.index');
+        Route::get('/formulir/{uuid}', [\App\Http\Controllers\Personel\PersonelFormController::class, 'show'])->name('form.show');
+        Route::post('/formulir/{uuid}', [\App\Http\Controllers\Personel\PersonelFormController::class, 'submit'])->name('form.submit');
+
+        // Modul Layanan Live Chat Personel
+        Route::get('/live-chat/thread', [\App\Http\Controllers\Chat\LiveChatController::class, 'getThread'])->name('chat.thread');
+        Route::get('/live-chat/{uuid}/messages', [\App\Http\Controllers\Chat\LiveChatController::class, 'getMessages'])->name('chat.messages');
+        Route::post('/live-chat/{uuid}/send', [\App\Http\Controllers\Chat\LiveChatController::class, 'sendMessage'])->name('chat.send');
     });
 });
 
@@ -451,10 +479,28 @@ Route::middleware(['auth', 'role:kordinator_angkatan,kordinator_matra'])->prefix
     Route::get('/dashboard', [DashboardKordinatorController::class, 'index'])->name('dashboard');
     Route::post('/personel/{uuid}/catatan', [DashboardKordinatorController::class, 'updateNotes'])->name('personel.catatan');
     
-        Route::middleware('role:kordinator_matra,kordinator_angkatan')->group(function () {
+    Route::middleware('role:kordinator_matra,kordinator_angkatan')->group(function () {
         Route::get('/broadcast', [BroadcastKoordinatorController::class, 'index'])->name('broadcast.index');
         Route::get('/broadcast/create', [BroadcastKoordinatorController::class, 'create'])->name('broadcast.create');
         Route::post('/broadcast', [BroadcastKoordinatorController::class, 'store'])->name('broadcast.store');
+
+        // Modul Formulir & Rekrutmen Koordinator
+        Route::get('/formulir', [\App\Http\Controllers\Form\CustomFormController::class, 'index'])->name('form.index');
+        Route::get('/formulir/create', [\App\Http\Controllers\Form\CustomFormController::class, 'create'])->name('form.create');
+        Route::post('/formulir', [\App\Http\Controllers\Form\CustomFormController::class, 'store'])->name('form.store');
+        Route::get('/formulir/{uuid}/edit', [\App\Http\Controllers\Form\CustomFormController::class, 'edit'])->name('form.edit');
+        Route::put('/formulir/{uuid}', [\App\Http\Controllers\Form\CustomFormController::class, 'update'])->name('form.update');
+        Route::delete('/formulir/{uuid}', [\App\Http\Controllers\Form\CustomFormController::class, 'destroy'])->name('form.destroy');
+        Route::patch('/formulir/{uuid}/toggle-status', [\App\Http\Controllers\Form\CustomFormController::class, 'toggleStatus'])->name('form.toggle-status');
+        Route::get('/formulir/{uuid}/responses', [\App\Http\Controllers\Form\CustomFormController::class, 'responses'])->name('form.responses');
+        Route::get('/formulir/{uuid}/responses/{responseUuid}', [\App\Http\Controllers\Form\CustomFormController::class, 'responseDetail'])->name('form.responses.detail');
+        Route::post('/formulir/{uuid}/responses/{responseUuid}/status', [\App\Http\Controllers\Form\CustomFormController::class, 'updateResponseStatus'])->name('form.responses.status');
+
+        // Modul Layanan Live Chat Koordinator
+        Route::get('/live-chat', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminIndex'])->name('chat.index');
+        Route::get('/live-chat/{uuid}/messages', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminGetMessages'])->name('chat.messages');
+        Route::post('/live-chat/{uuid}/send', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminSendMessage'])->name('chat.send');
+        Route::post('/live-chat/{uuid}/status', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminToggleStatus'])->name('chat.status');
     });
 });
 
@@ -476,6 +522,24 @@ Route::middleware(['auth:pju,web', 'role:ka_bacadnas,ses_bacadnas,kapus_komcad,p
     Route::get('/laporan/personel/excel', [\App\Http\Controllers\Admin\ReportController::class, 'personelExcel'])->name('report.personel.excel');
     Route::get('/laporan/wilayah/pdf', [\App\Http\Controllers\Admin\ReportController::class, 'regionPdf'])->name('report.region.pdf');
     Route::get('/laporan/wilayah/excel', [\App\Http\Controllers\Admin\ReportController::class, 'regionExcel'])->name('report.region.excel');
+
+    // Modul Formulir & Rekrutmen PJU
+    Route::get('/formulir', [\App\Http\Controllers\Form\CustomFormController::class, 'index'])->name('form.index');
+    Route::get('/formulir/create', [\App\Http\Controllers\Form\CustomFormController::class, 'create'])->name('form.create');
+    Route::post('/formulir', [\App\Http\Controllers\Form\CustomFormController::class, 'store'])->name('form.store');
+    Route::get('/formulir/{uuid}/edit', [\App\Http\Controllers\Form\CustomFormController::class, 'edit'])->name('form.edit');
+    Route::put('/formulir/{uuid}', [\App\Http\Controllers\Form\CustomFormController::class, 'update'])->name('form.update');
+    Route::delete('/formulir/{uuid}', [\App\Http\Controllers\Form\CustomFormController::class, 'destroy'])->name('form.destroy');
+    Route::patch('/formulir/{uuid}/toggle-status', [\App\Http\Controllers\Form\CustomFormController::class, 'toggleStatus'])->name('form.toggle-status');
+    Route::get('/formulir/{uuid}/responses', [\App\Http\Controllers\Form\CustomFormController::class, 'responses'])->name('form.responses');
+    Route::get('/formulir/{uuid}/responses/{responseUuid}', [\App\Http\Controllers\Form\CustomFormController::class, 'responseDetail'])->name('form.responses.detail');
+    Route::post('/formulir/{uuid}/responses/{responseUuid}/status', [\App\Http\Controllers\Form\CustomFormController::class, 'updateResponseStatus'])->name('form.responses.status');
+
+    // Modul Layanan Live Chat PJU
+    Route::get('/live-chat', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminIndex'])->name('chat.index');
+    Route::get('/live-chat/{uuid}/messages', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminGetMessages'])->name('chat.messages');
+    Route::post('/live-chat/{uuid}/send', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminSendMessage'])->name('chat.send');
+    Route::post('/live-chat/{uuid}/status', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminToggleStatus'])->name('chat.status');
 });
 
 // API Proxy Wilayah.id (Bypass CORS, SSL & Rate limits with Cache & Safe Fallbacks)
