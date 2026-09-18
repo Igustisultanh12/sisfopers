@@ -167,10 +167,7 @@ class CustomFormController extends Controller
             'creator_role' => $current['role'],
         ]);
 
-        // Pemicu Notifikasi ke Personel Sasaran yang Memenuhi Syarat
-        $this->notifyTargetedPersonels($form);
-
-        // Menentukan rute redirect berdasarkan role
+        // Menentukan rute redirect berdasarkan role (tanpa pengiriman notifikasi massal ke personel saat admin submit)
         $redirectRoute = match ($current['role']) {
             'ka_bacadnas', 'ses_bacadnas', 'kapus_komcad', 'pembina_matra',
             'pembina_kodam', 'pembina_kodaeral', 'pembina_kodau', 'pembina_kodim',
@@ -179,7 +176,7 @@ class CustomFormController extends Controller
             default => 'admin.form.index',
         };
 
-        return redirect()->route($redirectRoute)->with('success', 'Formulir berhasil diterbitkan dan notifikasi telah dikirimkan ke personel sasaran.');
+        return redirect()->route($redirectRoute)->with('success', 'Formulir berhasil diterbitkan.');
     }
 
     /**

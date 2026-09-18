@@ -362,7 +362,7 @@
               :disabled="form.processing"
               class="px-6 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 transition cursor-pointer disabled:opacity-50"
             >
-              {{ form.processing ? 'Menyimpan & Mengirim Notifikasi...' : 'Terbitkan Formulir Sekarang' }}
+              {{ form.processing ? 'Menyimpan Formulir...' : 'Terbitkan Formulir Sekarang' }}
             </button>
           </div>
         </form>

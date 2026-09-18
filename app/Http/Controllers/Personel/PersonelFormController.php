@@ -246,23 +246,24 @@ class PersonelFormController extends Controller
             'user_agent' => $request->userAgent(),
         ]);
 
-        // 8. Pengiriman Notifikasi Konfirmasi Penerimaan Berkas (Hanya via Email)
+        // 8. Pengiriman Notifikasi Konfirmasi Penerimaan Berkas & Jawaban (Email & In-App)
         try {
-            $userEmail = $personel->user?->email;
-            if ($userEmail) {
-                Mail::to($userEmail)->send(
-                    new SystemNotificationMail(
-                        title: 'Konfirmasi Pengiriman Formulir: ' . $form->title,
-                        messageText: "Terima kasih, formulir berkas & persyaratan '{$form->title}' telah berhasil Anda kirimkan pada " . now()->translatedFormat('d F Y H:i') . " WIB. Berkas persyaratan dan jawaban kuesioner Anda telah tersimpan dengan aman pada pangkalan data SISFOPERSKC untuk ditinjau oleh pejabat pembina / panitia.",
-                        userOrPersonel: $personel,
-                        url: route('personel.form.show', $form->uuid)
-                    )
-                );
+            $notifTitle = 'Pengiriman Formulir Berhasil: ' . $form->title;
+            $notifMessage = "Terima kasih. Jawaban kuesioner dan berkas persyaratan Anda untuk '{$form->title}' telah berhasil disimpan di pangkalan data SISFOPERSKC dan saat ini sedang menunggu proses verifikasi oleh tim pembina / panitia.";
+            $notifUrl = route('personel.form.show', $form->uuid);
+
+            if ($personel->user) {
+                $personel->user->notify(new \App\Notifications\CustomFormAppAndEmailNotification(
+                    $notifTitle,
+                    $notifMessage,
+                    $notifUrl,
+                    'form'
+                ));
             }
         } catch (\Throwable $e) {
-            Log::error("Gagal mengirimkan email konfirmasi formulir: " . $e->getMessage());
+            Log::error("Gagal mengirimkan notifikasi konfirmasi formulir: " . $e->getMessage());
         }
 
-        return redirect()->route('personel.form.show', $form->uuid)->with('success', 'Formulir berhasil dikirimkan. Berkas dan jawaban Anda telah tersimpan dengan aman.');
+        return redirect()->route('personel.form.show', $form->uuid)->with('success', 'Jawaban dan berkas persyaratan Anda telah berhasil disimpan dan saat ini sedang menunggu proses verifikasi.');
     }
 }

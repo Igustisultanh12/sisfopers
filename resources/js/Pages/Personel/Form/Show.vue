@@ -558,10 +558,17 @@ const submitFullForm = () => {
     forceFormData: true,
     onSuccess: () => {
       isSubmitting.value = false;
+      Swal.fire({
+        icon: 'success',
+        title: 'Jawaban Berhasil Disimpan',
+        text: 'Jawaban dan berkas persyaratan Anda telah berhasil disimpan dan saat ini sedang menunggu proses verifikasi oleh panitia / pembina.',
+        confirmButtonText: 'Tutup',
+        confirmButtonColor: '#2563EB',
+        customClass: { popup: 'rounded-2xl', confirmButton: 'rounded-xl' },
+      });
     },
     onError: (errors) => {
       isSubmitting.value = false;
-      // Map errors if any returned
       console.error(errors);
     }
   });
