@@ -221,6 +221,10 @@
               <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
               Formulir & Rekrutmen
             </Link>
+            <Link :href="route('personel.chat.index')" :class="route().current('personel.chat.*') ? 'bg-[#2563EB]/5 text-[#2563EB] font-bold' : 'text-[#64748B] hover:text-slate-800 font-medium'" class="flex items-center gap-4 px-5 py-3.5 rounded-2xl text-[14px] transition duration-150">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+              Live Chat Layanan
+            </Link>
           </template>
 
           <template v-else-if="authProps?.user?.role?.name === 'kordinator_angkatan' || authProps?.user?.role?.name === 'kordinator_matra'">
@@ -521,6 +525,10 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path></svg>
                 Open Tiket Pengaduan
               </Link>
+              <Link :href="route('personel.chat.index')" @click="isSidebarOpen = false" :class="route().current('personel.chat.*') ? 'bg-[#2563EB]/5 text-[#2563EB] font-bold' : 'text-[#64748B] hover:text-slate-800 font-medium'" class="flex items-center gap-4 px-5 py-3.5 rounded-2xl text-[14px] transition duration-150">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                Live Chat Layanan
+              </Link>
             </template>
 
             <template v-else-if="authProps?.user?.role?.name === 'pju'">
@@ -792,8 +800,9 @@
   </div>
 </template>
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { router, Link, usePage, useForm } from '@inertiajs/vue3';
+import { playNotificationSound } from '@/Utils/sound';
 
 const page = usePage();
 const dropdownOpen = ref(false);
@@ -1057,6 +1066,12 @@ const authProps = computed(() => page.props.auth);
 const unreadCount = computed(() => page.props.auth?.unread_notifications_count || 0);
 const allNotifications = computed(() => page.props.auth?.all_notifications || []);
 const settings = computed(() => page.props.settings || {});
+
+watch(unreadCount, (newVal, oldVal) => {
+  if (typeof oldVal !== 'undefined' && newVal > oldVal) {
+    playNotificationSound();
+  }
+});
 
 const toggleDropdown = () => {
   dropdownOpen.value = !dropdownOpen.value;

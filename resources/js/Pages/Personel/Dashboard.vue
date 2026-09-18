@@ -61,12 +61,12 @@
           </div>
         </div>
 
-        <!-- Grid Menu Pintasan 5 Kolom ala Aplikasi Android/iOS dengan Ikon Premium -->
-        <div class="grid grid-cols-5 gap-1.5 bg-white p-3.5 rounded-3xl border border-[#E2E8F0] shadow-xs">
+        <!-- Grid Menu Pintasan 6 Kolom ala Aplikasi Seluler Militer -->
+        <div class="grid grid-cols-6 gap-1 bg-white p-3 rounded-3xl border border-[#E2E8F0] shadow-xs">
           <!-- Pintasan 1: Dashboard (Portal Saya) -->
           <Link :href="route('personel.dashboard')" class="flex flex-col items-center justify-center p-1 rounded-2xl hover:bg-slate-50 transition text-center group cursor-pointer">
-            <div class="w-10 h-10 rounded-2xl bg-blue-50 text-[#2563EB] flex items-center justify-center shadow-xs border border-blue-100/30 group-hover:scale-105 transition duration-200 select-none">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+            <div class="w-9 h-9 rounded-2xl bg-blue-50 text-[#2563EB] flex items-center justify-center shadow-xs border border-blue-100/30 group-hover:scale-105 transition duration-200 select-none">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
               </svg>
             </div>
@@ -75,8 +75,8 @@
 
           <!-- Pintasan 2: Riwayat Pekerjaan -->
           <Link :href="route('personel.job.index')" class="flex flex-col items-center justify-center p-1 rounded-2xl hover:bg-slate-50 transition text-center group cursor-pointer">
-            <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-xs border border-emerald-100/30 group-hover:scale-105 transition duration-200 select-none">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+            <div class="w-9 h-9 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-xs border border-emerald-100/30 group-hover:scale-105 transition duration-200 select-none">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.25c0 .621-.504 1.125-1.125 1.125H4.875c-.621 0-1.125-.504-1.125-1.125v-4.25m16.5 0a2.25 2.25 0 00-2.25-2.25H5.625a2.25 2.25 0 00-2.25 2.25m16.5 0v-1.5A3.375 3.375 0 0017.25 9h-2.625M3.75 14.15v-1.5A3.375 3.375 0 016.75 9h2.625m.002-2.25a3.375 3.375 0 013.373-3.375h1.5a3.375 3.375 0 013.375 3.375v2.25m-8.25 0h8.25" />
               </svg>
             </div>
@@ -85,8 +85,8 @@
 
           <!-- Pintasan 3: Broadcast Kegiatan -->
           <Link :href="route('personel.broadcast.index')" class="flex flex-col items-center justify-center p-1 rounded-2xl hover:bg-slate-50 transition text-center group cursor-pointer">
-            <div class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-xs border border-amber-100/30 group-hover:scale-105 transition duration-200 select-none">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+            <div class="w-9 h-9 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-xs border border-amber-100/30 group-hover:scale-105 transition duration-200 select-none">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
               </svg>
             </div>
@@ -95,8 +95,8 @@
 
           <!-- Pintasan 4: Riwayat Pendidikan -->
           <Link :href="route('personel.education.index')" class="flex flex-col items-center justify-center p-1 rounded-2xl hover:bg-slate-50 transition text-center group cursor-pointer">
-            <div class="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center shadow-xs border border-purple-100/30 group-hover:scale-105 transition duration-200 select-none">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+            <div class="w-9 h-9 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center shadow-xs border border-purple-100/30 group-hover:scale-105 transition duration-200 select-none">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.62 48.62 0 0112 20.904a48.62 48.62 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A5.905 5.905 0 018 3.097V5.25m15.482 4.897a50.57 50.57 0 012.658-.813c.852-.162 1.48-.901 1.48-1.767V5.25m0 0a5.905 5.905 0 00-5.88-5.25h-1.5a5.905 5.905 0 00-5.88 5.25m13.26 0v2.25" />
               </svg>
             </div>
@@ -105,12 +105,22 @@
 
           <!-- Pintasan 5: Formulir & Rekrutmen -->
           <Link :href="route('personel.form.index')" class="flex flex-col items-center justify-center p-1 rounded-2xl hover:bg-slate-50 transition text-center group cursor-pointer">
-            <div class="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-xs border border-indigo-100/30 group-hover:scale-105 transition duration-200 select-none">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+            <div class="w-9 h-9 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-xs border border-indigo-100/30 group-hover:scale-105 transition duration-200 select-none">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
             <span class="text-[8px] font-bold text-slate-600 mt-1.5 tracking-tight leading-tight">Formulir</span>
+          </Link>
+
+          <!-- Pintasan 6: Live Chat Layanan -->
+          <Link :href="route('personel.chat.index')" class="flex flex-col items-center justify-center p-1 rounded-2xl hover:bg-slate-50 transition text-center group cursor-pointer">
+            <div class="w-9 h-9 rounded-2xl bg-sky-50 text-[#2563EB] flex items-center justify-center shadow-xs border border-sky-100/30 group-hover:scale-105 transition duration-200 select-none">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+            </div>
+            <span class="text-[8px] font-bold text-slate-600 mt-1.5 tracking-tight leading-tight">Live Chat</span>
           </Link>
         </div>
 
@@ -130,11 +140,14 @@
           </div>
         </div>
 
-        <!-- Pengumuman & Mobilisasi Terbaru di HP -->
-        <div class="bg-white border border-[#E2E8F0] rounded-3xl shadow-xs overflow-hidden">
+        <!-- Pengumuman Singkat Kegiatan Terbaru di HP -->
+        <div class="bg-white border border-[#E2E8F0] rounded-3xl overflow-hidden shadow-xs">
           <div class="px-5 py-4 border-b border-[#E2E8F0] bg-slate-50/50 flex items-center justify-between">
             <h4 class="text-xs font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-              <span class="text-blue-500">📢</span> Pengumuman Terbaru
+              <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+              </svg>
+              <span>Pengumuman Terbaru</span>
             </h4>
             <Link :href="route('personel.broadcast.index')" class="text-[10px] font-bold text-[#2563EB] hover:underline">Lihat Semua</Link>
           </div>
@@ -149,7 +162,9 @@
               >
                 <div class="flex items-start gap-3">
                   <div class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0 border border-blue-100/20">
-                    📌
+                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
                   </div>
                   <div class="space-y-1 flex-1 min-w-0">
                     <div class="flex items-center justify-between gap-2">
@@ -170,11 +185,11 @@
           </div>
         </div>
 
-        <!-- Banner Kuning Promosi/Petunjuk di HP (Marquee) -->
-        <div class="bg-amber-400 border border-amber-500 rounded-2xl p-3 shadow-xs overflow-hidden flex items-center gap-2">
-          <span class="text-[10px] select-none shrink-0 font-extrabold text-amber-950 uppercase tracking-wider">🔥 Info:</span>
-          <marquee class="text-[10px] font-bold text-amber-950 flex-1" scrollamount="3">
-            Pusat Informasi & Layanan SISFOPERSKC Komponen Cadangan RI. Selalu verifikasi data diri dan kehadiran latihan Anda secara berkala!
+        <!-- Banner Promosi/Petunjuk di HP (Marquee) -->
+        <div class="bg-blue-900 border border-blue-800 rounded-2xl p-3 shadow-xs overflow-hidden flex items-center gap-2 text-white">
+          <span class="text-[10px] select-none shrink-0 font-extrabold text-blue-200 uppercase tracking-wider">Warta Dinas:</span>
+          <marquee class="text-[10px] font-semibold text-blue-100 flex-1" scrollamount="3">
+            Pusat Informasi & Layanan SISFOPERSKC Komponen Cadangan RI. Selalu verifikasi data diri dan kehadiran latihan Anda secara berkala.
           </marquee>
         </div>
 
@@ -204,7 +219,11 @@
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
           <!-- Boks 1: Total Perintah Mobilisasi -->
           <div class="bg-white border border-[#E2E8F0] rounded-2xl p-5 flex items-center gap-4 shadow-xs">
-            <div class="w-10 h-10 rounded-xl bg-blue-50 text-[#2563EB] flex items-center justify-center font-bold text-sm select-none">📋</div>
+            <div class="w-10 h-10 rounded-xl bg-blue-50 text-[#2563EB] flex items-center justify-center select-none">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            </div>
             <div>
               <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Kegiatan</p>
               <p class="text-xl font-extrabold text-slate-800 mt-0.5">{{ stats.total_kegiatan }}</p>
@@ -213,7 +232,11 @@
 
           <!-- Boks 2: Siap Hadir Laksana -->
           <div class="bg-white border border-[#E2E8F0] rounded-2xl p-5 flex items-center gap-4 shadow-xs">
-            <div class="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center font-bold text-sm select-none">✅</div>
+            <div class="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center select-none">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
             <div>
               <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Siap Hadir</p>
               <p class="text-xl font-extrabold text-slate-800 mt-0.5">{{ stats.total_hadir }}</p>
@@ -222,7 +245,11 @@
 
           <!-- Boks 3: Izin Dinas -->
           <div class="bg-white border border-[#E2E8F0] rounded-2xl p-5 flex items-center gap-4 shadow-xs">
-            <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-sm select-none">⏳</div>
+            <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center select-none">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
             <div>
               <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Izin Dinas</p>
               <p class="text-xl font-extrabold text-slate-800 mt-0.5">{{ stats.total_izin }}</p>
@@ -247,7 +274,7 @@
                     <h5 class="text-sm font-bold text-slate-800">{{ personel.full_name }}</h5>
                     <p class="text-slate-400 font-medium">Nomor Induk Kependudukan: <span class="text-slate-700 font-bold">{{ personel.nik }}</span></p>
                     <p class="text-slate-400 font-medium">WhatsApp Aktif: <span class="text-slate-700 font-bold">{{ personel.phone_number }}</span></p>
-                    <p class="text-slate-400 font-medium">Otoritas Komparasi Wajah: <span class="text-green-600 font-bold">Face Verified ✔️</span></p>
+                    <p class="text-slate-400 font-medium">Otoritas Komparasi Wajah: <span class="text-green-600 font-bold">Terverifikasi (Face Verified)</span></p>
                   </div>
                 </div>
 
@@ -342,11 +369,15 @@
 
           <div class="text-xs text-slate-600 space-y-3 leading-relaxed">
             <div class="flex items-start gap-2.5">
-              <span class="text-blue-500 mt-0.5">▪️</span>
+              <svg class="w-3.5 h-3.5 text-blue-600 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <circle cx="10" cy="10" r="4" />
+              </svg>
               <p><strong>Respons Instruksi Pimpinan:</strong> Pastikan Anda selalu memantau menu <Link :href="route('personel.broadcast.index')" class="text-[#2563EB] font-bold hover:underline">Kegiatan & Mobilisasi</Link> untuk melakukan konfirmasi presensi setiap ada perintah apel atau latihan baru dari pusat komando.</p>
             </div>
             <div class="flex items-start gap-2.5">
-              <span class="text-blue-500 mt-0.5">▪️</span>
+              <svg class="w-3.5 h-3.5 text-blue-600 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <circle cx="10" cy="10" r="4" />
+              </svg>
               <p><strong>Integritas Pusat Akun:</strong> Jaga keamanan sandi masuk Anda secara berkala, dan tautkan pengaman kriptografi **Google Authenticator (M2FA)** melalui sub-menu pengaturan akun demi kerahasiaan data operasional instansi.</p>
             </div>
           </div>

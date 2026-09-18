@@ -468,6 +468,7 @@ Route::middleware(['auth', 'role:personel,admin,kordinator_angkatan,kordinator_m
         Route::post('/formulir/{uuid}', [\App\Http\Controllers\Personel\PersonelFormController::class, 'submit'])->name('form.submit');
 
         // Modul Layanan Live Chat Personel
+        Route::get('/live-chat', [\App\Http\Controllers\Chat\LiveChatController::class, 'personelIndex'])->name('chat.index');
         Route::get('/live-chat/thread', [\App\Http\Controllers\Chat\LiveChatController::class, 'getThread'])->name('chat.thread');
         Route::get('/live-chat/{uuid}/messages', [\App\Http\Controllers\Chat\LiveChatController::class, 'getMessages'])->name('chat.messages');
         Route::post('/live-chat/{uuid}/send', [\App\Http\Controllers\Chat\LiveChatController::class, 'sendMessage'])->name('chat.send');

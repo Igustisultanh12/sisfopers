@@ -395,6 +395,7 @@
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { playNotificationSound } from '@/Utils/sound';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 
@@ -512,8 +513,12 @@ const pollAdminMessages = async () => {
     }
 
     if (res.data.messages && res.data.messages.length > 0) {
+      const hasPersonelMsg = res.data.messages.some(m => m.sender_type === 'PERSONEL');
       activeMessagesList.value.push(...res.data.messages);
       scrollAdminChatToBottom();
+      if (hasPersonelMsg) {
+        playNotificationSound();
+      }
     }
   } catch (err) {
     console.error('Pembaruan pesan terhambat:', err);

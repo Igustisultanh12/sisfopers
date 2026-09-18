@@ -16,6 +16,66 @@ use Inertia\Inertia;
 class LiveChatController extends Controller
 {
     /**
+     * Halaman Utama Live Chat Mandiri untuk Personel Komcad
+     */
+    public function personelIndex(Request $request)
+    {
+        $user = Auth::user();
+        $personel = $user->personel ?? Personel::where('user_id', $user->id)->first();
+
+        if (!$personel) {
+            abort(404, 'Data profil personel tidak ditemukan.');
+        }
+
+        // Cari utas terbuka aktif atau utas terakhir yang pernah dibuat
+        $thread = LiveChatThread::where('personel_id', $personel->id)
+            ->where('status', 'OPEN')
+            ->latest('last_message_at')
+            ->first();
+
+        if (!$thread) {
+            $thread = LiveChatThread::where('personel_id', $personel->id)
+                ->latest('last_message_at')
+                ->first();
+        }
+
+        if (!$thread) {
+            $thread = LiveChatThread::create([
+                'personel_id' => $personel->id,
+                'uuid' => (string) Str::uuid(),
+                'subject' => 'Pusat Bantuan & Konsultasi',
+                'status' => 'OPEN',
+                'last_message_at' => now(),
+                'unread_admin' => 0,
+                'unread_personel' => 0,
+            ]);
+        }
+
+        if ($thread->unread_personel > 0) {
+            $thread->update(['unread_personel' => 0]);
+        }
+        $thread->messages()
+            ->where('sender_type', '!=', 'PERSONEL')
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+
+        $messages = $thread->messages()->orderBy('id', 'asc')->get();
+
+        return Inertia::render('Personel/Chat/Index', [
+            'initialThread' => $thread,
+            'initialMessages' => $messages,
+            'personel' => [
+                'id' => $personel->id,
+                'name' => $personel->full_name,
+                'pangkat' => Personel::formatLongRank($personel->pangkat),
+                'matra' => $personel->matra,
+                'nikc' => $personel->nikc ?? $personel->nik,
+                'photo_profile' => $personel->photo_profile,
+            ],
+        ]);
+    }
+
+    /**
      * Memperoleh atau membuka utas obrolan aktif untuk Personel yang sedang masuk
      */
     public function getThread(Request $request)
@@ -144,6 +204,15 @@ class LiveChatController extends Controller
             }
 
             $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt'];
+            $allowedMimes = [
+                'image/jpeg', 'image/png', 'image/webp',
+                'application/pdf', 'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/vnd.ms-excel',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'text/plain',
+            ];
+            $finfo = new \finfo(FILEINFO_MIME_TYPE);
 
             foreach ($files as $file) {
                 $ext = strtolower($file->getClientOriginalExtension());
@@ -153,20 +222,30 @@ class LiveChatController extends Controller
                     ], 422);
                 }
 
+                $realMime = $finfo->file($file->getRealPath());
+                if (!in_array($realMime, $allowedMimes)) {
+                    return response()->json([
+                        'error' => "Format berkas [{$file->getClientOriginalName()}] tidak sah atau memiliki risiko keamanan MIME."
+                    ], 422);
+                }
+
+                $cleanOriginalName = preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', $file->getClientOriginalName());
+                $cleanOriginalName = preg_replace('/\.+/', '.', $cleanOriginalName);
+
                 $storedPath = $file->store("chat_attachments/{$thread->uuid}", 'private');
                 $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'webp']);
 
                 $uploadedFiles[] = [
-                    'original_name' => $file->getClientOriginalName(),
+                    'original_name' => $cleanOriginalName,
                     'file_path' => $storedPath,
-                    'mime_type' => $file->getClientMimeType(),
+                    'mime_type' => $realMime,
                     'size' => $file->getSize(),
                     'is_image' => $isImage,
                 ];
             }
         }
 
-        $messageContent = trim((string) $request->input('message'));
+        $messageContent = strip_tags(trim((string) $request->input('message')));
         if ($messageContent === '' && empty($uploadedFiles)) {
             return response()->json(['error' => 'Pesan teks atau berkas lampiran wajib diisi.'], 422);
         }
@@ -318,6 +397,15 @@ class LiveChatController extends Controller
             }
 
             $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt'];
+            $allowedMimes = [
+                'image/jpeg', 'image/png', 'image/webp',
+                'application/pdf', 'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/vnd.ms-excel',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'text/plain',
+            ];
+            $finfo = new \finfo(FILEINFO_MIME_TYPE);
 
             foreach ($files as $file) {
                 $ext = strtolower($file->getClientOriginalExtension());
@@ -327,20 +415,30 @@ class LiveChatController extends Controller
                     ], 422);
                 }
 
+                $realMime = $finfo->file($file->getRealPath());
+                if (!in_array($realMime, $allowedMimes)) {
+                    return response()->json([
+                        'error' => "Format berkas [{$file->getClientOriginalName()}] tidak sah atau memiliki risiko keamanan MIME."
+                    ], 422);
+                }
+
+                $cleanOriginalName = preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', $file->getClientOriginalName());
+                $cleanOriginalName = preg_replace('/\.+/', '.', $cleanOriginalName);
+
                 $storedPath = $file->store("chat_attachments/{$thread->uuid}", 'private');
                 $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'webp']);
 
                 $uploadedFiles[] = [
-                    'original_name' => $file->getClientOriginalName(),
+                    'original_name' => $cleanOriginalName,
                     'file_path' => $storedPath,
-                    'mime_type' => $file->getClientMimeType(),
+                    'mime_type' => $realMime,
                     'size' => $file->getSize(),
                     'is_image' => $isImage,
                 ];
             }
         }
 
-        $messageContent = trim((string) $request->input('message'));
+        $messageContent = strip_tags(trim((string) $request->input('message')));
         if ($messageContent === '' && empty($uploadedFiles)) {
             return response()->json(['error' => 'Pesan teks atau berkas lampiran wajib diisi.'], 422);
         }

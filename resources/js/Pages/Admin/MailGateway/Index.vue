@@ -67,7 +67,7 @@ const sendTestEmail = () => {
             Mail Gateway
           </h1>
           <p class="text-sm text-slate-500 mt-0.5">
-            Kelola server SMTP pengiriman Email OTP, notifikasi sistem, dan pengujian koneksi real-time.
+            Kelola server SMTP pengiriman Email OTP, notifikasi sistem, dan pengujian koneksi langsung.
           </p>
         </div>
 

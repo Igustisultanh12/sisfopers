@@ -17,16 +17,15 @@
             </p>
           </div>
           <div class="shrink-0">
-            <button 
-              @click="showChatModal = true" 
-              type="button" 
+            <Link 
+              :href="route('personel.chat.index')" 
               class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-950/40 border border-blue-400/30 transition cursor-pointer"
             >
               <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
               <span>Hubungi Live chat</span>
-            </button>
+            </Link>
           </div>
         </div>
       </div>
@@ -121,9 +120,6 @@
           Saat ada kegiatan seleksi, rekrutmen, atau pendataan khusus yang ditujukan untuk Anda, informasi akan muncul pada halaman ini.
         </p>
       </div>
-
-      <!-- Komponen Modal Obrolan Langsung -->
-      <LiveChatModal v-model="showChatModal" />
     </div>
   </AuthenticatedLayout>
 </template>
@@ -132,7 +128,6 @@
 import { ref, onMounted } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import LiveChatModal from '@/Components/LiveChatModal.vue';
 import Swal from 'sweetalert2';
 
 const props = defineProps({
@@ -141,8 +136,6 @@ const props = defineProps({
   hasCompletedEducation: Boolean,
   ineligibleError: String,
 });
-
-const showChatModal = ref(false);
 
 onMounted(() => {
   // Pengecekan pesan penolakan akses kelayakan sasaran strata formulir
