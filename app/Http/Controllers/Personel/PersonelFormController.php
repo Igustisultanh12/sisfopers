@@ -74,6 +74,7 @@ class PersonelFormController extends Controller
             'forms' => $formsData,
             'personel' => $personel,
             'hasCompletedEducation' => $this->checkEducationCompleteness($personel),
+            'ineligibleError' => session('ineligible_error'),
         ]);
     }
 
@@ -85,9 +86,21 @@ class PersonelFormController extends Controller
         $personel = $this->getPersonel();
         $form = CustomForm::where('uuid', $uuid)->firstOrFail();
 
-        // Validasi Kelayakan Sasaran Form
+        // Validasi Kelayakan Sasaran Form (Kepangkatan & Matra)
         if (!$form->isPersonelEligible($personel) && !$form->hasPersonelSubmitted($personel)) {
-            abort(403, 'Anda tidak memenuhi kriteria kepangkatan atau matra sasaran untuk formulir ini.');
+            $targetRank = match ($form->target_rank_category) {
+                'PERWIRA' => 'jenjang Perwira',
+                'BINTARA' => 'jenjang Bintara',
+                'TAMTAMA' => 'jenjang Tamtama',
+                default => 'kriteria tertentu',
+            };
+
+            $msg = "Mohon Maaf form ini hanya ditujukan kepada {$targetRank}";
+            if ($form->target_matra && $form->target_matra !== 'ALL') {
+                $msg .= " Matra {$form->target_matra}";
+            }
+
+            return redirect()->route('personel.form.index')->with('ineligible_error', $msg);
         }
 
         // Cek apakah personel sudah pernah mengirim respon

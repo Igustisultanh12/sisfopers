@@ -138,6 +138,17 @@
 
             <!-- Action Dropdown / Buttons -->
             <div class="flex items-center gap-1">
+              <!-- Tombol Salin Tautan Langsung (Direct Link) -->
+              <button 
+                @click="copyDirectLink(form)" 
+                title="Salin Direct Link untuk Disebarkan"
+                class="p-2 rounded-xl text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition cursor-pointer"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                </svg>
+              </button>
+
               <button 
                 @click="toggleFormStatus(form)" 
                 :title="form.is_active ? 'Tutup Formulir' : 'Buka Formulir'"
@@ -211,6 +222,7 @@
 import { ref } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import Swal from 'sweetalert2';
 
 const props = defineProps({
   forms: Object,
@@ -278,6 +290,27 @@ const confirmDelete = (form) => {
   if (confirm(`Apakah Anda yakin ingin menghapus formulir "${form.title}"? Seluruh respon yang telah masuk akan diarsipkan.`)) {
     router.delete(route(`${getPrefix()}.form.destroy`, form.uuid));
   }
+};
+
+const copyDirectLink = (form) => {
+  const directUrl = `${window.location.origin}/f/${form.uuid}`;
+  navigator.clipboard.writeText(directUrl).then(() => {
+    Swal.fire({
+      icon: 'success',
+      title: 'Tautan Berhasil Disalin',
+      text: `Direct link untuk '${form.title}' telah disalin ke clipboard:\n${directUrl}`,
+      confirmButtonText: 'Tutup',
+      confirmButtonColor: '#2563EB',
+      customClass: { popup: 'rounded-2xl', confirmButton: 'rounded-xl' },
+    });
+  }).catch(() => {
+    Swal.fire({
+      title: 'Tautan Formulir',
+      text: directUrl,
+      confirmButtonColor: '#2563EB',
+      customClass: { popup: 'rounded-2xl' },
+    });
+  });
 };
 
 const formatDate = (dateStr) => {

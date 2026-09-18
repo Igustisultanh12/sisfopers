@@ -465,4 +465,60 @@ class CustomFormController extends Controller
 
         return back()->with('success', 'Status respon personel berhasil diperbarui.');
     }
+
+    /**
+     * Tautan Langsung (Direct Link) Formulir untuk Disebarkan ke Personel
+     */
+    public function shareRedirect(Request $request, $uuid)
+    {
+        $form = CustomForm::where('uuid', $uuid)->firstOrFail();
+
+        // 1. Jika belum login (pengguna umum / tamu)
+        if (!Auth::check() && !Auth::guard('pju')->check()) {
+            session(['url.intended' => route('form.share', $uuid)]);
+            return redirect()->route('login')->with('info', 'Silakan masuk ke akun Anda terlebih dahulu untuk mengakses formulir: ' . $form->title);
+        }
+
+        // 2. Jika akun Pejabat Utama (PJU)
+        if (Auth::guard('pju')->check()) {
+            return redirect()->route('pju.form.responses', $form->uuid);
+        }
+
+        $user = Auth::user();
+
+        // 3. Jika Administrator
+        if ($user->hasRole('admin')) {
+            return redirect()->route('admin.form.responses', $form->uuid);
+        }
+
+        // 4. Jika Koordinator
+        if ($user->hasRole('kordinator_angkatan') || $user->hasRole('kordinator_matra')) {
+            return redirect()->route('kordinator.form.responses', $form->uuid);
+        }
+
+        // 5. Jika Personel Komcad
+        $personel = $user->personel ?? Personel::where('user_id', $user->id)->first();
+        if (!$personel) {
+            return redirect()->route('personel.dashboard')->with('error', 'Profil personel tidak ditemukan.');
+        }
+
+        // Pengecekan kelayakan kepangkatan dan matra sasaran formulir
+        if (!$form->isPersonelEligible($personel) && !$form->hasPersonelSubmitted($personel)) {
+            $targetRank = match ($form->target_rank_category) {
+                'PERWIRA' => 'jenjang Perwira',
+                'BINTARA' => 'jenjang Bintara',
+                'TAMTAMA' => 'jenjang Tamtama',
+                default => 'kriteria tertentu',
+            };
+
+            $msg = "Mohon Maaf form ini hanya ditujukan kepada {$targetRank}";
+            if ($form->target_matra && $form->target_matra !== 'ALL') {
+                $msg .= " Matra {$form->target_matra}";
+            }
+
+            return redirect()->route('personel.form.index')->with('ineligible_error', $msg);
+        }
+
+        return redirect()->route('personel.form.show', $form->uuid);
+    }
 }

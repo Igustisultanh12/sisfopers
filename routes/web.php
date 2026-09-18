@@ -57,6 +57,9 @@ Route::get('/verify-doc/{verify_code}', [\App\Http\Controllers\Public\DocumentVe
 Route::match(['get', 'post'], '/skep/check', [SkepPublicController::class, 'checkNikc'])->name('skep.check');
 Route::match(['get', 'post'], '/skep/request', [SkepPublicController::class, 'submitRequest'])->name('skep.request');
 
+// Rute Tautan Langsung (Direct Link) Formulir Terbuka / Rekrutmen Personel
+Route::get('/f/{uuid}', [\App\Http\Controllers\Form\CustomFormController::class, 'shareRedirect'])->name('form.share');
+
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);

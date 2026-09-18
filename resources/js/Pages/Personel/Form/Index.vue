@@ -139,13 +139,23 @@ const props = defineProps({
   forms: Array,
   personel: Object,
   hasCompletedEducation: Boolean,
+  ineligibleError: String,
 });
 
 const showChatModal = ref(false);
 
 onMounted(() => {
-  // Pengecekan kelengkapan riwayat pendidikan
-  if (props.hasCompletedEducation === false) {
+  // Pengecekan pesan penolakan akses kelayakan sasaran strata formulir
+  if (props.ineligibleError) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Akses Tidak Memenuhi Kriteria',
+      text: props.ineligibleError,
+      confirmButtonText: 'Mengerti',
+      confirmButtonColor: '#2563EB',
+      customClass: { popup: 'rounded-2xl', confirmButton: 'rounded-xl' },
+    });
+  } else if (props.hasCompletedEducation === false) {
     Swal.fire({
       icon: 'warning',
       title: 'Perhatian',

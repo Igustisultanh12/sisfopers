@@ -4,7 +4,7 @@
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 font-sans space-y-6">
       <!-- Back Link & Header -->
-      <div class="flex items-center justify-between">
+      <div class="flex items-center justify-between gap-3">
         <Link 
           :href="getIndexRoute()" 
           class="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-800 transition"
@@ -12,6 +12,16 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
           Kembali ke Daftar Formulir
         </Link>
+
+        <button 
+          @click="copyDirectLink"
+          type="button"
+          class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 hover:border-blue-200 text-xs font-bold transition shadow-xs cursor-pointer"
+          title="Salin tautan langsung untuk dibagikan kepada Personel"
+        >
+          <svg class="w-4 h-4 text-slate-500 hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+          <span>Salin Tautan Formulir</span>
+        </button>
       </div>
 
       <!-- Form Information Summary Header -->
@@ -428,6 +438,7 @@
 import { ref } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import Swal from 'sweetalert2';
 
 const props = defineProps({
   form: Object,
@@ -479,6 +490,28 @@ const getPrefix = () => {
 
 const getIndexRoute = () => {
   return route(`${getPrefix()}.form.index`);
+};
+
+const copyDirectLink = () => {
+  if (!props.form?.uuid) return;
+  const directUrl = `${window.location.origin}/f/${props.form.uuid}`;
+  navigator.clipboard.writeText(directUrl).then(() => {
+    Swal.fire({
+      icon: 'success',
+      title: 'Tautan Berhasil Disalin',
+      text: `Direct link untuk '${props.form.title}' telah disalin ke clipboard:\n${directUrl}`,
+      confirmButtonText: 'Tutup',
+      confirmButtonColor: '#2563EB',
+      customClass: { popup: 'rounded-2xl', confirmButton: 'rounded-xl' },
+    });
+  }).catch(() => {
+    Swal.fire({
+      title: 'Tautan Formulir',
+      text: directUrl,
+      confirmButtonColor: '#2563EB',
+      customClass: { popup: 'rounded-2xl' },
+    });
+  });
 };
 
 const openDetail = (resp) => {
