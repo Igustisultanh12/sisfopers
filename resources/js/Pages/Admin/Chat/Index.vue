@@ -227,7 +227,11 @@
                               <span class="truncate text-slate-700 font-medium">{{ att.original_name }}</span>
                               <span class="text-[9px] text-slate-400 shrink-0">({{ formatBytes(att.size) }})</span>
                             </div>
+                            <span v-if="att.purged || !att.file_path" class="shrink-0 text-slate-400 text-[10px] font-semibold italic">
+                              Berkas Terhapus
+                            </span>
                             <a 
+                              v-else
                               :href="`/documents/private-stream?path=${encodeURIComponent(att.file_path)}`" 
                               target="_blank" 
                               class="shrink-0 text-blue-600 hover:text-blue-800 font-bold underline text-[10px]"
@@ -267,7 +271,11 @@
                               <span class="truncate text-white font-medium">{{ att.original_name }}</span>
                               <span class="text-[9px] text-slate-300 shrink-0">({{ formatBytes(att.size) }})</span>
                             </div>
+                            <span v-if="att.purged || !att.file_path" class="shrink-0 text-amber-300 text-[10px] font-semibold italic">
+                              Berkas Terhapus
+                            </span>
                             <a 
+                              v-else
                               :href="`/documents/private-stream?path=${encodeURIComponent(att.file_path)}`" 
                               target="_blank" 
                               class="shrink-0 text-blue-400 hover:text-blue-300 font-bold underline text-[10px]"
@@ -308,8 +316,20 @@
               </div>
             </div>
 
-            <!-- Composer Balasan Pesan Admin -->
-            <form @submit.prevent="submitAdminReply" class="p-4 bg-white border-t border-slate-200 shrink-0">
+            <!-- Composer Balasan Pesan Admin / Status Ditutup -->
+            <div v-if="selectedThread.status === 'CLOSED'" class="p-4 bg-slate-50 border-t border-slate-200 text-center space-y-2 shrink-0">
+              <p class="text-xs text-slate-600 font-medium">Sesi obrolan ini telah ditutup. Seluruh berkas lampiran otomatis dihapus permanen dari server.</p>
+              <button 
+                @click="toggleStatus(selectedThread.uuid)" 
+                type="button" 
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition cursor-pointer"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
+                <span>Buka Sesi Kembali</span>
+              </button>
+            </div>
+
+            <form v-else @submit.prevent="submitAdminReply" class="p-4 bg-white border-t border-slate-200 shrink-0">
               <div class="flex items-end gap-2">
                 <label 
                   class="p-2.5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition cursor-pointer shrink-0 flex items-center justify-center"
@@ -457,10 +477,18 @@ const selectThread = (th) => {
   loadThreadMessages(th.uuid);
 };
 
+const getPrefix = () => {
+  if (typeof window !== 'undefined') {
+    if (window.location.pathname.startsWith('/pju')) return 'pju';
+    if (window.location.pathname.startsWith('/kordinator')) return 'kordinator';
+  }
+  return 'admin';
+};
+
 // Pengambilan pesan utas secara asinkron
 const loadThreadMessages = async (uuid) => {
   try {
-    const res = await axios.get(`/admin/live-chat/${uuid}/messages`);
+    const res = await axios.get(`/${getPrefix()}/live-chat/${uuid}/messages`);
     activeMessagesList.value = res.data.messages || [];
     scrollAdminChatToBottom();
   } catch (err) {
@@ -475,7 +503,7 @@ const pollAdminMessages = async () => {
   const lastId = lastMsg ? lastMsg.id : 0;
 
   try {
-    const res = await axios.get(`/admin/live-chat/${selectedThread.value.uuid}/messages`, {
+    const res = await axios.get(`/${getPrefix()}/live-chat/${selectedThread.value.uuid}/messages`, {
       params: { last_id: lastId },
     });
 
@@ -547,7 +575,7 @@ const submitAdminReply = async () => {
   });
 
   try {
-    const res = await axios.post(`/admin/live-chat/${selectedThread.value.uuid}/send`, formData, {
+    const res = await axios.post(`/${getPrefix()}/live-chat/${selectedThread.value.uuid}/send`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -574,11 +602,45 @@ const submitAdminReply = async () => {
 };
 
 const toggleStatus = (uuid) => {
-  router.post(`/admin/live-chat/${uuid}/status`, {}, {
+  const isClosing = selectedThread.value?.status === 'OPEN';
+  if (isClosing) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Tutup Sesi Obrolan?',
+      text: 'Apakah Anda yakin ingin menutup sesi obrolan ini? Seluruh berkas lampiran yang ada dalam obrolan akan otomatis dihapus permanen dari server.',
+      showCancelButton: true,
+      confirmButtonText: 'Ya, Tutup Sesi & Hapus Berkas',
+      cancelButtonText: 'Batal',
+      confirmButtonColor: '#DC2626',
+      cancelButtonColor: '#64748B',
+      customClass: { popup: 'rounded-2xl', confirmButton: 'rounded-xl', cancelButton: 'rounded-xl' },
+    }).then((result) => {
+      if (result.isConfirmed) {
+        executeToggleStatus(uuid);
+      }
+    });
+  } else {
+    executeToggleStatus(uuid);
+  }
+};
+
+const executeToggleStatus = (uuid) => {
+  router.post(`/${getPrefix()}/live-chat/${uuid}/status`, {}, {
     preserveScroll: true,
     onSuccess: () => {
       if (selectedThread.value) {
-        selectedThread.value.status = selectedThread.value.status === 'OPEN' ? 'CLOSED' : 'OPEN';
+        const wasOpen = selectedThread.value.status === 'OPEN';
+        selectedThread.value.status = wasOpen ? 'CLOSED' : 'OPEN';
+        if (wasOpen) {
+          activeMessagesList.value.forEach((msg) => {
+            if (msg.attachments) {
+              msg.attachments.forEach((att) => {
+                att.purged = true;
+                att.file_path = null;
+              });
+            }
+          });
+        }
       }
     },
   });

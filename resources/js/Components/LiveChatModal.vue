@@ -24,22 +24,47 @@
           </div>
         </div>
 
-        <button 
-          @click="close" 
-          type="button" 
-          class="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition cursor-pointer"
-          title="Tutup Jendela"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        <div class="flex items-center gap-2">
+          <button 
+            v-if="thread && thread.status === 'OPEN'"
+            @click="confirmEndSession" 
+            type="button" 
+            class="px-2.5 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 hover:text-white border border-rose-500/30 text-[11px] font-bold transition cursor-pointer flex items-center gap-1.5"
+            title="Akhiri sesi obrolan dan hapus semua berkas lampiran dari server"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            <span>Akhiri Sesi</span>
+          </button>
+
+          <button 
+            @click="close" 
+            type="button" 
+            class="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition cursor-pointer"
+            title="Tutup Jendela"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <!-- 2. Status Banner Utas -->
-      <div v-if="thread && thread.status === 'CLOSED'" class="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2 flex items-center justify-between text-xs text-amber-800">
-        <span class="font-medium">Sesi obrolan ini telah ditutup oleh operator dinas.</span>
-        <span class="text-[10px] font-bold uppercase bg-amber-200 text-amber-900 px-2 py-0.5 rounded">Tutup</span>
+      <div v-if="thread && thread.status === 'CLOSED'" class="bg-amber-500/10 border-b border-amber-500/20 px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-amber-900">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+          <span>Sesi obrolan telah berakhir. Seluruh berkas lampiran telah otomatis dihapus dari server.</span>
+        </div>
+        <button 
+          @click="startNewSession" 
+          type="button" 
+          class="shrink-0 px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] transition shadow-xs cursor-pointer flex items-center gap-1"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+          <span>Mulai Sesi Baru</span>
+        </button>
       </div>
 
       <!-- 3. Wadah Aliran Pesan Obrolan (Message Stream) -->
@@ -103,7 +128,11 @@
                           <span class="truncate text-white font-medium">{{ att.original_name }}</span>
                           <span class="text-[9px] text-blue-200 shrink-0">({{ formatBytes(att.size) }})</span>
                         </div>
+                        <span v-if="att.purged || !att.file_path" class="shrink-0 text-amber-200 text-[10px] font-semibold italic">
+                          Berkas Terhapus
+                        </span>
                         <a 
+                          v-else
                           :href="`/documents/private-stream?path=${encodeURIComponent(att.file_path)}`" 
                           target="_blank" 
                           class="shrink-0 text-white hover:text-blue-100 font-bold underline text-[10px]"
@@ -148,7 +177,11 @@
                           <span class="truncate text-slate-700 font-medium">{{ att.original_name }}</span>
                           <span class="text-[9px] text-slate-400 shrink-0">({{ formatBytes(att.size) }})</span>
                         </div>
+                        <span v-if="att.purged || !att.file_path" class="shrink-0 text-slate-400 text-[10px] font-semibold italic">
+                          Berkas Terhapus
+                        </span>
                         <a 
+                          v-else
                           :href="`/documents/private-stream?path=${encodeURIComponent(att.file_path)}`" 
                           target="_blank" 
                           class="shrink-0 text-blue-600 hover:text-blue-800 font-bold underline text-[10px]"
@@ -199,8 +232,20 @@
         </div>
       </div>
 
-      <!-- 5. Bagian Input Teks & Pengiriman -->
-      <form @submit.prevent="submitMessage" class="p-3 sm:p-4 bg-white border-t border-slate-200 shrink-0">
+      <!-- 5. Bagian Input Teks & Pengiriman / Status Ditutup -->
+      <div v-if="thread && thread.status === 'CLOSED'" class="p-4 bg-slate-50 border-t border-slate-200 text-center space-y-2 shrink-0">
+        <p class="text-xs text-slate-600 font-medium">Sesi ini telah diakhiri. Seluruh berkas obrolan otomatis dibersihkan dari server.</p>
+        <button 
+          @click="startNewSession" 
+          type="button" 
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition cursor-pointer"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+          <span>Mulai Sesi Konsultasi Baru</span>
+        </button>
+      </div>
+
+      <form v-else @submit.prevent="submitMessage" class="p-3 sm:p-4 bg-white border-t border-slate-200 shrink-0">
         <div class="flex items-end gap-2">
           <!-- Tombol Pemilihan Berkas Bulk -->
           <label 
@@ -436,6 +481,73 @@ const submitMessage = async () => {
     });
   } finally {
     isSending.value = false;
+  }
+};
+
+const confirmEndSession = async () => {
+  if (!thread.value || !thread.value.uuid) return;
+  const result = await Swal.fire({
+    icon: 'warning',
+    title: 'Akhiri Sesi Obrolan?',
+    text: 'Apakah Anda yakin ingin mengakhiri sesi ini? Seluruh file dan lampiran dalam obrolan akan otomatis dihapus permanen dari server.',
+    showCancelButton: true,
+    confirmButtonText: 'Ya, Akhiri Sesi',
+    cancelButtonText: 'Batal',
+    confirmButtonColor: '#DC2626',
+    cancelButtonColor: '#64748B',
+    customClass: { popup: 'rounded-2xl', confirmButton: 'rounded-xl', cancelButton: 'rounded-xl' },
+  });
+
+  if (result.isConfirmed) {
+    try {
+      const res = await axios.post(route('personel.chat.end', thread.value.uuid));
+      thread.value.status = 'CLOSED';
+      // Tandai lampiran pesan lokal sebagai purged
+      messages.value.forEach((msg) => {
+        if (msg.attachments) {
+          msg.attachments.forEach((att) => {
+            att.purged = true;
+            att.file_path = null;
+          });
+        }
+      });
+      Swal.fire({
+        icon: 'success',
+        title: 'Sesi Diakhiri',
+        text: res.data.message || 'Sesi obrolan telah ditutup dan seluruh berkas berhasil dihapus dari server.',
+        confirmButtonColor: '#2563EB',
+        customClass: { popup: 'rounded-2xl' },
+      });
+    } catch (err) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Gagal Mengakhiri Sesi',
+        text: err.response?.data?.error || 'Terjadi kesalahan saat mengakhiri sesi obrolan.',
+        confirmButtonColor: '#2563EB',
+        customClass: { popup: 'rounded-2xl' },
+      });
+    }
+  }
+};
+
+const startNewSession = async () => {
+  try {
+    isLoading.value = true;
+    const res = await axios.post(route('personel.chat.new'));
+    thread.value = res.data.thread;
+    messages.value = res.data.messages || [];
+    scrollToBottom();
+    startPolling();
+  } catch (err) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Gagal Memulai Sesi Baru',
+      text: err.response?.data?.error || 'Terjadi kendala saat membuka sesi baru.',
+      confirmButtonColor: '#2563EB',
+      customClass: { popup: 'rounded-2xl' },
+    });
+  } finally {
+    isLoading.value = false;
   }
 };
 

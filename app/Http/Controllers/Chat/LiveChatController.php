@@ -378,14 +378,106 @@ class LiveChatController extends Controller
 
     /**
      * Mengubah status utas obrolan (Buka / Tutup Sesi Percakapan)
+     * Jika sesi ditutup (CLOSED), seluruh file lampiran otomatis dihapus permanen dari server.
      */
     public function adminToggleStatus(Request $request, $uuid)
     {
         $thread = LiveChatThread::where('uuid', $uuid)->firstOrFail();
         $newStatus = $thread->status === 'OPEN' ? 'CLOSED' : 'OPEN';
 
+        if ($newStatus === 'CLOSED') {
+            $thread->purgeFiles();
+        }
+
         $thread->update(['status' => $newStatus]);
 
-        return back()->with('success', "Status sesi percakapan berhasil diubah menjadi: {$newStatus}.");
+        $message = "Status sesi percakapan berhasil diubah menjadi: {$newStatus}." . ($newStatus === 'CLOSED' ? ' Seluruh berkas lampiran telah otomatis dihapus dari server.' : '');
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'status' => $newStatus,
+                'message' => $message,
+            ]);
+        }
+
+        return back()->with('success', $message);
+    }
+
+    /**
+     * Mengakhiri sesi obrolan dari sisi Personel dan otomatis menghapus seluruh berkas lampiran dari server
+     */
+    public function endSession(Request $request, $uuid)
+    {
+        $user = Auth::user();
+        $personel = $user->personel ?? Personel::where('user_id', $user->id)->first();
+
+        if (!$personel) {
+            return response()->json(['error' => 'Profil personel tidak ditemukan.'], 404);
+        }
+
+        $thread = LiveChatThread::where('uuid', $uuid)
+            ->where('personel_id', $personel->id)
+            ->firstOrFail();
+
+        $thread->purgeFiles();
+        $thread->update(['status' => 'CLOSED']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Sesi obrolan berhasil diakhiri dan seluruh berkas lampiran telah otomatis dihapus dari server.',
+        ]);
+    }
+
+    /**
+     * Membuka sesi obrolan konsultasi baru bagi Personel setelah sesi sebelumnya diakhiri
+     */
+    public function newThread(Request $request)
+    {
+        $user = Auth::user();
+        $personel = $user->personel ?? Personel::where('user_id', $user->id)->first();
+
+        if (!$personel) {
+            return response()->json(['error' => 'Profil personel tidak ditemukan.'], 404);
+        }
+
+        // Pastikan seluruh sesi terbuka terdahulu ditutup dan berkasnya dibersihkan
+        $openThreads = LiveChatThread::where('personel_id', $personel->id)
+            ->where('status', 'OPEN')
+            ->get();
+
+        foreach ($openThreads as $th) {
+            $th->purgeFiles();
+            $th->update(['status' => 'CLOSED']);
+        }
+
+        $newThread = LiveChatThread::create([
+            'personel_id' => $personel->id,
+            'uuid' => (string) Str::uuid(),
+            'subject' => 'Pusat Bantuan & Konsultasi',
+            'status' => 'OPEN',
+            'last_message_at' => now(),
+            'unread_admin' => 0,
+            'unread_personel' => 0,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'thread' => $newThread,
+            'messages' => [],
+        ]);
+    }
+
+    /**
+     * Menghapus sesi percakapan dan seluruh lampiran secara permanen oleh pengelola
+     */
+    public function adminDestroy(Request $request, $uuid)
+    {
+        $thread = LiveChatThread::where('uuid', $uuid)->firstOrFail();
+        $thread->purgeFiles();
+        $thread->messages()->delete();
+        $thread->delete();
+
+        return back()->with('success', 'Sesi obrolan dan seluruh berkas lampiran berhasil dihapus permanen.');
     }
 }
