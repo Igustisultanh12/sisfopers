@@ -43,7 +43,7 @@ class LiveChatController extends Controller
             $thread = LiveChatThread::create([
                 'personel_id' => $personel->id,
                 'uuid' => (string) Str::uuid(),
-                'subject' => 'Pusat Bantuan & Konsultasi',
+                'subject' => 'Pusat Layanan Informasi',
                 'status' => 'OPEN',
                 'last_message_at' => now(),
                 'unread_admin' => 0,
@@ -94,7 +94,7 @@ class LiveChatController extends Controller
             ],
             [
                 'uuid' => (string) Str::uuid(),
-                'subject' => 'Pusat Bantuan & Konsultasi',
+                'subject' => 'Pusat Layanan Informasi',
                 'last_message_at' => now(),
                 'unread_admin' => 0,
                 'unread_personel' => 0,
@@ -572,7 +572,7 @@ class LiveChatController extends Controller
         $newThread = LiveChatThread::create([
             'personel_id' => $personel->id,
             'uuid' => (string) Str::uuid(),
-            'subject' => 'Pusat Bantuan & Konsultasi',
+            'subject' => 'Pusat Layanan Informasi',
             'status' => 'OPEN',
             'last_message_at' => now(),
             'unread_admin' => 0,
@@ -580,7 +580,7 @@ class LiveChatController extends Controller
         ]);
 
         if ($request->header('X-Inertia')) {
-            return back()->with('success', 'Sesi konsultasi baru berhasil dibuka.');
+            return back()->with('success', 'Chat baru berhasil dimulai.');
         }
 
         return response()->json([

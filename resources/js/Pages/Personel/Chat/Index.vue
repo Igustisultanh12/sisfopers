@@ -71,7 +71,7 @@
               <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
               </svg>
-              <span>{{ isStartingSession ? 'Membuka Sesi...' : 'Mulai Sesi Konsultasi Baru' }}</span>
+              <span>{{ isStartingSession ? 'Membuka Chat...' : 'Mulai Chat Baru' }}</span>
             </button>
           </div>
         </div>
@@ -413,12 +413,12 @@
             @click="startNewSession"
             :disabled="isStartingSession"
             type="button"
-            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition cursor-pointer"
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition cursor-pointer disabled:opacity-50"
           >
             <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
             </svg>
-            <span>Buka Sesi Konsultasi Baru</span>
+            <span>{{ isStartingSession ? 'Membuka Chat...' : 'Mulai Chat Baru' }}</span>
           </button>
         </div>
       </div>
@@ -589,7 +589,7 @@ const sendMessage = async () => {
       scrollToBottom();
     }
   } catch (err) {
-    const errMsg = err.response?.data?.error || 'Gagal mengirimkan pesan konsultasi.';
+    const errMsg = err.response?.data?.error || 'Gagal mengirimkan pesan.';
     Swal.fire({
       icon: 'error',
       title: 'Gagal Mengirim',
@@ -603,6 +603,8 @@ const sendMessage = async () => {
 };
 
 const confirmEndSession = () => {
+  if (isEndingSession.value) return;
+
   Swal.fire({
     icon: 'warning',
     title: 'Akhiri Sesi Percakapan?',
@@ -612,11 +614,7 @@ const confirmEndSession = () => {
     cancelButtonText: 'Batal',
     confirmButtonColor: '#DC2626',
     cancelButtonColor: '#64748B',
-    customClass: {
-      popup: 'rounded-2xl',
-      confirmButton: 'rounded-xl',
-      cancelButton: 'rounded-xl',
-    },
+    customClass: { popup: 'rounded-2xl', confirmButton: 'rounded-xl', cancelButton: 'rounded-xl' },
   }).then((result) => {
     if (result.isConfirmed) {
       executeEndSession();
@@ -676,8 +674,8 @@ const startNewSession = async () => {
 
       Swal.fire({
         icon: 'success',
-        title: 'Sesi Baru Dibuka',
-        text: 'Anda telah terhubung pada sesi konsultasi baru.',
+        title: 'Chat Baru Dimulai',
+        text: 'Anda telah terhubung pada sesi chat baru.',
         timer: 2000,
         showConfirmButton: false,
         customClass: { popup: 'rounded-2xl' },
@@ -686,8 +684,8 @@ const startNewSession = async () => {
   } catch (err) {
     Swal.fire({
       icon: 'error',
-      title: 'Gagal Membuka Sesi',
-      text: 'Terjadi kendala saat membuka sesi obrolan baru.',
+      title: 'Gagal Memulai Chat',
+      text: 'Terjadi kendala saat memulai chat baru.',
       confirmButtonColor: '#2563EB',
       customClass: { popup: 'rounded-2xl' },
     });
