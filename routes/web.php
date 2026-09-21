@@ -366,6 +366,7 @@ Route::middleware(['auth', 'role:admin,kordinator_matra,kordinator_angkatan'])->
     // Pengaturan Sistem, Local WA Gateway & Google Authenticator MFA
     Route::get('/pengaturan', [SettingController::class, 'index'])->name('setting.index');
     Route::post('/pengaturan', [SettingController::class, 'update'])->name('setting.update');
+    Route::get('/pengaturan/detect-ip', [SettingController::class, 'detectPublicIp'])->name('setting.detect-ip');
     Route::post('/pengaturan/wa-test', [SettingController::class, 'testWaConnection'])->name('setting.wa-test');
     Route::post('/pengaturan/wa-test-send', [SettingController::class, 'testSendWa'])->name('setting.wa-test-send');
 

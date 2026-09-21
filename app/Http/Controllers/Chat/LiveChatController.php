@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\LiveChatThread;
 use App\Models\LiveChatMessage;
 use App\Models\Personel;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -1156,8 +1157,8 @@ class LiveChatController extends Controller
      */
     public function getIceServers(Request $request)
     {
-        $meteredApiKey = env('METERED_API_KEY');
-        $meteredAppName = env('METERED_APP_NAME');
+        $meteredAppName = Setting::where('key', 'metered_app_name')->value('value') ?: env('METERED_APP_NAME');
+        $meteredApiKey = Setting::where('key', 'metered_api_key')->value('value') ?: env('METERED_API_KEY');
 
         $baseStunServers = [
             ['urls' => 'stun:stun.l.google.com:19302'],
@@ -1169,9 +1170,10 @@ class LiveChatController extends Controller
             ['urls' => 'stun:stun.services.mozilla.com'],
         ];
 
-        // 1. Prioritas Layanan Relay Terkelola (Metered TURN) jika disetel pada .env
+        // 1. Prioritas Layanan Relay Terkelola (Metered TURN) jika disetel pada Setting Admin atau .env
         if (!empty($meteredApiKey) && !empty($meteredAppName)) {
-            $cached = Cache::get('live_chat:metered_ice_servers');
+            $cacheKey = "live_chat:metered_ice_servers:{$meteredAppName}";
+            $cached = Cache::get($cacheKey);
             if (is_array($cached) && !empty($cached)) {
                 return response()->json(['iceServers' => $cached]);
             }
@@ -1184,7 +1186,7 @@ class LiveChatController extends Controller
                 if ($response->successful()) {
                     $meteredServers = $response->json();
                     if (is_array($meteredServers) && !empty($meteredServers)) {
-                        Cache::put('live_chat:metered_ice_servers', $meteredServers, now()->addMinutes(60));
+                        Cache::put($cacheKey, $meteredServers, now()->addMinutes(60));
                         return response()->json(['iceServers' => $meteredServers]);
                     }
                 }
@@ -1193,15 +1195,15 @@ class LiveChatController extends Controller
             }
         }
 
-        // 2. Prioritas Layanan Relay Mandiri (Self-Hosted Coturn) jika disetel pada .env
-        $coturnHost = env('COTURN_HOST');
-        $coturnSecret = env('COTURN_SECRET');
+        // 2. Prioritas Layanan Relay Mandiri (Self-Hosted Coturn) jika disetel pada Setting Admin atau .env
+        $coturnHost = Setting::where('key', 'coturn_host')->value('value') ?: env('COTURN_HOST');
+        $coturnSecret = Setting::where('key', 'coturn_secret')->value('value') ?: env('COTURN_SECRET');
         if (!empty($coturnHost) && !empty($coturnSecret)) {
             $userId = Auth::id() ?? 'guest';
             $username = (string) (time() + 86400) . ':' . $userId;
             $credential = base64_encode(hash_hmac('sha1', $username, $coturnSecret, true));
-            $coturnPort = (int) env('COTURN_PORT', 3478);
-            $coturnTlsPort = (int) env('COTURN_TLS_PORT', 5349);
+            $coturnPort = (int) (Setting::where('key', 'coturn_port')->value('value') ?: env('COTURN_PORT', 3478));
+            $coturnTlsPort = (int) (Setting::where('key', 'coturn_tls_port')->value('value') ?: env('COTURN_TLS_PORT', 5349));
 
             $coturnServers = [
                 ['urls' => "stun:{$coturnHost}:{$coturnPort}"],

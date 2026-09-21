@@ -31,7 +31,12 @@ class SettingController extends Controller
             'logo_al' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
             'logo_au' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
             'disable_whatsapp_otp' => 'nullable',
-            'under_maintenance' => 'nullable'
+            'under_maintenance' => 'nullable',
+            'coturn_host' => 'nullable|string|max:100',
+            'coturn_port' => 'nullable|numeric',
+            'coturn_secret' => 'nullable|string|max:100',
+            'metered_app_name' => 'nullable|string|max:100',
+            'metered_api_key' => 'nullable|string|max:200',
         ]);
 
         foreach ($validated as $key => $value) {
@@ -120,5 +125,27 @@ class SettingController extends Controller
             'status' => false,
             'message' => 'Gagal mengirim pesan uji coba. Periksa log gateway Anda.'
         ]);
+    }
+
+    /**
+     * Mendeteksi alamat IP publik peladen secara otomatis
+     */
+    public function detectPublicIp()
+    {
+        try {
+            $response = Http::timeout(3)->get('https://api.ipify.org?format=json');
+            if ($response->successful() && !empty($response->json('ip'))) {
+                return response()->json(['success' => true, 'ip' => $response->json('ip')]);
+            }
+        } catch (\Throwable $e) {}
+
+        try {
+            $ip = trim(Http::timeout(3)->get('https://ifconfig.me/ip')->body());
+            if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                return response()->json(['success' => true, 'ip' => $ip]);
+            }
+        } catch (\Throwable $e) {}
+
+        return response()->json(['success' => false, 'message' => 'Gagal mendeteksi IP publik otomatis dari peladen.']);
     }
 }

@@ -60,6 +60,92 @@
             </div>
           </div>
 
+          <!-- Section Pengaturan Video Conference & Relay TURN -->
+          <div class="border-t border-[#E2E8F0] pt-6 space-y-6">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <h4 class="text-sm font-bold text-slate-800">Relay Panggilan Video Dinas (WebRTC & TURN Server)</h4>
+                <p class="text-xs text-slate-400 mt-0.5">Konfigurasikan server relay Coturn atau Metered agar panggilan video dapat menembus firewall dan jaringan seluler (CGNAT).</p>
+              </div>
+              <button 
+                type="button" 
+                @click="autoDetectIp" 
+                :disabled="isDetectingIp"
+                class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-xl border border-blue-200 transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <svg v-if="isDetectingIp" class="w-3.5 h-3.5 animate-spin" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <span>{{ isDetectingIp ? 'Mendeteksi...' : 'Deteksi IP Publik Peladen' }}</span>
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 border border-slate-200 rounded-2xl p-5">
+              <div class="md:col-span-3">
+                <span class="text-xs font-bold text-blue-700 uppercase tracking-wider block mb-1">Opsi 1: Server Mandiri Coturn (Peladen Lokal / VPS)</span>
+                <p class="text-[11px] text-slate-500 mb-3">Gunakan IP publik peladen Komandan jika telah memasang paket coturn di Linux (apt install coturn).</p>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">IP Publik / Host Coturn</label>
+                <input 
+                  type="text" 
+                  v-model="form.coturn_host" 
+                  placeholder="Contoh: 182.8.66.12" 
+                  class="w-full px-3.5 py-2 bg-white border border-[#E2E8F0] rounded-xl text-xs font-mono outline-none focus:border-[#2563EB]" 
+                />
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">Port Coturn (Default: 3478)</label>
+                <input 
+                  type="number" 
+                  v-model="form.coturn_port" 
+                  placeholder="3478" 
+                  class="w-full px-3.5 py-2 bg-white border border-[#E2E8F0] rounded-xl text-xs font-mono outline-none focus:border-[#2563EB]" 
+                />
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">Kunci Rahasia (Secret)</label>
+                <input 
+                  type="text" 
+                  v-model="form.coturn_secret" 
+                  placeholder="sisfoperskc2026secret" 
+                  class="w-full px-3.5 py-2 bg-white border border-[#E2E8F0] rounded-xl text-xs font-mono outline-none focus:border-[#2563EB]" 
+                />
+              </div>
+
+              <div class="md:col-span-3 border-t border-slate-200/80 pt-3 mt-1">
+                <span class="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">Opsi 2: Layanan Relay Metered (Alternatif Awan)</span>
+                <p class="text-[11px] text-slate-500 mb-3">Jika tidak memasang Coturn, Komandan dapat mengisi App Name dan API Key dari Metered.ca.</p>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">Metered App Name</label>
+                <input 
+                  type="text" 
+                  v-model="form.metered_app_name" 
+                  placeholder="Contoh: sisfopers" 
+                  class="w-full px-3.5 py-2 bg-white border border-[#E2E8F0] rounded-xl text-xs font-mono outline-none focus:border-[#2563EB]" 
+                />
+              </div>
+
+              <div class="md:col-span-2">
+                <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">Metered API Key</label>
+                <input 
+                  type="text" 
+                  v-model="form.metered_api_key" 
+                  placeholder="Kunci API dari dashboard Metered" 
+                  class="w-full px-3.5 py-2 bg-white border border-[#E2E8F0] rounded-xl text-xs font-mono outline-none focus:border-[#2563EB]" 
+                />
+              </div>
+            </div>
+          </div>
+
           <!-- Section Pengaturan Tampilan Visual (Background, Logo, Favicon) -->
           <div class="border-t border-[#E2E8F0] pt-6 space-y-6">
             <div>
@@ -220,6 +306,11 @@ const form = useForm({
   wa_api_key: '',
   disable_whatsapp_otp: props.settings.disable_whatsapp_otp || '0',
   under_maintenance: props.settings.under_maintenance || '0',
+  coturn_host: props.settings.coturn_host || '',
+  coturn_port: props.settings.coturn_port || '3478',
+  coturn_secret: props.settings.coturn_secret || 'sisfoperskc2026secret',
+  metered_app_name: props.settings.metered_app_name || '',
+  metered_api_key: props.settings.metered_api_key || '',
   login_background: null,
   logo_tni: null,
   logo_ad: null,
@@ -227,6 +318,35 @@ const form = useForm({
   logo_au: null,
   favicon: null
 });
+
+const isDetectingIp = ref(false);
+
+const autoDetectIp = async () => {
+  isDetectingIp.value = true;
+  try {
+    const res = await axios.get(route('admin.setting.detect-ip'));
+    if (res.data?.success && res.data.ip) {
+      form.coturn_host = res.data.ip;
+      Swal.fire({
+        icon: 'success',
+        title: 'IP Publik Terdeteksi',
+        text: `Alamat IP publik peladen ${res.data.ip} berhasil dimuat ke formulir.`,
+        confirmButtonColor: '#2563eb',
+      });
+    } else {
+      throw new Error(res.data?.message || 'Gagal mendeteksi IP');
+    }
+  } catch (err) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Deteksi IP Terkendala',
+      text: err.response?.data?.message || err.message || 'Gagal menghubungi peladen pendeteksi IP.',
+      confirmButtonColor: '#2563eb',
+    });
+  } finally {
+    isDetectingIp.value = false;
+  }
+};
 
 const handleFileChange = (e, key) => {
   const file = e.target.files[0];
