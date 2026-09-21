@@ -469,9 +469,24 @@ const initAgoraRoom = async () => {
       hangUpCall();
     });
 
-    // Masuk ke saluran Agora RTC (mode tanpa token / App ID only)
+    // Masuk ke saluran Agora RTC (didukung token dinamis terenkripsi server)
     const uid = props.currentUser?.id || Math.floor(Math.random() * 900000) + 100000;
-    await agoraClient.join(AGORA_APP_ID, channelName.value, null, uid);
+    let token = null;
+    let appId = AGORA_APP_ID;
+
+    try {
+      const resToken = await axios.get(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/agora-token?uid=${uid}`);
+      if (resToken.data?.token) {
+        token = resToken.data.token;
+      }
+      if (resToken.data?.appId) {
+        appId = resToken.data.appId;
+      }
+    } catch (tokenErr) {
+      console.debug('Pengambilan token dinas fallback ke mode App ID:', tokenErr);
+    }
+
+    await agoraClient.join(appId, channelName.value, token, uid);
 
     // Buat aliran mikrofon dan kamera lokal pengguna
     try {

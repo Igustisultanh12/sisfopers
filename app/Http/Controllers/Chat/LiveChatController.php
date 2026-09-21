@@ -1236,6 +1236,28 @@ class LiveChatController extends Controller
     }
 
     /**
+     * Menghasilkan RTC Token dinamis secara aman untuk sesi panggilan Agora
+     */
+    public function getAgoraToken(Request $request, $uuid)
+    {
+        $user = Auth::user();
+        $thread = LiveChatThread::where('uuid', $uuid)->firstOrFail();
+        $channelName = 'SISFOPERSKC_' . preg_replace('/[^a-zA-Z0-9]/', '', $thread->uuid);
+        $uid = (int) ($request->input('uid') ?: ($user->id ?? 1));
+
+        $token = \App\Services\AgoraTokenService::generateToken($channelName, $uid);
+        $appId = Setting::where('key', 'agora_app_id')->value('value') ?: env('AGORA_APP_ID', '19daeb63baec46f2be2197c9fbbe81d6');
+
+        return response()->json([
+            'success' => true,
+            'appId' => $appId,
+            'channel' => $channelName,
+            'token' => $token,
+            'uid' => $uid,
+        ]);
+    }
+
+    /**
      * Mengirimkan sinyal negosiasi WebRTC (Offer, Answer, ICE Candidates, atau Status Terhubung)
      */
     public function sendCallSignal(Request $request, $uuid)
