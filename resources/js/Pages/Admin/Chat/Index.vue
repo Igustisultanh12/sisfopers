@@ -50,6 +50,18 @@
           
           <!-- Filter & Pencarian -->
           <div class="p-4 border-b border-slate-200 bg-white space-y-3">
+            <!-- Tombol Mulai Chat Baru dengan Personel -->
+            <button 
+              @click="openNewChatModal" 
+              type="button"
+              class="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              <span>Mulai Chat dengan Personel</span>
+            </button>
+
             <div class="relative">
               <input 
                 v-model="searchQuery" 
@@ -93,8 +105,16 @@
 
           <!-- Daftar Utas Obrolan -->
           <div class="flex-1 overflow-y-auto divide-y divide-slate-100">
-            <div v-if="!threads?.data || threads.data.length === 0" class="p-8 text-center text-slate-400 text-xs">
-              Tidak ada sesi obrolan yang sesuai kriteria.
+            <div v-if="!threads?.data || threads.data.length === 0" class="p-8 text-center text-slate-400 text-xs space-y-2">
+              <p>Tidak ada sesi obrolan yang sesuai kriteria.</p>
+              <button 
+                v-if="searchQuery"
+                @click="openNewChatModalWithQuery(searchQuery)"
+                type="button"
+                class="text-blue-600 hover:underline font-bold text-xs inline-flex items-center gap-1 cursor-pointer"
+              >
+                <span>Cari "{{ searchQuery }}" di Master Personel &rarr;</span>
+              </button>
             </div>
 
             <div 
@@ -385,7 +405,232 @@
             </div>
           </template>
 
+    <!-- MODAL MULAI CHAT DENGAN PERSONEL -->
+    <div 
+      v-if="showNewChatModal" 
+      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in"
+    >
+      <div class="bg-white border border-slate-200 rounded-3xl shadow-2xl max-w-xl w-full overflow-hidden text-xs flex flex-col max-h-[90vh]">
+        
+        <!-- Header Modal -->
+        <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between shrink-0">
+          <div>
+            <span class="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+              Pusat Layanan Informasi
+            </span>
+            <h3 class="text-sm font-black text-slate-800 mt-1">Mulai Chat dengan Personel</h3>
+          </div>
+          <button 
+            @click="closeNewChatModal" 
+            type="button" 
+            class="text-slate-400 hover:text-slate-600 p-1 cursor-pointer transition rounded-lg hover:bg-slate-100"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
+
+        <!-- Body Modal: Langkah 1 (Cari Personel) -->
+        <div v-if="!selectedPersonelToChat" class="p-6 space-y-4 flex-1 overflow-y-auto">
+          <p class="text-xs text-slate-500">
+            Cari personel aktif berdasarkan <strong>Nama Lengkap</strong>, <strong>NIKC</strong>, atau <strong>Nomor Telepon</strong> untuk memulai sesi percakapan Pusat Layanan Informasi.
+          </p>
+
+          <!-- Input Pencarian -->
+          <div class="relative">
+            <input 
+              v-model="personelSearchQuery" 
+              @input="onPersonelSearchInput"
+              type="text" 
+              placeholder="Ketik Nama Lengkap atau NIKC Personel..." 
+              class="w-full text-xs pl-9 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+              autocomplete="off"
+            />
+            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <svg v-if="isSearchingPersonel" class="w-4 h-4 text-blue-600 absolute right-3 top-3 animate-spin pointer-events-none" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+          </div>
+
+          <!-- Hasil Pencarian -->
+          <div class="space-y-2">
+            <div v-if="isSearchingPersonel" class="p-6 text-center text-slate-400 text-xs">
+              Mencari data personel...
+            </div>
+
+            <div v-else-if="!personelSearchQuery || personelSearchQuery.trim().length < 2" class="p-6 text-center text-slate-400 text-xs bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+              Ketik minimal 2 karakter Nama atau NIKC untuk menampilkan data.
+            </div>
+
+            <div v-else-if="personelSearchResults.length === 0" class="p-6 text-center text-slate-400 text-xs bg-slate-50/50 rounded-2xl border border-slate-200">
+              Personel tidak ditemukan pada master data.
+            </div>
+
+            <div v-else class="border border-slate-200 rounded-2xl overflow-hidden divide-y divide-slate-100 max-h-64 overflow-y-auto">
+              <div 
+                v-for="p in personelSearchResults" 
+                :key="p.id"
+                @click="choosePersonel(p)"
+                class="p-3.5 hover:bg-blue-50/70 cursor-pointer transition flex items-center justify-between gap-3 text-left"
+              >
+                <div class="flex items-center gap-3 min-w-0">
+                  <img 
+                    :src="p.photo_profile ? `/documents/private-stream?path=${encodeURIComponent(p.photo_profile)}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(p.full_name || 'P')}&background=e2e8f0&color=334155`" 
+                    class="w-10 h-10 object-cover rounded-xl border border-slate-200 shrink-0" 
+                  />
+                  <div class="min-w-0">
+                    <h4 class="text-xs font-bold text-slate-900 truncate">
+                      {{ p.pangkat }} {{ p.full_name }}
+                    </h4>
+                    <div class="flex flex-wrap items-center gap-2 text-[10px] text-slate-500 mt-0.5">
+                      <span>NIKC: <strong>{{ p.nikc }}</strong></span>
+                      <span>&bull;</span>
+                      <span>Matra {{ p.matra }}</span>
+                      <span v-if="p.phone_number">&bull;</span>
+                      <span v-if="p.phone_number">{{ p.phone_number }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="shrink-0 flex items-center gap-2">
+                  <span 
+                    v-if="p.has_open_thread" 
+                    class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold"
+                  >
+                    Sesi Aktif
+                  </span>
+                  <button 
+                    type="button" 
+                    class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs cursor-pointer shadow-xs transition"
+                  >
+                    Pilih
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Body Modal: Langkah 2 (Konfirmasi & Pesan Pembuka) -->
+        <div v-else class="p-6 space-y-4 flex-1 overflow-y-auto">
+          <!-- Kartu Personel Terpilih -->
+          <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <img 
+                :src="selectedPersonelToChat.photo_profile ? `/documents/private-stream?path=${encodeURIComponent(selectedPersonelToChat.photo_profile)}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedPersonelToChat.full_name || 'P')}&background=e2e8f0&color=334155`" 
+                class="w-11 h-11 object-cover rounded-xl border border-slate-200 shrink-0" 
+              />
+              <div class="min-w-0">
+                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 uppercase">
+                  Matra {{ selectedPersonelToChat.matra }}
+                </span>
+                <h4 class="text-xs font-bold text-slate-900 mt-1 truncate">
+                  {{ selectedPersonelToChat.pangkat }} {{ selectedPersonelToChat.full_name }}
+                </h4>
+                <div class="flex items-center gap-2 text-[10px] text-slate-500 mt-0.5">
+                  <span>NIKC: <strong>{{ selectedPersonelToChat.nikc }}</strong></span>
+                  <span>&bull;</span>
+                  <span>No HP: <strong>{{ selectedPersonelToChat.phone_number || '-' }}</strong></span>
+                </div>
+              </div>
+            </div>
+
+            <button 
+              @click="selectedPersonelToChat = null" 
+              type="button" 
+              class="text-xs font-bold text-blue-600 hover:text-blue-800 underline cursor-pointer shrink-0"
+            >
+              Ganti
+            </button>
+          </div>
+
+          <!-- Input Pesan Pembuka -->
+          <div class="space-y-1.5">
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide">
+              Pesan Pembuka (Opsional)
+            </label>
+            <textarea 
+              v-model="newChatInitialMessage" 
+              rows="3" 
+              placeholder="Tuliskan pesan pembuka percakapan dinas (opsional)..."
+              class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 leading-relaxed"
+            ></textarea>
+            <p class="text-[10px] text-slate-400">
+              Pesan ini akan langsung terkirim sebagai pesan pertama dari pengelola dan diteruskan ke notifikasi personel.
+            </p>
+          </div>
+
+          <!-- Info Notifikasi Multi-Channel Otomatis -->
+          <div class="p-3.5 bg-blue-50/70 border border-blue-200 rounded-2xl space-y-2">
+            <div class="flex items-center gap-2 text-blue-900 font-bold text-xs">
+              <svg class="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Notifikasi Otomatis Terpadu</span>
+            </div>
+            <p class="text-[11px] text-blue-700 leading-relaxed">
+              Memulai sesi ini akan secara otomatis mengirimkan notifikasi dinas ke personel melalui 3 jalur komunikasi:
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+              <div class="flex items-center gap-1.5 p-2 bg-white rounded-xl border border-blue-100 text-[10px] font-bold text-slate-700 shadow-2xs">
+                <svg class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Aplikasi Sinden</span>
+              </div>
+              <div class="flex items-center gap-1.5 p-2 bg-white rounded-xl border border-blue-100 text-[10px] font-bold text-slate-700 shadow-2xs">
+                <svg class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Email Dinas</span>
+              </div>
+              <div class="flex items-center gap-1.5 p-2 bg-white rounded-xl border border-blue-100 text-[10px] font-bold text-slate-700 shadow-2xs">
+                <svg class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>WhatsApp</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Modal -->
+        <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between shrink-0">
+          <button 
+            @click="closeNewChatModal" 
+            type="button" 
+            class="px-4 py-2 border border-slate-200 rounded-xl hover:bg-slate-100 text-slate-600 font-bold text-xs transition cursor-pointer"
+          >
+            Tutup
+          </button>
+
+          <div v-if="selectedPersonelToChat" class="flex items-center gap-2">
+            <button 
+              @click="selectedPersonelToChat = null" 
+              type="button" 
+              class="px-4 py-2 border border-slate-200 rounded-xl hover:bg-slate-100 text-slate-600 font-bold text-xs transition cursor-pointer"
+            >
+              Kembali
+            </button>
+            <button 
+              @click="executeStartChat" 
+              :disabled="isStartingChat" 
+              type="button" 
+              class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-500/20 transition cursor-pointer flex items-center gap-1.5"
+            >
+              <svg v-if="isStartingChat" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+              </svg>
+              <span>{{ isStartingChat ? 'Memulai Sesi...' : 'Mulai Chat & Kirim Notifikasi' }}</span>
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   </AuthenticatedLayout>
@@ -417,6 +662,117 @@ const adminStagedFiles = ref([]);
 const adminFileInputRef = ref(null);
 const adminChatContainer = ref(null);
 const isAdminSending = ref(false);
+
+// State & Logika Modal Mulai Chat Baru dengan Personel
+const showNewChatModal = ref(false);
+const personelSearchQuery = ref('');
+const personelSearchResults = ref([]);
+const isSearchingPersonel = ref(false);
+const selectedPersonelToChat = ref(null);
+const newChatInitialMessage = ref('');
+const isStartingChat = ref(false);
+
+let personelSearchDebounce = null;
+
+const openNewChatModal = () => {
+  showNewChatModal.value = true;
+  selectedPersonelToChat.value = null;
+  newChatInitialMessage.value = '';
+  personelSearchQuery.value = '';
+  personelSearchResults.value = [];
+};
+
+const openNewChatModalWithQuery = (q) => {
+  openNewChatModal();
+  personelSearchQuery.value = q;
+  fetchPersonelSearch(q);
+};
+
+const closeNewChatModal = () => {
+  showNewChatModal.value = false;
+  selectedPersonelToChat.value = null;
+  newChatInitialMessage.value = '';
+  personelSearchQuery.value = '';
+  personelSearchResults.value = [];
+  if (personelSearchDebounce) clearTimeout(personelSearchDebounce);
+};
+
+const fetchPersonelSearch = async (query) => {
+  if (!query || query.trim().length < 2) {
+    personelSearchResults.value = [];
+    isSearchingPersonel.value = false;
+    return;
+  }
+  isSearchingPersonel.value = true;
+  try {
+    const res = await axios.get(`/${getPrefix()}/live-chat/search-personel`, {
+      params: { query: query.trim() },
+    });
+    personelSearchResults.value = res.data || [];
+  } catch (err) {
+    console.error('Gagal mencari personel:', err);
+    personelSearchResults.value = [];
+  } finally {
+    isSearchingPersonel.value = false;
+  }
+};
+
+const onPersonelSearchInput = () => {
+  if (personelSearchDebounce) clearTimeout(personelSearchDebounce);
+  personelSearchDebounce = setTimeout(() => {
+    fetchPersonelSearch(personelSearchQuery.value);
+  }, 250);
+};
+
+const choosePersonel = (personel) => {
+  selectedPersonelToChat.value = personel;
+};
+
+const executeStartChat = async () => {
+  if (!selectedPersonelToChat.value) return;
+  isStartingChat.value = true;
+
+  try {
+    const res = await axios.post(`/${getPrefix()}/live-chat/start`, {
+      personel_id: selectedPersonelToChat.value.id,
+      message: newChatInitialMessage.value,
+    });
+
+    if (res.data.success) {
+      const newThread = res.data.thread;
+      closeNewChatModal();
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Sesi Chat Dimulai',
+        text: res.data.message || 'Sesi obrolan dibuka. Notifikasi telah terkirim ke Aplikasi Sinden, Email, dan WhatsApp personel.',
+        confirmButtonColor: '#2563EB',
+        customClass: { popup: 'rounded-2xl' },
+      });
+
+      // Buka dan muat utas obrolan langsung
+      router.visit(window.location.pathname, {
+        data: {
+          thread: newThread.uuid,
+          search: searchQuery.value,
+          status: statusFilter.value,
+        },
+        preserveScroll: true,
+      });
+    }
+  } catch (err) {
+    console.error('Gagal memulai sesi chat:', err);
+    Swal.fire({
+      icon: 'error',
+      title: 'Gagal Memulai Chat',
+      text: err.response?.data?.message || 'Terjadi kesalahan saat memulai sesi obrolan.',
+      confirmButtonColor: '#2563EB',
+      customClass: { popup: 'rounded-2xl' },
+    });
+  } finally {
+    isStartingChat.value = false;
+  }
+};
 
 const maxAllowedBytes = 15 * 1024 * 1024;
 

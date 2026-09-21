@@ -591,6 +591,175 @@ class LiveChatController extends Controller
     }
 
     /**
+     * Pencarian Personel berdasarkan Nama, NIKC, NIK, atau No HP untuk Inisiasi Chat
+     */
+    public function adminSearchPersonel(Request $request)
+    {
+        $q = trim((string) $request->input('query', ''));
+        if (strlen($q) < 2) {
+            return response()->json([]);
+        }
+
+        $cleanQ = preg_replace('/[^A-Za-z0-9]/', '', $q);
+
+        $personels = Personel::where(function ($sub) use ($q, $cleanQ) {
+                $sub->where('full_name', 'like', "%{$q}%")
+                    ->orWhere('nikc', 'like', "%{$q}%")
+                    ->orWhere('nik', 'like', "%{$q}%")
+                    ->orWhere('phone_number', 'like', "%{$q}%");
+
+                if (!empty($cleanQ)) {
+                    $sub->orWhere('nikc', 'like', "%{$cleanQ}%")
+                        ->orWhere('nik', 'like', "%{$cleanQ}%");
+                }
+            })
+            ->with(['user'])
+            ->limit(15)
+            ->get();
+
+        $personelIds = $personels->pluck('id')->toArray();
+
+        // Cek apakah personel sudah memiliki utas chat yang berstatus OPEN
+        $openThreads = LiveChatThread::whereIn('personel_id', $personelIds)
+            ->where('status', 'OPEN')
+            ->pluck('uuid', 'personel_id')
+            ->toArray();
+
+        $results = $personels->map(function ($p) use ($openThreads) {
+            return [
+                'id' => $p->id,
+                'full_name' => $p->full_name,
+                'pangkat' => Personel::formatLongRank($p->pangkat),
+                'pangkat_raw' => $p->pangkat,
+                'matra' => $p->matra ?: 'AD',
+                'angkatan' => $p->angkatan,
+                'nikc' => $p->nikc ?: $p->nik,
+                'phone_number' => $p->phone_number ?: '-',
+                'email' => $p->user?->email ?: ($p->email ?: '-'),
+                'photo_profile' => $p->photo_profile,
+                'has_open_thread' => isset($openThreads[$p->id]),
+                'open_thread_uuid' => $openThreads[$p->id] ?? null,
+            ];
+        });
+
+        return response()->json($results);
+    }
+
+    /**
+     * Memulai sesi chat baru dengan personel dari sisi Pengelola (Admin/PJU/Koordinator)
+     * Mengirimkan notifikasi multi-channel ke Aplikasi Sinden, Email, dan WhatsApp
+     */
+    public function adminStartChat(Request $request)
+    {
+        $user = Auth::user();
+
+        $request->validate([
+            'personel_id' => 'required|exists:personels,id',
+            'message' => 'nullable|string|max:5000',
+        ]);
+
+        $personel = Personel::with('user')->findOrFail($request->personel_id);
+
+        // 1. Periksa apakah sudah ada utas berstatus OPEN untuk personel ini
+        $thread = LiveChatThread::where('personel_id', $personel->id)
+            ->where('status', 'OPEN')
+            ->latest('last_message_at')
+            ->first();
+
+        $isFirstTime = false;
+
+        if (!$thread) {
+            $isFirstTime = !LiveChatThread::where('personel_id', $personel->id)->exists();
+
+            $thread = LiveChatThread::create([
+                'personel_id' => $personel->id,
+                'uuid' => (string) Str::uuid(),
+                'subject' => 'Pusat Layanan Informasi',
+                'status' => 'OPEN',
+                'last_message_at' => now(),
+                'unread_admin' => 0,
+                'unread_personel' => 0,
+            ]);
+        }
+
+        // 2. Tentukan nama dan identitas pengirim dinas
+        $personelAdmin = $user->personel;
+        $rankAdmin = $personelAdmin ? Personel::formatLongRank($personelAdmin->pangkat) : '';
+        $nameAdmin = $personelAdmin ? $personelAdmin->full_name : ($user->name ?? $user->username);
+
+        $roleTitle = match (true) {
+            $user->hasRole('admin') => 'Admin Sisfopers',
+            $user->hasRole('pju') => 'PJU Mabes TNI',
+            $user->hasRole('kordinator_angkatan') => 'Koordinator Angkatan' . ($personelAdmin?->angkatan ? " {$personelAdmin->angkatan}" : ''),
+            $user->hasRole('kordinator_matra') => 'Koordinator Matra' . ($personelAdmin?->matra ? " {$personelAdmin->matra}" : ''),
+            default => 'Operator Pelayanan',
+        };
+
+        $parts = array_filter([$roleTitle, $rankAdmin, $nameAdmin]);
+        $senderName = implode(' ', $parts);
+
+        // 3. Jika disertakan pesan pembuka awal, simpan sebagai pesan pertama
+        $initialMessage = strip_tags(trim((string) $request->input('message')));
+        if ($initialMessage !== '') {
+            LiveChatMessage::create([
+                'thread_id' => $thread->id,
+                'sender_type' => 'ADMIN',
+                'sender_id' => $user->id,
+                'sender_name' => $senderName,
+                'message' => $initialMessage,
+                'attachments' => null,
+                'is_read' => false,
+            ]);
+
+            $thread->update([
+                'last_message_at' => now(),
+                'unread_personel' => $thread->unread_personel + 1,
+            ]);
+        }
+
+        // 4. Kirim notifikasi multi-channel (Aplikasi Sinden, Email, WhatsApp)
+        $notification = new \App\Notifications\LiveChatInitiatedNotification(
+            $senderName,
+            $initialMessage !== '' ? $initialMessage : null,
+            route('personel.chat.index')
+        );
+
+        if ($personel->user) {
+            try {
+                $personel->user->notify($notification);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error("Gagal mengirimkan notifikasi user chat: " . $e->getMessage());
+            }
+        } else {
+            try {
+                $notification->via($personel);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error("Gagal mengirimkan notifikasi personel langsung: " . $e->getMessage());
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'is_first_time' => $isFirstTime,
+            'message' => 'Sesi obrolan berhasil dibuka dan notifikasi telah dikirim ke Aplikasi Sinden, Email, serta WhatsApp personel.',
+            'thread' => [
+                'id' => $thread->id,
+                'uuid' => $thread->uuid,
+                'status' => $thread->status,
+                'personel' => [
+                    'id' => $personel->id,
+                    'full_name' => $personel->full_name,
+                    'pangkat' => Personel::formatLongRank($personel->pangkat),
+                    'matra' => $personel->matra,
+                    'nikc' => $personel->nikc ?: $personel->nik,
+                    'phone_number' => $personel->phone_number,
+                    'photo_profile' => $personel->photo_profile,
+                ],
+            ],
+        ]);
+    }
+
+    /**
      * Menghapus sesi percakapan dan seluruh lampiran secara permanen oleh pengelola
      */
     public function adminDestroy(Request $request, $uuid)
