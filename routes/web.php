@@ -335,6 +335,7 @@ Route::middleware(['auth', 'role:admin,kordinator_matra,kordinator_angkatan'])->
 
     // Modul Pusat Layanan Live Chat Personel (Admin)
     Route::get('/live-chat', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminIndex'])->name('chat.index');
+    Route::get('/live-chat/sync', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminSync'])->name('chat.sync');
     Route::get('/live-chat/search-personel', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminSearchPersonel'])->name('chat.search-personel');
     Route::post('/live-chat/start', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminStartChat'])->name('chat.start');
     Route::get('/live-chat/{uuid}/messages', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminGetMessages'])->name('chat.messages');
@@ -473,6 +474,7 @@ Route::middleware(['auth', 'role:personel,admin,kordinator_angkatan,kordinator_m
         // Modul Layanan Live Chat Personel
         Route::get('/live-chat', [\App\Http\Controllers\Chat\LiveChatController::class, 'personelIndex'])->name('chat.index');
         Route::get('/live-chat/thread', [\App\Http\Controllers\Chat\LiveChatController::class, 'getThread'])->name('chat.thread');
+        Route::get('/live-chat/active-session', [\App\Http\Controllers\Chat\LiveChatController::class, 'getActiveSession'])->name('chat.active-session');
         Route::get('/live-chat/{uuid}/messages', [\App\Http\Controllers\Chat\LiveChatController::class, 'getMessages'])->name('chat.messages');
         Route::post('/live-chat/{uuid}/send', [\App\Http\Controllers\Chat\LiveChatController::class, 'sendMessage'])->name('chat.send');
         Route::post('/live-chat/{uuid}/typing', [\App\Http\Controllers\Chat\LiveChatController::class, 'personelTyping'])->name('chat.typing');
@@ -509,6 +511,7 @@ Route::middleware(['auth', 'role:kordinator_angkatan,kordinator_matra'])->prefix
 
         // Modul Layanan Live Chat Koordinator
         Route::get('/live-chat', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminIndex'])->name('chat.index');
+        Route::get('/live-chat/sync', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminSync'])->name('chat.sync');
         Route::get('/live-chat/search-personel', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminSearchPersonel'])->name('chat.search-personel');
         Route::post('/live-chat/start', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminStartChat'])->name('chat.start');
         Route::get('/live-chat/{uuid}/messages', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminGetMessages'])->name('chat.messages');
@@ -552,6 +555,7 @@ Route::middleware(['auth:pju,web', 'role:ka_bacadnas,ses_bacadnas,kapus_komcad,p
 
     // Modul Layanan Live Chat PJU
     Route::get('/live-chat', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminIndex'])->name('chat.index');
+    Route::get('/live-chat/sync', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminSync'])->name('chat.sync');
     Route::get('/live-chat/search-personel', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminSearchPersonel'])->name('chat.search-personel');
     Route::post('/live-chat/start', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminStartChat'])->name('chat.start');
     Route::get('/live-chat/{uuid}/messages', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminGetMessages'])->name('chat.messages');

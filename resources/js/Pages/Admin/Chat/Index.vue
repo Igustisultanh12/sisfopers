@@ -8,7 +8,7 @@
         <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
             <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Sesi Terbuka (Aktif)</p>
-            <h3 class="text-2xl font-black text-slate-900 mt-1">{{ stats?.total_open || 0 }}</h3>
+            <h3 class="text-2xl font-black text-slate-900 mt-1">{{ chatStats?.total_open || 0 }}</h3>
           </div>
           <div class="w-11 h-11 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -20,7 +20,7 @@
         <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
             <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Pesan Baru Belum Dibalas</p>
-            <h3 class="text-2xl font-black text-blue-600 mt-1">{{ stats?.total_unread || 0 }}</h3>
+            <h3 class="text-2xl font-black text-blue-600 mt-1">{{ chatStats?.total_unread || 0 }}</h3>
           </div>
           <div class="w-11 h-11 rounded-2xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -32,7 +32,7 @@
         <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
             <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Utas Terdaftar</p>
-            <h3 class="text-2xl font-black text-slate-900 mt-1">{{ threads?.total || 0 }}</h3>
+            <h3 class="text-2xl font-black text-slate-900 mt-1">{{ totalThreadsCount }}</h3>
           </div>
           <div class="w-11 h-11 rounded-2xl bg-slate-50 border border-slate-200 text-slate-600 flex items-center justify-center">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -105,7 +105,7 @@
 
           <!-- Daftar Utas Obrolan -->
           <div class="flex-1 min-h-0 overflow-y-auto divide-y divide-slate-100">
-            <div v-if="!threads?.data || threads.data.length === 0" class="p-8 text-center text-slate-400 text-xs space-y-2">
+            <div v-if="!threadsList || threadsList.length === 0" class="p-8 text-center text-slate-400 text-xs space-y-2">
               <p>Tidak ada sesi obrolan yang sesuai kriteria.</p>
               <button 
                 v-if="searchQuery"
@@ -118,8 +118,8 @@
             </div>
 
             <div 
-              v-for="th in threads?.data" 
-              :key="th.id"
+              v-for="th in threadsList" 
+              :key="th.uuid || th.id"
               @click="selectThread(th)"
               :class="selectedThread?.uuid === th.uuid ? 'bg-blue-50/70 border-l-4 border-blue-600' : 'hover:bg-slate-50 border-l-4 border-transparent'"
               class="p-4 cursor-pointer transition flex items-start gap-3 text-left"
@@ -714,7 +714,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { playNotificationSound } from '@/Utils/sound';
@@ -733,6 +733,40 @@ const searchQuery = ref(props.filters?.search || '');
 const statusFilter = ref(props.filters?.status || 'all');
 const selectedThread = ref(props.activeThread || null);
 const activeMessagesList = ref(props.activeMessages || []);
+
+// State reaktif daftar utas dan statistik obrolan
+const threadsList = ref([...(props.threads?.data || [])]);
+const totalThreadsCount = ref(props.threads?.total || props.threads?.data?.length || 0);
+const chatStats = ref(props.stats || { total_open: 0, total_unread: 0 });
+
+watch(
+  () => props.threads?.data,
+  (newVal) => {
+    if (newVal) {
+      threadsList.value = [...newVal];
+    }
+  },
+  { deep: true }
+);
+
+watch(
+  () => props.threads?.total,
+  (newTotal) => {
+    if (typeof newTotal === 'number') {
+      totalThreadsCount.value = newTotal;
+    }
+  }
+);
+
+watch(
+  () => props.stats,
+  (newStats) => {
+    if (newStats) {
+      chatStats.value = { ...newStats };
+    }
+  },
+  { deep: true }
+);
 
 const adminReplyMessage = ref('');
 const adminStagedFiles = ref([]);
@@ -994,7 +1028,7 @@ const loadThreadMessages = async (uuid) => {
     if (res.data.presence) {
       selectedPersonelOnline.value = res.data.presence.is_online;
       selectedPersonelLastSeen.value = res.data.presence.last_seen_at;
-      const targetTh = props.threads?.data?.find(t => t.uuid === uuid);
+      const targetTh = threadsList.value.find((t) => t.uuid === uuid);
       if (targetTh && targetTh.personel) {
         targetTh.personel.is_online = res.data.presence.is_online;
         targetTh.personel.last_seen_at = res.data.presence.last_seen_at;
@@ -1006,52 +1040,99 @@ const loadThreadMessages = async (uuid) => {
   }
 };
 
-// Polling asinkron pembaharuan pesan masuk dari Personel
-const pollAdminMessages = async () => {
-  if (!selectedThread.value || !selectedThread.value.uuid) return;
+// Polling asinkron pembaharuan pesan masuk & daftar utas secara terpadu tanpa muat ulang laman
+const pollAdminSync = async () => {
+  const activeUuid = selectedThread.value?.uuid || null;
   const lastMsg = activeMessagesList.value[activeMessagesList.value.length - 1];
-  const lastId = lastMsg ? lastMsg.id : 0;
+  const lastId = (activeUuid && lastMsg) ? lastMsg.id : 0;
 
   try {
-    const res = await axios.get(`/${getPrefix()}/live-chat/${selectedThread.value.uuid}/messages`, {
-      params: { last_id: lastId },
+    const res = await axios.get(`/${getPrefix()}/live-chat/sync`, {
+      params: {
+        search: searchQuery.value || '',
+        status: statusFilter.value || 'all',
+        thread: activeUuid,
+        last_id: lastId,
+      },
     });
 
-    if (res.data.status) {
-      selectedThread.value.status = res.data.status;
-    }
+    // 1. Sinkronisasi daftar utas di sisi kiri
+    if (res.data.threads) {
+      const incomingThreads = res.data.threads;
+      let shouldPlaySound = false;
 
-    if (res.data.typing) {
-      updatePersonelTypingStatus(res.data.typing);
-    }
+      // Cek apakah ada utas baru atau pesan baru dari personel
+      incomingThreads.forEach((inTh) => {
+        const oldTh = threadsList.value.find((t) => t.uuid === inTh.uuid);
+        if (!oldTh) {
+          // Utas baru masuk ke antarmuka
+          if (inTh.latest_message?.sender_type === 'PERSONEL') {
+            shouldPlaySound = true;
+          }
+        } else {
+          // Utas lama: periksa apakah unread_admin bertambah atau pesan terbaru berubah dan bukan utas aktif
+          if (
+            inTh.unread_admin > (oldTh.unread_admin || 0) &&
+            inTh.uuid !== activeUuid
+          ) {
+            shouldPlaySound = true;
+          } else if (
+            inTh.last_message_at !== oldTh.last_message_at &&
+            inTh.latest_message?.sender_type === 'PERSONEL' &&
+            inTh.uuid !== activeUuid
+          ) {
+            shouldPlaySound = true;
+          }
+        }
+      });
 
-    if (res.data.presence) {
-      selectedPersonelOnline.value = res.data.presence.is_online;
-      selectedPersonelLastSeen.value = res.data.presence.last_seen_at;
-      const targetTh = props.threads?.data?.find(t => t.uuid === selectedThread.value?.uuid);
-      if (targetTh && targetTh.personel) {
-        targetTh.personel.is_online = res.data.presence.is_online;
-        targetTh.personel.last_seen_at = res.data.presence.last_seen_at;
-      }
-    }
+      threadsList.value = incomingThreads;
 
-    if (res.data.messages && res.data.messages.length > 0) {
-      const hasPersonelMsg = res.data.messages.some(m => m.sender_type === 'PERSONEL');
-      activeMessagesList.value.push(...res.data.messages);
-      scrollAdminChatToBottom();
-      if (hasPersonelMsg) {
+      if (shouldPlaySound) {
         playNotificationSound();
       }
     }
+
+    // 2. Sinkronisasi pesan & status pada utas aktif
+    if (res.data.active_thread && activeUuid) {
+      const activeData = res.data.active_thread;
+
+      if (activeData.status && selectedThread.value) {
+        selectedThread.value.status = activeData.status;
+      }
+
+      if (activeData.typing) {
+        updatePersonelTypingStatus(activeData.typing);
+      }
+
+      if (activeData.presence) {
+        selectedPersonelOnline.value = activeData.presence.is_online;
+        selectedPersonelLastSeen.value = activeData.presence.last_seen_at;
+      }
+
+      if (activeData.messages && activeData.messages.length > 0) {
+        const hasPersonelMsg = activeData.messages.some((m) => m.sender_type === 'PERSONEL');
+        activeMessagesList.value.push(...activeData.messages);
+        scrollAdminChatToBottom();
+        if (hasPersonelMsg) {
+          playNotificationSound();
+        }
+      }
+    }
+
+    // 3. Sinkronisasi statistik dinas
+    if (res.data.stats) {
+      chatStats.value = res.data.stats;
+    }
   } catch (err) {
-    console.error('Pembaruan pesan terhambat:', err);
+    console.debug('Pembaruan pesan terhambat:', err);
   }
 };
 
 const startAdminPolling = () => {
   stopAdminPolling();
   adminPollingTimer = setInterval(() => {
-    pollAdminMessages();
+    pollAdminSync();
   }, 2500); // Polling asinkron berkala setiap 2.5 detik
 };
 
@@ -1114,6 +1195,14 @@ const submitAdminReply = async () => {
       adminReplyMessage.value = '';
       adminStagedFiles.value = [];
       scrollAdminChatToBottom();
+
+      // Perbarui posisi dan info pesan terakhir pada daftar utas secara langsung
+      const target = threadsList.value.find((t) => t.uuid === selectedThread.value?.uuid);
+      if (target) {
+        target.latest_message = res.data.message;
+        target.last_message_at = res.data.message.created_at;
+        threadsList.value = [target, ...threadsList.value.filter((t) => t.uuid !== target.uuid)];
+      }
     }
   } catch (err) {
     const errMsg = err.response?.data?.error || 'Gagal mengirim pesan balasan dinas.';
@@ -1171,11 +1260,9 @@ const executeToggleStatus = async (uuid) => {
       }
 
       // Sinkronisasi status pada item daftar utas di sisi kiri
-      if (props.threads?.data) {
-        const targetThread = props.threads.data.find((t) => t.uuid === uuid);
-        if (targetThread) {
-          targetThread.status = res.data.status;
-        }
+      const targetThread = threadsList.value.find((t) => t.uuid === uuid);
+      if (targetThread) {
+        targetThread.status = res.data.status;
       }
 
       Swal.fire({

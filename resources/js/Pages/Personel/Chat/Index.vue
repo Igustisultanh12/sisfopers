@@ -578,7 +578,23 @@ const removeStagedFile = (idx) => {
 };
 
 const pollMessages = async () => {
-  if (!thread.value || !thread.value.uuid) return;
+  // Jika belum ada utas atau status saat ini DITUTUP, periksa apakah ada sesi terbuka baru yang diinisiasi oleh pengelola
+  if (!thread.value || !thread.value.uuid || thread.value.status === 'CLOSED') {
+    try {
+      const activeRes = await axios.get('/personel/live-chat/active-session');
+      if (activeRes.data?.thread && activeRes.data.thread.status === 'OPEN') {
+        thread.value = activeRes.data.thread;
+        messagesList.value = activeRes.data.messages || [];
+        scrollToBottom();
+        playNotificationSound();
+        return;
+      }
+    } catch (e) {
+      console.debug('Pemeriksaan sesi aktif personel terkendala:', e);
+    }
+    return;
+  }
+
   const lastMsg = messagesList.value[messagesList.value.length - 1];
   const lastId = lastMsg ? lastMsg.id : 0;
 
@@ -596,7 +612,7 @@ const pollMessages = async () => {
     }
 
     if (res.data.messages && res.data.messages.length > 0) {
-      const hasDinasMessage = res.data.messages.some(m => m.sender_type !== 'PERSONEL');
+      const hasDinasMessage = res.data.messages.some((m) => m.sender_type !== 'PERSONEL');
       messagesList.value.push(...res.data.messages);
       scrollToBottom();
 

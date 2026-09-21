@@ -130,6 +130,43 @@ class LiveChatController extends Controller
     }
 
     /**
+     * Memeriksa dan mengambil sesi percakapan aktif terkini untuk Personel
+     */
+    public function getActiveSession(Request $request)
+    {
+        $user = Auth::user();
+        $personel = $user->personel ?? Personel::where('user_id', $user->id)->first();
+
+        if (!$personel) {
+            return response()->json(['thread' => null]);
+        }
+
+        $this->touchPersonelPresence($personel->id);
+
+        $thread = LiveChatThread::where('personel_id', $personel->id)
+            ->where('status', 'OPEN')
+            ->latest('last_message_at')
+            ->first();
+
+        if (!$thread) {
+            return response()->json(['thread' => null]);
+        }
+
+        if ($thread->unread_personel > 0) {
+            $thread->update(['unread_personel' => 0]);
+        }
+        $thread->messages()
+            ->where('sender_type', '!=', 'PERSONEL')
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+
+        return response()->json([
+            'thread' => $thread,
+            'messages' => $thread->messages()->orderBy('id', 'asc')->get(),
+        ]);
+    }
+
+    /**
      * Mengambil pembaharuan pesan secara asinkron tanpa penyegaran laman (Personel)
      */
     public function getMessages(Request $request, $uuid)
@@ -398,6 +435,95 @@ class LiveChatController extends Controller
                 'status' => $status,
                 'thread' => $activeUuid,
             ],
+            'stats' => [
+                'total_open' => $totalOpen,
+                'total_unread' => $totalUnread,
+            ],
+        ]);
+    }
+
+    /**
+     * Sinkronisasi berkala terpadu untuk Admin/PJU/Koordinator:
+     * Mengambil daftar utas terbaru, pesan masuk pada utas aktif, status presensi,
+     * indikator sedang mengetik, dan statistik obrolan tanpa muat ulang laman.
+     */
+    public function adminSync(Request $request)
+    {
+        $search = $request->query('search');
+        $status = $request->query('status', 'all');
+        $activeUuid = $request->query('thread');
+        $lastId = (int) $request->query('last_id', 0);
+
+        // 1. Ambil 25 utas teratas sesuai kriteria filter
+        $threadsQuery = LiveChatThread::with(['personel.user', 'latestMessage'])
+            ->when($status !== 'all', function ($q) use ($status) {
+                $q->where('status', strtoupper($status));
+            })
+            ->when($search, function ($q) use ($search) {
+                $q->whereHas('personel', function ($pq) use ($search) {
+                    $pq->where('full_name', 'like', "%{$search}%")
+                        ->orWhere('nikc', 'like', "%{$search}%")
+                        ->orWhere('nik', 'like', "%{$search}%")
+                        ->orWhere('phone_number', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('last_message_at', 'desc');
+
+        $threads = $threadsQuery->limit(25)->get();
+
+        $threads->transform(function ($th) {
+            if ($th->personel) {
+                $th->personel->is_online = Cache::has("live_chat:presence:personel:{$th->personel_id}");
+                $th->personel->last_seen_at = Cache::get("live_chat:last_seen:personel:{$th->personel_id}");
+            }
+            return $th;
+        });
+
+        // 2. Pembaharuan data utas aktif jika sedang dibuka di antarmuka
+        $activeData = null;
+        if ($activeUuid) {
+            $activeThread = LiveChatThread::where('uuid', $activeUuid)->first();
+            if ($activeThread) {
+                if ($activeThread->unread_admin > 0) {
+                    $activeThread->update(['unread_admin' => 0]);
+                }
+                $activeThread->messages()
+                    ->where('sender_type', 'PERSONEL')
+                    ->where('is_read', false)
+                    ->update(['is_read' => true]);
+
+                $messagesQuery = $activeThread->messages()->orderBy('id', 'asc');
+                if ($lastId > 0) {
+                    $messagesQuery->where('id', '>', $lastId);
+                }
+                $newMessages = $messagesQuery->get();
+
+                $personelTyping = Cache::get("live_chat:typing:{$activeThread->uuid}:personel");
+                $isOnline = Cache::has("live_chat:presence:personel:{$activeThread->personel_id}");
+                $lastSeenAt = Cache::get("live_chat:last_seen:personel:{$activeThread->personel_id}");
+
+                $activeData = [
+                    'uuid' => $activeThread->uuid,
+                    'status' => $activeThread->status,
+                    'messages' => $newMessages,
+                    'typing' => [
+                        'is_typing' => !empty($personelTyping),
+                        'name' => $personelTyping['name'] ?? null,
+                    ],
+                    'presence' => [
+                        'is_online' => $isOnline,
+                        'last_seen_at' => $lastSeenAt,
+                    ],
+                ];
+            }
+        }
+
+        $totalOpen = LiveChatThread::where('status', 'OPEN')->count();
+        $totalUnread = LiveChatThread::where('unread_admin', '>', 0)->count();
+
+        return response()->json([
+            'threads' => $threads,
+            'active_thread' => $activeData,
             'stats' => [
                 'total_open' => $totalOpen,
                 'total_unread' => $totalUnread,
