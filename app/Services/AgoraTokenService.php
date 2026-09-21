@@ -15,7 +15,7 @@ class AgoraTokenService
      */
     public static function generateToken($channelName, $uid = 0, $role = RtcTokenBuilder2::ROLE_PUBLISHER)
     {
-        $appId = Setting::where('key', 'agora_app_id')->value('value') ?: env('AGORA_APP_ID', '19daeb63baec46f2be2197c9fbbe81d6');
+        $appId = Setting::where('key', 'agora_app_id')->value('value') ?: env('AGORA_APP_ID', '19daeb63b0ec46f2b02197c9fbbe81d6');
         $appCertificate = Setting::where('key', 'agora_app_certificate')->value('value') ?: env('AGORA_APP_CERTIFICATE', 'f20e73efeed44842b2d861723549f8ea');
 
         if (empty($appId)) {

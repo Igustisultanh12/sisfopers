@@ -1227,7 +1227,7 @@ class LiveChatController extends Controller
             return response()->json(['iceServers' => array_merge($coturnServers, $baseStunServers)]);
         }
 
-        $agoraAppId = Setting::where('key', 'agora_app_id')->value('value') ?: env('AGORA_APP_ID', '19daeb63baec46f2be2197c9fbbe81d6');
+        $agoraAppId = Setting::where('key', 'agora_app_id')->value('value') ?: env('AGORA_APP_ID', '19daeb63b0ec46f2b02197c9fbbe81d6');
 
         return response()->json([
             'agoraAppId' => $agoraAppId,
@@ -1246,7 +1246,7 @@ class LiveChatController extends Controller
         $uid = (int) ($request->input('uid') ?: ($user->id ?? 1));
 
         $token = \App\Services\AgoraTokenService::generateToken($channelName, $uid);
-        $appId = Setting::where('key', 'agora_app_id')->value('value') ?: env('AGORA_APP_ID', '19daeb63baec46f2be2197c9fbbe81d6');
+        $appId = Setting::where('key', 'agora_app_id')->value('value') ?: env('AGORA_APP_ID', '19daeb63b0ec46f2b02197c9fbbe81d6');
 
         return response()->json([
             'success' => true,

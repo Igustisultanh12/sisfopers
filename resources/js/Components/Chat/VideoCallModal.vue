@@ -332,7 +332,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'call-ended', 'call-accepted']);
 
 // App ID Agora Resmi (Proyek sisfopers)
-const AGORA_APP_ID = '19daeb63baec46f2be2197c9fbbe81d6';
+const AGORA_APP_ID = '19daeb63b0ec46f2b02197c9fbbe81d6';
 
 // State Status Panggilan
 const callStatus = ref('IDLE'); // 'IDLE' | 'OUTGOING' | 'INCOMING' | 'CONNECTING' | 'CONNECTED' | 'ENDED'
