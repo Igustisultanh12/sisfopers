@@ -208,13 +208,23 @@
               <div class="flex items-center gap-1.5 text-[10px] text-slate-400 px-1 font-medium">
                 <span>Anda</span>
                 <span>&bull;</span>
-                <span>{{ formatTime(msg.created_at) }}</span>
-                <span v-if="msg.is_read" class="text-blue-600 font-bold" title="Telah dibaca oleh petugas">
+                <span v-if="msg.is_pending" class="text-amber-500 font-semibold italic flex items-center gap-1">
+                  <svg class="w-3 h-3 animate-spin shrink-0" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                  </svg>
+                  Mengirim...
+                </span>
+                <span v-else>{{ formatTime(msg.created_at) }}</span>
+                <span v-if="!msg.is_pending && msg.is_read" class="text-blue-600 font-bold" title="Telah dibaca oleh petugas">
                   (Dibaca)
                 </span>
               </div>
 
-              <div class="max-w-xl bg-blue-600 text-white rounded-2xl rounded-tr-xs px-4 py-3 text-xs shadow-sm space-y-2">
+              <div 
+                :class="msg.is_pending ? 'opacity-85' : ''"
+                class="max-w-xl bg-blue-600 text-white rounded-2xl rounded-tr-xs px-4 py-3 text-xs shadow-sm space-y-2 transition-opacity"
+              >
                 <p v-if="msg.message" class="whitespace-pre-wrap leading-relaxed">{{ msg.message }}</p>
 
                 <!-- Lampiran Berkas Personel -->
@@ -697,8 +707,9 @@ const pollMessages = async () => {
     return;
   }
 
-  const lastMsg = messagesList.value[messagesList.value.length - 1];
-  const lastId = lastMsg ? lastMsg.id : 0;
+  // Cari pesan terakhir dengan ID numerik database yang valid
+  const lastNumericMsg = [...messagesList.value].reverse().find((m) => typeof m.id === 'number');
+  const lastId = lastNumericMsg ? lastNumericMsg.id : 0;
 
   try {
     const res = await axios.get(`/personel/live-chat/${thread.value.uuid}/messages`, {
@@ -727,7 +738,20 @@ const pollMessages = async () => {
 
     if (res.data.messages && res.data.messages.length > 0) {
       const hasDinasMessage = res.data.messages.some((m) => m.sender_type !== 'PERSONEL');
-      messagesList.value.push(...res.data.messages);
+      for (const newMsg of res.data.messages) {
+        const exists = messagesList.value.some((m) => m.id === newMsg.id);
+        if (!exists) {
+          // Jika pesan personel baru masuk dari server dan ada pesan pending yang cocok, ganti statusnya
+          const pendingIdx = messagesList.value.findIndex(
+            (m) => m.is_pending && (m.message === newMsg.message || m.temp_id)
+          );
+          if (pendingIdx !== -1 && newMsg.sender_type === 'PERSONEL') {
+            messagesList.value[pendingIdx] = newMsg;
+          } else {
+            messagesList.value.push(newMsg);
+          }
+        }
+      }
       scrollToBottom();
 
       if (hasDinasMessage) {
@@ -743,7 +767,7 @@ const startPolling = () => {
   stopPolling();
   pollingTimer = setInterval(() => {
     pollMessages();
-  }, 2500); // Polling asinkron teratur setiap 2.5 detik
+  }, 1200); // Polling asinkron cepat setiap 1.2 detik (sinkron seketika)
 };
 
 const stopPolling = () => {
@@ -770,30 +794,82 @@ const sendMessage = async () => {
     return;
   }
 
-  isSending.value = true;
-  const formData = new FormData();
-  if (text) {
-    formData.append('message', text);
-  }
+  // 1. Amankan data dan salin berkas lampiran
+  const filesToSend = [...stagedFiles.value];
+  const messageContent = text;
 
-  stagedFiles.value.forEach((f) => {
-    formData.append('attachments[]', f);
-  });
+  // 2. Bersihkan input seketika (Optimistic UI Reset tanpa tertahan)
+  inputMessage.value = '';
+  stagedFiles.value = [];
+
+  // 3. Terbitkan pesan langsung ke gelembung obrolan (Optimistic Dispatch seketika 0ms)
+  const tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+  const tempMsg = {
+    id: tempId,
+    temp_id: tempId,
+    thread_id: thread.value.id,
+    sender_type: 'PERSONEL',
+    sender_id: props.personel?.id || 0,
+    sender_name: 'Anda',
+    message: messageContent || null,
+    attachments: filesToSend.map((f) => ({
+      original_name: f.name,
+      size: f.size,
+      is_image: f.type.startsWith('image/'),
+      is_uploading: true,
+    })),
+    created_at: new Date().toISOString(),
+    is_read: false,
+    is_pending: true,
+  };
+
+  messagesList.value.push(tempMsg);
+  scrollToBottom();
+
+  isSending.value = true;
 
   try {
-    const res = await axios.post(`/personel/live-chat/${thread.value.uuid}/send`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    let res;
+    if (filesToSend.length === 0) {
+      // Transmisi cepat payload JSON murni jika tidak ada lampiran berkas
+      res = await axios.post(`/personel/live-chat/${thread.value.uuid}/send`, {
+        message: messageContent,
+      });
+    } else {
+      // Transmisi multipart jika ada berkas
+      const formData = new FormData();
+      if (messageContent) {
+        formData.append('message', messageContent);
+      }
+      filesToSend.forEach((f) => {
+        formData.append('attachments[]', f);
+      });
+      res = await axios.post(`/personel/live-chat/${thread.value.uuid}/send`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+    }
 
     if (res.data.message) {
-      messagesList.value.push(res.data.message);
-      inputMessage.value = '';
-      stagedFiles.value = [];
+      const realMsg = res.data.message;
+      const idx = messagesList.value.findIndex((m) => m.id === tempId || m.temp_id === tempId);
+      if (idx !== -1) {
+        messagesList.value[idx] = realMsg;
+      } else if (!messagesList.value.some((m) => m.id === realMsg.id)) {
+        messagesList.value.push(realMsg);
+      }
       scrollToBottom();
     }
   } catch (err) {
+    // Revert pesan sementara jika transmisi gagal dan kembalikan teks ke form
+    const idx = messagesList.value.findIndex((m) => m.id === tempId || m.temp_id === tempId);
+    if (idx !== -1) {
+      messagesList.value.splice(idx, 1);
+    }
+    inputMessage.value = messageContent;
+    stagedFiles.value = filesToSend;
+
     const errMsg = err.response?.data?.error || 'Gagal mengirimkan pesan.';
     Swal.fire({
       icon: 'error',

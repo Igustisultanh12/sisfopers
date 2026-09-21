@@ -196,11 +196,11 @@ class LiveChatController extends Controller
 
         if ($thread->unread_personel > 0) {
             $thread->update(['unread_personel' => 0]);
+            $thread->messages()
+                ->where('sender_type', '!=', 'PERSONEL')
+                ->where('is_read', false)
+                ->update(['is_read' => true]);
         }
-        $thread->messages()
-            ->where('sender_type', '!=', 'PERSONEL')
-            ->where('is_read', false)
-            ->update(['is_read' => true]);
 
         $lastId = (int) $request->query('last_id', 0);
         $messagesQuery = $thread->messages()->orderBy('id', 'asc');
@@ -506,11 +506,11 @@ class LiveChatController extends Controller
             if ($activeThread) {
                 if ($activeThread->unread_admin > 0) {
                     $activeThread->update(['unread_admin' => 0]);
+                    $activeThread->messages()
+                        ->where('sender_type', 'PERSONEL')
+                        ->where('is_read', false)
+                        ->update(['is_read' => true]);
                 }
-                $activeThread->messages()
-                    ->where('sender_type', 'PERSONEL')
-                    ->where('is_read', false)
-                    ->update(['is_read' => true]);
 
                 $messagesQuery = $activeThread->messages()->orderBy('id', 'asc');
                 if ($lastId > 0) {
@@ -575,11 +575,11 @@ class LiveChatController extends Controller
 
         if ($thread->unread_admin > 0) {
             $thread->update(['unread_admin' => 0]);
+            $thread->messages()
+                ->where('sender_type', 'PERSONEL')
+                ->where('is_read', false)
+                ->update(['is_read' => true]);
         }
-        $thread->messages()
-            ->where('sender_type', 'PERSONEL')
-            ->where('is_read', false)
-            ->update(['is_read' => true]);
 
         $lastId = (int) $request->query('last_id', 0);
         $messagesQuery = $thread->messages()->orderBy('id', 'asc');

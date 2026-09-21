@@ -334,10 +334,20 @@
                 <div v-else class="flex justify-end">
                   <div class="max-w-[85%] space-y-1 text-right">
                     <div class="flex items-center justify-end gap-2">
-                      <span class="text-[10px] text-slate-400">{{ formatTime(msg.created_at) }}</span>
+                      <span v-if="msg.is_pending" class="text-amber-500 font-semibold italic text-[10px] flex items-center gap-1">
+                        <svg class="w-3 h-3 animate-spin shrink-0" fill="none" viewBox="0 0 24 24">
+                          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                        </svg>
+                        Mengirim...
+                      </span>
+                      <span v-else class="text-[10px] text-slate-400">{{ formatTime(msg.created_at) }}</span>
                       <span class="text-xs font-bold text-slate-800">{{ msg.sender_name }}</span>
                     </div>
-                    <div class="bg-slate-900 text-white text-xs p-3.5 rounded-2xl rounded-tr-xs shadow-md text-left leading-relaxed">
+                    <div 
+                      :class="msg.is_pending ? 'opacity-85' : ''"
+                      class="bg-slate-900 text-white text-xs p-3.5 rounded-2xl rounded-tr-xs shadow-md text-left leading-relaxed transition-opacity"
+                    >
                       <p v-if="msg.message" class="whitespace-pre-wrap">{{ msg.message }}</p>
 
                       <!-- Lampiran Petugas -->
@@ -1159,8 +1169,8 @@ const loadThreadMessages = async (uuid) => {
 // Polling asinkron pembaharuan pesan masuk & daftar utas secara terpadu tanpa muat ulang laman
 const pollAdminSync = async () => {
   const activeUuid = selectedThread.value?.uuid || null;
-  const lastMsg = activeMessagesList.value[activeMessagesList.value.length - 1];
-  const lastId = (activeUuid && lastMsg) ? lastMsg.id : 0;
+  const lastNumericMsg = [...activeMessagesList.value].reverse().find((m) => typeof m.id === 'number');
+  const lastId = (activeUuid && lastNumericMsg) ? lastNumericMsg.id : 0;
 
   try {
     const res = await axios.get(`/${getPrefix()}/live-chat/sync`, {
@@ -1228,7 +1238,20 @@ const pollAdminSync = async () => {
 
       if (activeData.messages && activeData.messages.length > 0) {
         const hasPersonelMsg = activeData.messages.some((m) => m.sender_type === 'PERSONEL');
-        activeMessagesList.value.push(...activeData.messages);
+        for (const newMsg of activeData.messages) {
+          const exists = activeMessagesList.value.some((m) => m.id === newMsg.id);
+          if (!exists) {
+            // Jika pesan balasan admin tersimpan di server dan ada pesan pending yang cocok, ganti statusnya
+            const pendingIdx = activeMessagesList.value.findIndex(
+              (m) => m.is_pending && (m.message === newMsg.message || m.temp_id)
+            );
+            if (pendingIdx !== -1 && newMsg.sender_type === 'ADMIN') {
+              activeMessagesList.value[pendingIdx] = newMsg;
+            } else {
+              activeMessagesList.value.push(newMsg);
+            }
+          }
+        }
         scrollAdminChatToBottom();
         if (hasPersonelMsg) {
           playNotificationSound();
@@ -1266,7 +1289,7 @@ const startAdminPolling = () => {
   stopAdminPolling();
   adminPollingTimer = setInterval(() => {
     pollAdminSync();
-  }, 2500); // Polling asinkron berkala setiap 2.5 detik
+  }, 1200); // Polling asinkron cepat setiap 1.2 detik (sinkron seketika)
 };
 
 const stopAdminPolling = () => {
@@ -1306,38 +1329,97 @@ const submitAdminReply = async () => {
     return;
   }
 
-  isAdminSending.value = true;
-  const formData = new FormData();
-  if (msgText) {
-    formData.append('message', msgText);
+  // 1. Amankan data dan salin berkas lampiran
+  const filesToSend = [...adminStagedFiles.value];
+  const messageContent = msgText;
+
+  // 2. Bersihkan input seketika (Optimistic UI Reset tanpa jeda)
+  adminReplyMessage.value = '';
+  adminStagedFiles.value = [];
+
+  // 3. Terbitkan pesan langsung ke gelembung obrolan (Optimistic Dispatch seketika 0ms)
+  const tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+  const tempMsg = {
+    id: tempId,
+    temp_id: tempId,
+    thread_id: selectedThread.value.id,
+    sender_type: 'ADMIN',
+    sender_id: props.auth?.user?.id || 1,
+    sender_name: 'Admin Sisfopers',
+    message: messageContent || null,
+    attachments: filesToSend.map((f) => ({
+      original_name: f.name,
+      size: f.size,
+      is_image: f.type.startsWith('image/'),
+      is_uploading: true,
+    })),
+    created_at: new Date().toISOString(),
+    is_read: false,
+    is_pending: true,
+  };
+
+  activeMessagesList.value.push(tempMsg);
+  scrollAdminChatToBottom();
+
+  // Perbarui preview daftar utas di sisi kiri seketika
+  const target = threadsList.value.find((t) => t.uuid === selectedThread.value?.uuid);
+  if (target) {
+    target.latest_message = tempMsg;
+    target.last_message_at = tempMsg.created_at;
+    threadsList.value = [target, ...threadsList.value.filter((t) => t.uuid !== target.uuid)];
   }
 
-  adminStagedFiles.value.forEach((file) => {
-    formData.append('attachments[]', file);
-  });
+  isAdminSending.value = true;
 
   try {
-    const res = await axios.post(`/${getPrefix()}/live-chat/${selectedThread.value.uuid}/send`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    let res;
+    if (filesToSend.length === 0) {
+      // Transmisi cepat payload JSON murni jika tidak ada lampiran berkas
+      res = await axios.post(`/${getPrefix()}/live-chat/${selectedThread.value.uuid}/send`, {
+        message: messageContent,
+      });
+    } else {
+      // Transmisi multipart jika ada berkas
+      const formData = new FormData();
+      if (messageContent) {
+        formData.append('message', messageContent);
+      }
+      filesToSend.forEach((file) => {
+        formData.append('attachments[]', file);
+      });
+      res = await axios.post(`/${getPrefix()}/live-chat/${selectedThread.value.uuid}/send`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+    }
 
     if (res.data.message) {
-      activeMessagesList.value.push(res.data.message);
-      adminReplyMessage.value = '';
-      adminStagedFiles.value = [];
+      const realMsg = res.data.message;
+      const idx = activeMessagesList.value.findIndex((m) => m.id === tempId || m.temp_id === tempId);
+      if (idx !== -1) {
+        activeMessagesList.value[idx] = realMsg;
+      } else if (!activeMessagesList.value.some((m) => m.id === realMsg.id)) {
+        activeMessagesList.value.push(realMsg);
+      }
       scrollAdminChatToBottom();
 
-      // Perbarui posisi dan info pesan terakhir pada daftar utas secara langsung
-      const target = threadsList.value.find((t) => t.uuid === selectedThread.value?.uuid);
-      if (target) {
-        target.latest_message = res.data.message;
-        target.last_message_at = res.data.message.created_at;
-        threadsList.value = [target, ...threadsList.value.filter((t) => t.uuid !== target.uuid)];
+      // Perbarui posisi dan info pesan terakhir pada daftar utas
+      const tIdx = threadsList.value.findIndex((t) => t.uuid === selectedThread.value?.uuid);
+      if (tIdx !== -1) {
+        threadsList.value[tIdx].latest_message = realMsg;
+        threadsList.value[tIdx].last_message_at = realMsg.created_at;
       }
     }
   } catch (err) {
+    // Revert pesan sementara jika transmisi gagal dan kembalikan teks ke form
+    const idx = activeMessagesList.value.findIndex((m) => m.id === tempId || m.temp_id === tempId);
+    if (idx !== -1) {
+      activeMessagesList.value.splice(idx, 1);
+    }
+    adminReplyMessage.value = messageContent;
+    adminStagedFiles.value = filesToSend;
+
     const errMsg = err.response?.data?.error || 'Gagal mengirim pesan balasan dinas.';
     Swal.fire({
       icon: 'error',
