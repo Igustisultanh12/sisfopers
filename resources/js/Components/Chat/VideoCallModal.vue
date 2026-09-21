@@ -15,7 +15,7 @@
           <span class="w-2 h-2 rounded-full bg-blue-400 animate-ping"></span>
           Panggilan Video Dinas
         </span>
-        <h3 class="text-base font-bold text-slate-200">Menghubungkan Sinyal...</h3>
+        <h3 class="text-base font-bold text-slate-200">Menghubungkan Jalur Satelit...</h3>
       </div>
 
       <!-- Avatar dengan Animasi Gelombang Berdenyut -->
@@ -126,14 +126,14 @@
       </div>
     </div>
 
-    <!-- 3. KONDISI C: RUANG VICON AKTIF (CONNECTED / CONNECTING ROOM) -->
+    <!-- 3. KONDISI C: RUANG VICON AKTIF (CONNECTED / CONNECTING ROOM JITSI SFU) -->
     <div 
       v-else 
-      :class="isFullscreen ? 'fixed inset-0 z-50 rounded-none' : 'w-full max-w-5xl h-[100dvh] sm:h-[90vh] sm:max-h-[720px] rounded-none sm:rounded-3xl border-0 sm:border border-slate-800'"
+      :class="isFullscreen ? 'fixed inset-0 z-50 rounded-none' : 'w-full max-w-5xl h-[100dvh] sm:h-[90vh] sm:max-h-[760px] rounded-none sm:rounded-3xl border-0 sm:border border-slate-800'"
       class="bg-slate-900 shadow-2xl flex flex-col overflow-hidden relative overscroll-none"
     >
       <!-- Bilah Header Atas Ruang Vicon -->
-      <div class="h-14 px-3 sm:px-6 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 flex items-center justify-between shrink-0 z-20">
+      <div class="h-14 px-3 sm:px-6 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 flex items-center justify-between shrink-0 z-20">
         <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
           <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></div>
           <div class="min-w-0">
@@ -151,14 +151,29 @@
           </div>
         </div>
 
-        <!-- Lencana Keamanan Militer -->
+        <!-- Tombol Aksi Kanan Header -->
         <div class="flex items-center gap-2 shrink-0">
+          <!-- Lencana Keamanan Militer -->
           <div class="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/60 border border-emerald-800/60 text-[10px] font-bold text-emerald-400">
             <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
-            <span>Terenkripsi Ujung-ke-Ujung (DTLS-SRTP)</span>
+            <span>Terenkripsi E2E (SFU)</span>
           </div>
+
+          <!-- Tombol Buka di Tab Baru (Fallback Handal untuk Browser HP) -->
+          <a 
+            :href="jitsiWebUrl" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 transition"
+            title="Buka ruang vicon pada tab mandiri browser jika kamera terblokir"
+          >
+            <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+            <span>Buka Tab Mandiri</span>
+          </a>
 
           <!-- Tombol Fullscreen -->
           <button 
@@ -174,256 +189,67 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
+
+          <!-- Tombol Cepat Akhiri Panggilan -->
+          <button 
+            @click="hangUpCall" 
+            type="button" 
+            class="py-1.5 px-3 bg-red-600 hover:bg-red-700 text-white font-black text-xs rounded-xl shadow transition flex items-center gap-1 cursor-pointer active:scale-95"
+            title="Akhiri Panggilan Dinas"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M5 3a2 2 0 00-2 2v1c0 8.284 6.716 15 15 15h1a2 2 0 002-2v-3.28a1 1 0 00-.684-.948l-4.493-1.498a1 1 0 00-1.21.502l-1.13 2.257a11.042 11.042 0 01-5.516-5.517l2.257-1.128a1 1 0 00.502-1.21L9.228 3.684A1 1 0 008.279 3H5z" />
+            </svg>
+            <span>Akhiri</span>
+          </button>
         </div>
       </div>
 
-      <!-- Area Layar Video Utama (Remote Video & Overlay) -->
+      <!-- Area Layar Jitsi Meet (SFU Terintegrasi) -->
       <div class="flex-1 min-h-0 bg-slate-950 relative flex items-center justify-center overflow-hidden">
         
-        <!-- Video Peserta Lawan (Remote Video) -->
-        <video 
-          ref="remoteVideoRef" 
-          autoplay 
-          playsinline 
-          class="w-full h-full object-cover sm:object-contain"
-        ></video>
+        <!-- Wadah Iframe Jitsi Meet -->
+        <div ref="jitsiContainerRef" id="jitsi-container" class="w-full h-full flex-1"></div>
 
-        <!-- Placeholder jika Remote Video Belum Terhubung atau Kamera Lawan Nonaktif -->
+        <!-- Loading Overlay saat Inisialisasi API Jitsi -->
         <div 
-          v-if="(!isRemoteMediaActive && callStatus !== 'CONNECTED') || isRemoteVideoOff" 
-          class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/80 text-center space-y-3 p-6 z-10"
+          v-if="isJitsiLoading" 
+          class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 text-center space-y-4 p-6 z-10"
         >
-          <img 
-            :src="partnerUser?.photo ? `/documents/private-stream?path=${encodeURIComponent(partnerUser.photo)}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(partnerUser?.name || 'P')}&background=1e293b&color=94a3b8`" 
-            class="w-24 h-24 object-cover rounded-2xl border border-slate-700 shadow-xl" 
-          />
-          <div>
+          <div class="relative w-20 h-20 flex items-center justify-center">
+            <div class="absolute inset-0 rounded-full border-2 border-emerald-500/20 animate-ping"></div>
+            <div class="w-16 h-16 rounded-full border-2 border-t-emerald-500 border-r-transparent border-b-blue-500 border-l-transparent animate-spin"></div>
+            <img 
+              :src="partnerUser?.photo ? `/documents/private-stream?path=${encodeURIComponent(partnerUser.photo)}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(partnerUser?.name || 'P')}&background=1e293b&color=94a3b8`" 
+              class="w-10 h-10 object-cover rounded-full absolute" 
+            />
+          </div>
+
+          <div class="space-y-1">
             <h4 class="text-base font-bold text-white">{{ partnerUser?.pangkat }} {{ partnerUser?.name }}</h4>
-            <p class="text-xs text-slate-400 mt-0.5">
-              {{ (!isRemoteMediaActive && callStatus !== 'CONNECTED') ? 'Mempersiapkan jalur komunikasi terenkripsi...' : 'Kamera lawan bicara sedang dinonaktifkan' }}
+            <p class="text-xs text-slate-400">
+              Membuka bilik vicon militer terenkripsi bebas hambatan CGNAT...
             </p>
           </div>
-          <div v-if="!isRemoteMediaActive && callStatus !== 'CONNECTED'" class="flex flex-col items-center gap-2 text-xs text-blue-400">
-            <div class="flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-blue-500 animate-ping"></span>
-              <span>{{ connectionStatusText }}</span>
-            </div>
-            <div v-if="connectingSeconds > 7" class="pt-1">
-              <button 
-                @click="retryIceNegotiation" 
-                type="button" 
-                class="px-3 py-1.5 bg-blue-600/80 hover:bg-blue-600 text-white text-[11px] font-bold rounded-xl border border-blue-400/30 transition flex items-center gap-1.5 cursor-pointer shadow active:scale-95"
-              >
-                <svg class="w-3.5 h-3.5 animate-spin" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                <span>Segarkan Penyelarasan Sinyal</span>
-              </button>
-            </div>
+
+          <div class="flex items-center gap-2 text-xs text-emerald-400">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span>{{ connectionStatusText }}</span>
+          </div>
+
+          <!-- Fallback jika memuat lama di browser mobile tertentu -->
+          <div class="pt-2">
+            <a 
+              :href="jitsiWebUrl" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 text-xs font-bold rounded-xl border border-blue-500/30 transition"
+            >
+              <span>Klik di sini jika tampilan video tidak kunjung muncul</span>
+            </a>
           </div>
         </div>
 
-        <!-- Video Lokal Pengguna (Miniatur PiP di Sudut Kanan Bawah) -->
-        <div 
-          class="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 w-28 sm:w-44 aspect-[3/4] sm:aspect-video bg-slate-900 border-2 border-slate-700/90 rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden z-20 group transition-all"
-        >
-          <video 
-            ref="localVideoRef" 
-            autoplay 
-            playsinline 
-            muted 
-            :class="isMirrorCamera ? '-scale-x-100' : ''"
-            class="w-full h-full object-cover"
-          ></video>
-
-          <!-- Placeholder saat Kamera Lokal Dimatikan -->
-          <div 
-            v-if="isCameraOff" 
-            class="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center text-slate-400"
-          >
-            <svg class="w-6 h-6 text-slate-500 mb-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-            </svg>
-            <span class="text-[10px] font-bold">Kamera Mati</span>
-          </div>
-
-          <!-- Lencana Nama & Status Lokal -->
-          <div class="absolute bottom-1.5 left-2 right-2 flex items-center justify-between pointer-events-none text-[9px] font-bold text-white/90">
-            <span class="truncate bg-slate-950/70 px-1.5 py-0.5 rounded">Anda</span>
-            <span v-if="isMuted" class="bg-red-600/90 px-1.5 py-0.5 rounded">Mute</span>
-          </div>
-        </div>
-
-        <!-- Canvas Tersembunyi untuk Pemrosesan Virtual Background & Blur -->
-        <canvas ref="bgCanvasRef" class="hidden" width="640" height="480"></canvas>
-      </div>
-
-      <!-- Bilah Menu Pilihan Virtual Background (Bila Dibuka) -->
-      <div 
-        v-if="showBgMenu" 
-        class="absolute bottom-18 sm:bottom-22 left-1/2 -translate-x-1/2 w-[92%] sm:w-full max-w-md bg-slate-950/95 border border-slate-800 rounded-2xl p-3 sm:p-4 shadow-2xl z-30 space-y-2.5 sm:space-y-3 backdrop-blur-xl"
-      >
-        <div class="flex items-center justify-between pb-2 border-b border-slate-800">
-          <h5 class="text-xs font-bold text-white flex items-center gap-1.5">
-            <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <span>Pilihan Latar Belakang (Virtual Background)</span>
-          </h5>
-          <button @click="showBgMenu = false" type="button" class="text-slate-400 hover:text-white text-xs cursor-pointer">&times;</button>
-        </div>
-
-        <div class="grid grid-cols-3 gap-1.5 sm:gap-2 text-center text-[10px] font-bold">
-          <!-- Tanpa Efek -->
-          <button 
-            @click="applyBackground('none')"
-            :class="currentBackground === 'none' ? 'border-blue-500 bg-blue-500/10 text-blue-400' : 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800'"
-            class="p-2 sm:p-2.5 rounded-xl border flex flex-col items-center gap-1 sm:gap-1.5 transition cursor-pointer"
-          >
-            <div class="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-              </svg>
-            </div>
-            <span>Normal</span>
-          </button>
-
-          <!-- Blur Ringan -->
-          <button 
-            @click="applyBackground('blur-light')"
-            :class="currentBackground === 'blur-light' ? 'border-blue-500 bg-blue-500/10 text-blue-400' : 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800'"
-            class="p-2 sm:p-2.5 rounded-xl border flex flex-col items-center gap-1 sm:gap-1.5 transition cursor-pointer"
-          >
-            <div class="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center backdrop-blur-xs">
-              <span class="text-xs">BL</span>
-            </div>
-            <span>Blur Ringan</span>
-          </button>
-
-          <!-- Blur Pekat -->
-          <button 
-            @click="applyBackground('blur-heavy')"
-            :class="currentBackground === 'blur-heavy' ? 'border-blue-500 bg-blue-500/10 text-blue-400' : 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800'"
-            class="p-2 sm:p-2.5 rounded-xl border flex flex-col items-center gap-1 sm:gap-1.5 transition cursor-pointer"
-          >
-            <div class="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center backdrop-blur-md">
-              <span class="text-xs">BP</span>
-            </div>
-            <span>Blur Pekat</span>
-          </button>
-
-          <!-- Latar Markas Komcad -->
-          <button 
-            @click="applyBackground('command')"
-            :class="currentBackground === 'command' ? 'border-blue-500 bg-blue-500/10 text-blue-400' : 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800'"
-            class="p-2 sm:p-2.5 rounded-xl border flex flex-col items-center gap-1 sm:gap-1.5 transition cursor-pointer"
-          >
-            <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-slate-950 to-blue-900 flex items-center justify-center">
-              <span class="text-[9px] text-blue-300">KC</span>
-            </div>
-            <span>Markas Dinas</span>
-          </button>
-
-          <!-- Latar Ruang Sidang Mabes -->
-          <button 
-            @click="applyBackground('office')"
-            :class="currentBackground === 'office' ? 'border-blue-500 bg-blue-500/10 text-blue-400' : 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800'"
-            class="p-2 sm:p-2.5 rounded-xl border flex flex-col items-center gap-1 sm:gap-1.5 transition cursor-pointer"
-          >
-            <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-slate-900 to-emerald-950 flex items-center justify-center">
-              <span class="text-[9px] text-emerald-300">MBS</span>
-            </div>
-            <span>Ruang Rapat</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Bilah Kontrol Bawah (Toolbar Melayang Gaya Zoom / Meet / WhatsApp) -->
-      <div class="h-16 sm:h-20 pb-[env(safe-area-inset-bottom,0px)] px-2 sm:px-4 bg-slate-950/95 backdrop-blur-md border-t border-slate-800 flex items-center justify-around sm:justify-center gap-1 sm:gap-3 shrink-0 z-20">
-        
-        <!-- 1. Tombol Mikrofon (Mute/Unmute) -->
-        <button 
-          @click="toggleMute" 
-          type="button" 
-          :class="isMuted ? 'bg-red-600 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'"
-          class="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl shadow-md transition cursor-pointer flex flex-col items-center gap-1 active:scale-95"
-          :title="isMuted ? 'Nyalakan Mikrofon' : 'Matikan Mikrofon'"
-        >
-          <svg v-if="!isMuted" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-          </svg>
-          <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
-          </svg>
-        </button>
-
-        <!-- 2. Tombol Kamera (On/Off) -->
-        <button 
-          @click="toggleCamera" 
-          type="button" 
-          :class="isCameraOff ? 'bg-red-600 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'"
-          class="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl shadow-md transition cursor-pointer flex flex-col items-center gap-1 active:scale-95"
-          :title="isCameraOff ? 'Nyalakan Kamera' : 'Matikan Kamera'"
-        >
-          <svg v-if="!isCameraOff" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-          </svg>
-          <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-          </svg>
-        </button>
-
-        <!-- 3. Tombol Ubah Background (Virtual Background) -->
-        <button 
-          @click="showBgMenu = !showBgMenu" 
-          type="button" 
-          :class="showBgMenu ? 'bg-blue-600 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'"
-          class="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl shadow-md transition cursor-pointer flex flex-col items-center gap-1 active:scale-95"
-          title="Ubah Latar Belakang (Virtual Background)"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-        </button>
-
-        <!-- 4. Tombol Bagi Layar (Screen Share - Khusus Layar Komputer / Tablet) -->
-        <button 
-          @click="toggleScreenShare" 
-          type="button" 
-          :class="isScreenSharing ? 'bg-emerald-600 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'"
-          class="hidden sm:flex p-3 sm:p-3.5 rounded-2xl shadow-md transition cursor-pointer flex-col items-center gap-1 active:scale-95"
-          :title="isScreenSharing ? 'Berhenti Berbagi Layar' : 'Bagi Layar Paparan (Screen Share)'"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-          </svg>
-        </button>
-
-        <!-- 5. Tombol Flip / Ganti Kamera -->
-        <button 
-          @click="flipCamera" 
-          type="button" 
-          class="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 shadow-md transition cursor-pointer flex flex-col items-center gap-1 active:scale-95"
-          title="Ganti Sudut Kamera"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-        </button>
-
-        <!-- 6. Tombol Akhiri Panggilan (Hang Up) -->
-        <button 
-          @click="hangUpCall" 
-          type="button" 
-          class="py-2.5 sm:py-3 px-3.5 sm:px-6 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-black text-xs sm:text-sm rounded-xl sm:rounded-2xl shadow-xl transition flex items-center gap-1.5 sm:gap-2 cursor-pointer ml-1 sm:ml-2"
-          title="Akhiri Panggilan Dinas"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M5 3a2 2 0 00-2 2v1c0 8.284 6.716 15 15 15h1a2 2 0 002-2v-3.28a1 1 0 00-.684-.948l-4.493-1.498a1 1 0 00-1.21.502l-1.13 2.257a11.042 11.042 0 01-5.516-5.517l2.257-1.128a1 1 0 00.502-1.21L9.228 3.684A1 1 0 008.279 3H5z" />
-          </svg>
-          <span class="hidden sm:inline">Akhiri</span>
-        </button>
       </div>
 
     </div>
@@ -460,6 +286,7 @@ const callDuration = ref(0);
 const connectionStatusText = ref('Menghubungkan...');
 const activeCaller = ref(null);
 const isInitiator = ref(false);
+const isFullscreen = ref(false);
 
 // State Penanda Waktu Timeout
 const outgoingSeconds = ref(0);
@@ -467,67 +294,32 @@ const connectingSeconds = ref(0);
 let outgoingTimeoutTimer = null;
 let connectingTimeoutTimer = null;
 
-// State Kontrol Media
-const isMuted = ref(false);
-const isCameraOff = ref(false);
-const isScreenSharing = ref(false);
-const isMirrorCamera = ref(true);
-const isFullscreen = ref(false);
-const isRemoteVideoOff = ref(false);
-const isRemoteMediaActive = ref(false);
-
-// State Virtual Background
-const showBgMenu = ref(false);
-const currentBackground = ref('none'); // 'none' | 'blur-light' | 'blur-heavy' | 'command' | 'office'
-
-// Elemen DOM Referensi
-const localVideoRef = ref(null);
-const remoteVideoRef = ref(null);
-const bgCanvasRef = ref(null);
-
-// Stream & WebRTC Variables
-let localStream = null;
-let remoteStream = null;
-let rawVideoTrack = null;
-let rawAudioTrack = null;
-let screenStream = null;
-let peerConnection = null;
+// State Jitsi Meet
+const jitsiContainerRef = ref(null);
+const isJitsiLoading = ref(false);
+let jitsiApiInstance = null;
 let signalingTimer = null;
 let durationTimer = null;
-let canvasAnimId = null;
 
-// Antrean & Deduplikasi Kandidat ICE
-const addedCandidateKeys = new Set();
-const pendingCandidates = [];
-const localCandidateList = [];
-const isSendingAnswer = ref(false);
+// Nama Ruang Bersama Unik per Utas Chat
+const roomName = computed(() => {
+  const cleanId = (props.threadUuid || 'dinas').replace(/[^a-zA-Z0-9]/g, '');
+  return `SISFOPERSKC_${cleanId}`;
+});
 
-// Konfigurasi STUN Resmi Berkecepatan Tinggi (Google, Cloudflare, Mozilla)
-const rtcConfig = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:stun3.l.google.com:19302' },
-    { urls: 'stun:stun4.l.google.com:19302' },
-    { urls: 'stun:stun.cloudflare.com:3478' },
-    { urls: 'stun:stun.services.mozilla.com' },
-  ],
-  iceCandidatePoolSize: 10,
-};
+// URL Cadangan untuk Membuka Ruang Mandiri
+const jitsiWebUrl = computed(() => {
+  return `https://meet.jit.si/${roomName.value}#config.prejoinPageEnabled=false&config.disableDeepLinking=true`;
+});
 
-const loadIceServers = async () => {
-  try {
-    const res = await axios.get(`/${props.urlPrefix}/live-chat/ice-servers`);
-    if (res.data?.iceServers && Array.isArray(res.data.iceServers) && res.data.iceServers.length > 0) {
-      rtcConfig.iceServers = res.data.iceServers;
-    }
-  } catch (e) {
-    console.debug('Menggunakan konfigurasi STUN bawaan:', e);
-  }
-};
+// Nama Tampilan Pengguna
+const displayName = computed(() => {
+  const rank = props.currentUser?.pangkat ? `${props.currentUser.pangkat} ` : '';
+  const name = props.currentUser?.name || (props.userRole === 'OPERATOR' ? 'Operator Pelayanan' : 'Personel Komcad');
+  return `${rank}${name}`.trim();
+});
 
-// Penentuan peran pemanggil secara absolut
+// Penentuan peran pemanggil
 const isCaller = computed(() => {
   if (props.incomingCallData) {
     return (props.incomingCallData.caller?.type === props.userRole);
@@ -541,426 +333,153 @@ const formatDuration = (totalSeconds) => {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 };
 
-// ==========================================
-// 1. UTILITAS SERIALISASI & NORMALISASI SDP
-// ==========================================
-const normalizeSdp = (raw) => {
-  if (!raw) return null;
-  let parsed = raw;
-  if (typeof raw === 'string') {
-    try {
-      parsed = JSON.parse(raw);
-    } catch (e) {
-      return null;
-    }
-  }
-  if (parsed && typeof parsed === 'object' && typeof parsed.type === 'string' && typeof parsed.sdp === 'string') {
-    return {
-      type: parsed.type,
-      sdp: parsed.sdp,
-    };
-  }
-  return null;
-};
-
-const toSessionDescriptionPayload = (desc) => {
-  if (!desc) return null;
-  // Prioritas pertama: ambil langsung dari properti type dan sdp objek deskripsi
-  if (desc.type && desc.sdp) {
-    return { type: desc.type, sdp: desc.sdp };
-  }
-  if (typeof desc.toJSON === 'function') {
-    try {
-      const json = desc.toJSON();
-      if (json && json.type && json.sdp) {
-        return { type: json.type, sdp: json.sdp };
-      }
-    } catch (e) {}
-  }
-  return null;
-};
-
-const isValidSdp = (desc) => {
-  return Boolean(normalizeSdp(desc));
-};
-
-const setRemoteDescriptionSafely = async (rawDesc) => {
-  const desc = normalizeSdp(rawDesc);
-  if (!peerConnection || !desc) return false;
-
-  try {
-    // Jika remote description persis sama dengan yang sudah terpasang, lewati
-    if (peerConnection.remoteDescription && peerConnection.remoteDescription.sdp === desc.sdp) {
-      return true;
-    }
-
-    // Penanganan penawaran (offer)
-    if (desc.type === 'offer' && peerConnection.signalingState !== 'stable') {
-      if (peerConnection.signalingState === 'have-remote-offer') {
-        return true;
-      }
-      console.warn('Signaling state belum stabil untuk penawaran baru:', peerConnection.signalingState);
-      return false;
-    }
-
-    // Penanganan jawaban (answer)
-    if (desc.type === 'answer' && peerConnection.signalingState !== 'have-local-offer') {
-      if (peerConnection.remoteDescription && peerConnection.remoteDescription.type === 'answer') {
-        return true;
-      }
-      console.warn('Signaling state bukan have-local-offer saat memproses jawaban:', peerConnection.signalingState);
-      return false;
-    }
-
-    const rtcDesc = (typeof RTCSessionDescription !== 'undefined')
-      ? new RTCSessionDescription({ type: desc.type, sdp: desc.sdp })
-      : { type: desc.type, sdp: desc.sdp };
-
-    await peerConnection.setRemoteDescription(rtcDesc);
-    await flushPendingCandidates();
-    return true;
-  } catch (err) {
-    console.warn('Gagal menerapkan remote description awal:', err);
-    try {
-      await peerConnection.setRemoteDescription({
-        type: desc.type,
-        sdp: desc.sdp,
-      });
-      await flushPendingCandidates();
-      return true;
-    } catch (fallbackErr) {
-      console.error('Fallback setRemoteDescription juga gagal:', fallbackErr);
-      return false;
-    }
-  }
-};
-
-const handleCalleeAnswerNegotiation = async (rawOffer) => {
-  if (isCaller.value || !peerConnection || isSendingAnswer.value) return;
-
-  const offerDesc = normalizeSdp(rawOffer);
-  if (!offerDesc) return;
-
-  try {
-    isSendingAnswer.value = true;
-
-    // 1. Terapkan remote offer jika belum terpasang atau ada pembaruan SDP
-    if (!peerConnection.remoteDescription || peerConnection.remoteDescription.sdp !== offerDesc.sdp) {
-      const applied = await setRemoteDescriptionSafely(offerDesc);
-      if (!applied) {
-        console.warn('Gagal menerapkan remote offer pada penerima');
-        return;
-      }
-    }
-
-    // 2. Buat dan pasang local answer jika belum terpasang
-    let answer = peerConnection.localDescription;
-    if (!answer || answer.type !== 'answer') {
-      answer = await peerConnection.createAnswer();
-      await peerConnection.setLocalDescription(answer);
-      await waitForIceGathering(peerConnection, 300);
-    }
-
-    // 3. Kirimkan sinyal jawaban ke server
-    const currentDesc = peerConnection.localDescription || answer;
-    const answerPayload = toSessionDescriptionPayload(currentDesc) || {
-      type: 'answer',
-      sdp: currentDesc?.sdp || answer?.sdp,
-    };
-
-    if (answerPayload && answerPayload.sdp) {
-      await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
-        action: 'answer',
-        data: answerPayload,
-        candidates: localCandidateList,
-        sender: 'callee',
-      });
-      console.debug('Sinyal jawaban WebRTC berhasil dikirimkan ke server');
-    }
-  } catch (err) {
-    console.error('Kendala pada negosiasi jawaban panggilan:', err);
-  } finally {
-    isSendingAnswer.value = false;
-  }
+const toggleFullscreen = () => {
+  isFullscreen.value = !isFullscreen.value;
 };
 
 // ==========================================
-// 2. INISIASI MEDIA & WEBRTC PEER CONNECTION
+// 1. PEMUAT SKRIP JITSI MEET EXTERNAL API
 // ==========================================
-const initLocalMedia = async () => {
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        width: { ideal: 1280, max: 1920 },
-        height: { ideal: 720, max: 1080 },
-        facingMode: 'user',
-      },
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      },
-    });
-  } catch (videoAudioErr) {
-    console.warn('Akses kamera dan mikrofon bersamaan gagal, beralih ke audio saja:', videoAudioErr);
-    try {
-      localStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-      });
-      isCameraOff.value = true;
-    } catch (audioErr) {
-      console.warn('Akses mikrofon ditolak atau tidak tersedia, menggunakan stream cadangan:', audioErr);
-      localStream = new MediaStream();
-      isCameraOff.value = true;
-      isMuted.value = true;
-    }
-  }
-
-  if (localStream) {
-    rawVideoTrack = localStream.getVideoTracks()[0] || null;
-    rawAudioTrack = localStream.getAudioTracks()[0] || null;
-  }
-
-  await nextTick();
-  if (localVideoRef.value && localStream) {
-    localVideoRef.value.srcObject = localStream;
-  }
-};
-
-const waitForIceGathering = (pc, maxWaitMs = 600) => {
-  return new Promise((resolve) => {
-    if (pc.iceGatheringState === 'complete') {
-      resolve();
+const loadJitsiScript = () => {
+  return new Promise((resolve, reject) => {
+    if (typeof window !== 'undefined' && window.JitsiMeetExternalAPI) {
+      resolve(window.JitsiMeetExternalAPI);
       return;
     }
-    let timer = null;
-    const checkState = () => {
-      if (pc.iceGatheringState === 'complete') {
-        pc.removeEventListener('icegatheringstatechange', checkState);
-        if (timer) clearTimeout(timer);
-        resolve();
-      }
-    };
-    pc.addEventListener('icegatheringstatechange', checkState);
-    timer = setTimeout(() => {
-      pc.removeEventListener('icegatheringstatechange', checkState);
-      resolve();
-    }, maxWaitMs);
+    const existingScript = document.getElementById('jitsi-meet-external-api');
+    if (existingScript) {
+      existingScript.addEventListener('load', () => resolve(window.JitsiMeetExternalAPI));
+      existingScript.addEventListener('error', (e) => reject(e));
+      return;
+    }
+    const script = document.createElement('script');
+    script.id = 'jitsi-meet-external-api';
+    script.src = 'https://meet.jit.si/external_api.js';
+    script.async = true;
+    script.onload = () => resolve(window.JitsiMeetExternalAPI);
+    script.onerror = (e) => reject(e);
+    document.head.appendChild(script);
   });
 };
 
-const addCandidateSafely = async (cand) => {
-  if (!cand || !cand.candidate) return;
-  const candKey = `${cand.sdpMid || ''}_${cand.sdpMLineIndex || 0}_${cand.candidate}`;
-  if (addedCandidateKeys.has(candKey)) return;
+// ==========================================
+// 2. INISIASI RUANG VICON JITSI MEET
+// ==========================================
+const initJitsiRoom = async () => {
+  if (jitsiApiInstance) {
+    return;
+  }
 
-  if (!peerConnection || !peerConnection.remoteDescription) {
-    pendingCandidates.push(cand);
+  isJitsiLoading.value = true;
+  connectionStatusText.value = 'Mempersiapkan bilik aman...';
+
+  await nextTick();
+
+  if (!jitsiContainerRef.value) {
+    // Beri penundaan sedikit bila elemen DOM sedang dirender
+    setTimeout(initJitsiRoom, 300);
     return;
   }
 
   try {
-    await peerConnection.addIceCandidate(cand);
-    addedCandidateKeys.add(candKey);
-  } catch (e) {
-    try {
-      await peerConnection.addIceCandidate(new RTCIceCandidate(cand));
-      addedCandidateKeys.add(candKey);
-    } catch (err) {
-      console.debug('Kandidat ICE dilewati atau telah usang:', err);
-    }
-  }
-};
+    const JitsiMeetExternalAPI = await loadJitsiScript();
 
-const flushPendingCandidates = async () => {
-  if (!peerConnection || !peerConnection.remoteDescription) return;
-  while (pendingCandidates.length > 0) {
-    const cand = pendingCandidates.shift();
-    const candKey = `${cand.sdpMid || ''}_${cand.sdpMLineIndex || 0}_${cand.candidate}`;
-    if (!addedCandidateKeys.has(candKey)) {
-      try {
-        await peerConnection.addIceCandidate(cand);
-        addedCandidateKeys.add(candKey);
-      } catch (e) {
-        try {
-          await peerConnection.addIceCandidate(new RTCIceCandidate(cand));
-          addedCandidateKeys.add(candKey);
-        } catch (err) {
-          console.debug('Gagal menerapkan kandidat tertunda:', err);
+    // Bersihkan isi kontainer sebelum memasang iframe baru
+    jitsiContainerRef.value.innerHTML = '';
+
+    const domain = 'meet.jit.si';
+    const options = {
+      roomName: roomName.value,
+      width: '100%',
+      height: '100%',
+      parentNode: jitsiContainerRef.value,
+      userInfo: {
+        displayName: displayName.value,
+        email: 'personel@sisfoperskc.my.id',
+      },
+      configOverwrite: {
+        prejoinPageEnabled: false,
+        disableDeepLinking: true,
+        startWithAudioMuted: false,
+        startWithVideoMuted: false,
+        enableWelcomePage: false,
+        enableClosePage: false,
+        hideConferenceSubject: false,
+        subject: `SISFOPERS KC - Vicon Dinas (${partnerUserDisplay()})`,
+        disableThirdPartyRequests: true,
+        toolbarButtons: [
+          'microphone',
+          'camera',
+          'select-background',
+          'desktop',
+          'hangup',
+          'tileview',
+          'toggle-camera',
+          'chat',
+          'fullscreen'
+        ],
+      },
+      interfaceConfigOverwrite: {
+        SHOW_JITSI_WATERMARK: false,
+        SHOW_WATERMARK_FOR_GUESTS: false,
+        DEFAULT_REMOTE_DISPLAY_NAME: 'Peserta Dinas',
+        TOOLBAR_ALWAYS_VISIBLE: false,
+        MOBILE_APP_PROMO: false,
+      },
+    };
+
+    jitsiApiInstance = new JitsiMeetExternalAPI(domain, options);
+
+    // Event saat peserta berhasil masuk ke ruang konferensi
+    jitsiApiInstance.addEventListener('videoConferenceJoined', () => {
+      isJitsiLoading.value = false;
+      callStatus.value = 'CONNECTED';
+      connectionStatusText.value = 'Tersambung (SFU Satelit)';
+      stopConnectingTimer();
+      startDurationTimer();
+
+      // Pancarkan sinyal tersambung ke backend Laravel
+      axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
+        action: 'connected',
+      }).catch(() => {});
+    });
+
+    // Event saat ada lawan bicara masuk
+    jitsiApiInstance.addEventListener('participantJoined', () => {
+      connectionStatusText.value = 'Tersambung';
+    });
+
+    // Event saat tombol hangup pada kontrol Jitsi ditekan
+    jitsiApiInstance.addEventListener('videoConferenceLeft', () => {
+      hangUpCall();
+    });
+
+    jitsiApiInstance.addEventListener('readyToClose', () => {
+      hangUpCall();
+    });
+
+    // Timeout pengaman bila iframe Jitsi sudah terbuka namun event lambat terpanggil
+    setTimeout(() => {
+      if (isJitsiLoading.value) {
+        isJitsiLoading.value = false;
+        if (callStatus.value !== 'CONNECTED') {
+          callStatus.value = 'CONNECTED';
+          connectionStatusText.value = 'Tersambung';
+          stopConnectingTimer();
+          startDurationTimer();
         }
       }
-    }
-  }
-};
+    }, 4000);
 
-const createPeerConnection = () => {
-  if (peerConnection) {
-    peerConnection.close();
-    peerConnection = null;
-  }
-
-  peerConnection = new RTCPeerConnection(rtcConfig);
-
-  // Pasang media lokal ke Peer Connection jika tersedia
-  const hasAudio = localStream && localStream.getAudioTracks().length > 0;
-  const hasVideo = localStream && localStream.getVideoTracks().length > 0;
-
-  if (hasAudio) {
-    localStream.getAudioTracks().forEach((track) => {
-      peerConnection.addTrack(track, localStream);
-    });
-  } else {
-    try {
-      peerConnection.addTransceiver('audio', { direction: 'recvonly' });
-    } catch (e) {
-      console.debug('Transceiver fallback audio:', e);
-    }
-  }
-
-  if (hasVideo) {
-    localStream.getVideoTracks().forEach((track) => {
-      peerConnection.addTrack(track, localStream);
-    });
-  } else {
-    try {
-      peerConnection.addTransceiver('video', { direction: 'recvonly' });
-    } catch (e) {
-      console.debug('Transceiver fallback video:', e);
-    }
-  }
-
-  // Tangkap media lawan bicara dan pasang ke objek stream
-  peerConnection.ontrack = (event) => {
-    if (!remoteStream) {
-      remoteStream = new MediaStream();
-    }
-    if (event.streams && event.streams[0]) {
-      remoteStream = event.streams[0];
-    } else if (event.track) {
-      if (!remoteStream.getTracks().some((t) => t.id === event.track.id)) {
-        remoteStream.addTrack(event.track);
-      }
-    }
-
-    if (event.track && !remoteStream.getTracks().some((t) => t.id === event.track.id)) {
-      remoteStream.addTrack(event.track);
-    }
-
-    isRemoteMediaActive.value = true;
-    isRemoteVideoOff.value = false;
-
-    nextTick(() => {
-      if (remoteVideoRef.value) {
-        remoteVideoRef.value.srcObject = remoteStream;
-        remoteVideoRef.value.play().catch(() => {});
-      }
-    });
-
-    handleConnected();
-  };
-
-  // Tangkap kandidat ICE lokal dan pancarkan ke server
-  peerConnection.onicecandidate = (event) => {
-    if (event.candidate && props.threadUuid) {
-      const candPayload = event.candidate.toJSON ? event.candidate.toJSON() : {
-        candidate: event.candidate.candidate,
-        sdpMid: event.candidate.sdpMid,
-        sdpMLineIndex: event.candidate.sdpMLineIndex,
-      };
-      localCandidateList.push(candPayload);
-      const sender = isCaller.value ? 'caller' : 'callee';
-      axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
-        action: 'candidate',
-        data: candPayload,
-        sender: sender,
-      }).catch(() => {});
-    }
-  };
-
-  peerConnection.onconnectionstatechange = () => {
-    if (!peerConnection) return;
-    const state = peerConnection.connectionState;
-    console.debug('WebRTC connectionState:', state);
-    if (state === 'connected') {
-      handleConnected();
-    } else if (state === 'failed') {
-      console.warn('WebRTC connection failed, menyegarkan ICE...');
-      retryIceNegotiation();
-    } else if (state === 'disconnected') {
-      connectionStatusText.value = 'Terputus';
-    }
-  };
-
-  peerConnection.oniceconnectionstatechange = () => {
-    if (!peerConnection) return;
-    const iceState = peerConnection.iceConnectionState;
-    console.debug('WebRTC iceConnectionState:', iceState);
-    if (iceState === 'connected' || iceState === 'completed') {
-      handleConnected();
-    } else if (iceState === 'failed') {
-      console.warn('ICE connection failed, menyegarkan ICE...');
-      retryIceNegotiation();
-    }
-  };
-};
-
-// Penanganan saat jalur P2P berhasil terhubung
-const handleConnected = () => {
-  isRemoteMediaActive.value = true;
-  if (callStatus.value !== 'CONNECTED') {
-    callStatus.value = 'CONNECTED';
-    connectionStatusText.value = 'Tersambung (P2P)';
-    stopOutgoingDialRing();
-    stopIncomingCallRing();
-    stopOutgoingTimeout();
-    stopConnectingTimer();
-    startDurationTimer();
-
-    nextTick(() => {
-      if (remoteVideoRef.value && remoteStream) {
-        remoteVideoRef.value.srcObject = remoteStream;
-        remoteVideoRef.value.play().catch(() => {});
-      }
-      if (localVideoRef.value && localStream) {
-        localVideoRef.value.srcObject = localStream;
-      }
-    });
-
-    axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
-      action: 'connected',
-    }).catch(() => {});
-  }
-};
-
-// Penyegaran jalur ICE bila terjadi hambatan NAT / Firewall
-const retryIceNegotiation = async () => {
-  if (!peerConnection) return;
-  try {
-    connectionStatusText.value = 'Menyelaraskan rute cadangan...';
-    if (peerConnection.restartIce) {
-      peerConnection.restartIce();
-    }
-    if (isCaller.value) {
-      const offer = await peerConnection.createOffer({ iceRestart: true });
-      await peerConnection.setLocalDescription(offer);
-      await waitForIceGathering(peerConnection, 500);
-
-      const offerPayload = toSessionDescriptionPayload(peerConnection.localDescription || offer);
-      if (offerPayload) {
-        await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
-          action: 'offer',
-          data: offerPayload,
-          sender: 'caller',
-        });
-      }
-    }
   } catch (err) {
-    console.debug('Gagal restart ICE:', err);
+    console.error('Gagal menginisialisasi Jitsi Meet:', err);
+    isJitsiLoading.value = false;
+    connectionStatusText.value = 'Koneksi IFrame terhambat';
   }
+};
+
+const partnerUserDisplay = () => {
+  return `${props.partnerUser?.pangkat || ''} ${props.partnerUser?.name || 'Lawan Bicara'}`.trim();
 };
 
 // ==========================================
@@ -997,17 +516,9 @@ const startConnectingTimer = () => {
   connectingSeconds.value = 0;
   connectingTimeoutTimer = setInterval(() => {
     connectingSeconds.value++;
-    if (connectingSeconds.value === 12) {
-      retryIceNegotiation();
-    } else if (connectingSeconds.value >= 35) {
+    if (connectingSeconds.value >= 35) {
       stopConnectingTimer();
       if (callStatus.value !== 'CONNECTED') {
-        Swal.fire({
-          icon: 'warning',
-          title: 'Koneksi P2P Terkendala',
-          text: 'Koneksi terhambat oleh pembatas jaringan lawan bicara. Silakan gunakan saluran obrolan dinas tertulis.',
-          confirmButtonColor: '#2563eb',
-        });
         hangUpCall();
       }
     }
@@ -1022,6 +533,14 @@ const stopConnectingTimer = () => {
   connectingSeconds.value = 0;
 };
 
+const startDurationTimer = () => {
+  if (durationTimer) clearInterval(durationTimer);
+  callDuration.value = 0;
+  durationTimer = setInterval(() => {
+    callDuration.value++;
+  }, 1000);
+};
+
 // ==========================================
 // 4. LOGIKA PANGGILAN KELUAR & MASUK
 // ==========================================
@@ -1032,26 +551,10 @@ const startCall = async () => {
     startOutgoingDialRing();
     startOutgoingTimeout();
 
-    await initLocalMedia();
-    await loadIceServers();
-    createPeerConnection();
-
-    // Buat Offer seketika dan kumpulkan kandidat lokal dalam SDP
-    const offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
-    await waitForIceGathering(peerConnection, 300);
-
-    const currentDesc = peerConnection.localDescription || offer;
-    const offerPayload = toSessionDescriptionPayload(currentDesc) || {
-      type: 'offer',
-      sdp: currentDesc?.sdp || offer?.sdp,
-    };
-
-    // Inisiasi panggilan ke server dengan data penawaran awal dan kandidat ICE lokal
+    // Inisiasi panggilan ke server SISFOPERS KC
     const res = await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/initiate`, {
       call_type: 'video',
-      offer: offerPayload,
-      candidates: localCandidateList,
+      offer: { room: roomName.value },
     });
 
     if (res.data.success) {
@@ -1074,30 +577,21 @@ const acceptIncomingCall = async () => {
   startConnectingTimer();
 
   try {
-    await initLocalMedia();
-    await loadIceServers();
-    createPeerConnection();
-
-    // Pastikan status penerimaan dikirim ke server
+    // Beri tahu server bahwa panggilan diterima
     await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
       action: 'accept',
       sender: 'callee',
     });
 
-    // Ambil sinyal panggilan terbaru untuk memperoleh data penawaran pemanggil
-    const resSignal = await axios.get(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`);
-    const call = resSignal.data?.call;
-
-    if (call?.offer) {
-      await handleCalleeAnswerNegotiation(call.offer);
-    }
-
     startSignalingPoll();
     emit('call-accepted');
+
+    // Langsung buka ruang vicon Jitsi Meet
+    await initJitsiRoom();
   } catch (err) {
     console.error('Peringatan saat menerima panggilan:', err);
-    // Pertahankan polling sinyal agar proses negosiasi tetap berjalan tanpa terputus
     startSignalingPoll();
+    await initJitsiRoom();
   }
 };
 
@@ -1184,40 +678,12 @@ const resumeActiveCall = async (callData) => {
     startConnectingTimer();
   }
 
-  try {
-    await initLocalMedia();
-    await loadIceServers();
-    createPeerConnection();
-
-    if (!isCallerUser && callData.offer) {
-      await handleCalleeAnswerNegotiation(callData.offer);
-    } else if (isCallerUser && !callData.offer) {
-      const offer = await peerConnection.createOffer();
-      await peerConnection.setLocalDescription(offer);
-      await waitForIceGathering(peerConnection, 300);
-      const currentDesc = peerConnection.localDescription || offer;
-      const offerPayload = toSessionDescriptionPayload(currentDesc) || {
-        type: 'offer',
-        sdp: currentDesc?.sdp || offer?.sdp,
-      };
-      if (offerPayload && offerPayload.sdp) {
-        await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
-          action: 'offer',
-          data: offerPayload,
-          sender: 'caller',
-        });
-      }
-    }
-
-    startSignalingPoll();
-  } catch (err) {
-    console.error('Kendala saat menyambung ulang sesi aktif:', err);
-    startSignalingPoll();
-  }
+  await initJitsiRoom();
+  startSignalingPoll();
 };
 
 // ==========================================
-// 5. SINKRONISASI SINYAL WEBRTC TERARAH
+// 5. SINKRONISASI SINYAL STATUS PANGGILAN
 // ==========================================
 let missedPollCount = 0;
 
@@ -1234,7 +700,7 @@ const startSignalingPoll = () => {
 
       if (!call) {
         missedPollCount++;
-        if (missedPollCount >= 8) {
+        if (missedPollCount >= 10) {
           handleRemoteEnded('Panggilan terputus');
         }
         return;
@@ -1249,58 +715,26 @@ const startSignalingPoll = () => {
 
       const isCallerUser = isCaller.value;
 
-      // 1. Pemanggil mendeteksi bahwa penerima telah menerima sambungan
-      if (isCallerUser && call.status === 'ACCEPTED' && callStatus.value === 'OUTGOING') {
-        callStatus.value = 'CONNECTING';
+      // 1. Pemanggil mendeteksi bahwa penerima telah menerima panggilan
+      if (isCallerUser && (call.status === 'ACCEPTED' || call.status === 'CONNECTED') && (callStatus.value === 'OUTGOING' || callStatus.value === 'CONNECTING')) {
         stopOutgoingDialRing();
         stopOutgoingTimeout();
-        startConnectingTimer();
-      }
-
-      // 2. Pemanggil mengirimkan Offer jika belum sempat terkirim atau perlu pembaharuan
-      if (isCallerUser && (call.status === 'ACCEPTED' || call.status === 'RINGING') && !call.offer && peerConnection) {
-        const offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(offer);
-        await waitForIceGathering(peerConnection, 500);
-
-        const offerPayload = toSessionDescriptionPayload(peerConnection.localDescription || offer);
-        if (offerPayload) {
-          await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
-            action: 'offer',
-            data: offerPayload,
-            sender: 'caller',
-          });
+        callStatus.value = 'CONNECTING';
+        if (!jitsiApiInstance) {
+          await initJitsiRoom();
         }
       }
 
-      // 3. Penerima menerima Offer dari Pemanggil dan memastikan Answer terkirim
-      if (!isCallerUser && call.offer && peerConnection && (!call.answer || !peerConnection.remoteDescription || peerConnection.remoteDescription.sdp !== call.offer.sdp)) {
-        await handleCalleeAnswerNegotiation(call.offer);
-      }
-
-      // 4. Pemanggil menerima Answer dari Penerima
-      if (isCallerUser && call.answer && peerConnection && (!peerConnection.remoteDescription || peerConnection.remoteDescription.sdp !== call.answer.sdp)) {
-        await setRemoteDescriptionSafely(call.answer);
-      }
-
-      // 5. Sinkronisasi status terhubung jika salah satu pihak atau server telah terhubung
+      // 2. Jika status di server telah CONNECTED dan di klien belum
       if (call.status === 'CONNECTED' && callStatus.value !== 'CONNECTED') {
-        handleConnected();
-      }
-      if (call.offer && call.answer && remoteStream && remoteStream.getTracks().length > 0 && callStatus.value !== 'CONNECTED') {
-        handleConnected();
-      }
-
-      // 6. Pertukaran Kandidat ICE tambahan secara aman tanpa redundansi
-      const incomingCandidates = isCallerUser ? (call.candidates_callee || []) : (call.candidates_caller || []);
-      if (Array.isArray(incomingCandidates)) {
-        for (const cand of incomingCandidates) {
-          await addCandidateSafely(cand);
-        }
+        callStatus.value = 'CONNECTED';
+        connectionStatusText.value = 'Tersambung (SFU Satelit)';
+        stopConnectingTimer();
+        startDurationTimer();
       }
 
     } catch (err) {
-      console.debug('Pertukaran sinyal dinas terkendala:', err);
+      console.debug('Penyelarasan sinyal panggilan:', err);
     }
   }, 1000);
 };
@@ -1312,258 +746,39 @@ const stopSignalingPoll = () => {
   }
 };
 
-const startDurationTimer = () => {
-  if (durationTimer) clearInterval(durationTimer);
-  callDuration.value = 0;
-  durationTimer = setInterval(() => {
-    callDuration.value++;
-  }, 1000);
-};
-
 // ==========================================
-// 4. KONTROL MIKROFON, KAMERA & BAGI LAYAR
-// ==========================================
-const toggleMute = () => {
-  if (rawAudioTrack) {
-    rawAudioTrack.enabled = !rawAudioTrack.enabled;
-    isMuted.value = !rawAudioTrack.enabled;
-  }
-};
-
-const toggleCamera = () => {
-  if (rawVideoTrack) {
-    rawVideoTrack.enabled = !rawVideoTrack.enabled;
-    isCameraOff.value = !rawVideoTrack.enabled;
-  }
-};
-
-const flipCamera = () => {
-  isMirrorCamera.value = !isMirrorCamera.value;
-};
-
-const toggleFullscreen = () => {
-  isFullscreen.value = !isFullscreen.value;
-};
-
-const toggleScreenShare = async () => {
-  if (isScreenSharing.value) {
-    stopScreenShare();
-  } else {
-    try {
-      screenStream = await navigator.mediaDevices.getDisplayMedia({
-        video: { cursor: 'always' },
-        audio: false,
-      });
-
-      const screenTrack = screenStream.getVideoTracks()[0];
-      const sender = peerConnection?.getSenders()?.find((s) => s.track && s.track.kind === 'video');
-
-      if (sender) {
-        await sender.replaceTrack(screenTrack);
-      }
-
-      if (localVideoRef.value) {
-        localVideoRef.value.srcObject = screenStream;
-      }
-
-      screenTrack.onended = () => {
-        stopScreenShare();
-      };
-
-      isScreenSharing.value = true;
-    } catch (err) {
-      console.debug('Batal berbagi layar paparan:', err);
-    }
-  }
-};
-
-const stopScreenShare = async () => {
-  if (screenStream) {
-    screenStream.getTracks().forEach((t) => t.stop());
-    screenStream = null;
-  }
-
-  const sender = peerConnection?.getSenders()?.find((s) => s.track && s.track.kind === 'video');
-  if (sender && rawVideoTrack) {
-    await sender.replaceTrack(rawVideoTrack);
-  }
-
-  if (localVideoRef.value && localStream) {
-    localVideoRef.value.srcObject = localStream;
-  }
-
-  isScreenSharing.value = false;
-};
-
-// ==========================================
-// 5. ENGINE VIRTUAL BACKGROUND & BLUR (CANVAS)
-// ==========================================
-const applyBackground = async (type) => {
-  currentBackground.value = type;
-  showBgMenu.value = false;
-
-  const sender = peerConnection?.getSenders()?.find((s) => s.track && s.track.kind === 'video');
-
-  if (type === 'none') {
-    if (canvasAnimId) {
-      cancelAnimationFrame(canvasAnimId);
-      canvasAnimId = null;
-    }
-    if (sender && rawVideoTrack) {
-      await sender.replaceTrack(rawVideoTrack);
-    }
-    if (localVideoRef.value && localStream) {
-      localVideoRef.value.srcObject = localStream;
-    }
-    return;
-  }
-
-  // Mulai render loop Canvas untuk efek blur atau latar dinas
-  startCanvasEffect(type, sender);
-};
-
-const startCanvasEffect = (type, sender) => {
-  const canvas = bgCanvasRef.value;
-  if (!canvas || !localVideoRef.value) return;
-
-  const ctx = canvas.getContext('2d');
-
-  const renderLoop = () => {
-    if (currentBackground.value === 'none') return;
-
-    ctx.save();
-    if (isMirrorCamera.value) {
-      ctx.translate(canvas.width, 0);
-      ctx.scale(-1, 1);
-    }
-
-    if (type === 'blur-light') {
-      ctx.filter = 'blur(6px)';
-      ctx.drawImage(localVideoRef.value, 0, 0, canvas.width, canvas.height);
-      ctx.filter = 'none';
-      // Gambar pusat video tanpa blur
-      ctx.drawImage(localVideoRef.value, canvas.width * 0.15, canvas.height * 0.1, canvas.width * 0.7, canvas.height * 0.8, canvas.width * 0.15, canvas.height * 0.1, canvas.width * 0.7, canvas.height * 0.8);
-    } else if (type === 'blur-heavy') {
-      ctx.filter = 'blur(14px)';
-      ctx.drawImage(localVideoRef.value, 0, 0, canvas.width, canvas.height);
-      ctx.filter = 'none';
-      ctx.drawImage(localVideoRef.value, canvas.width * 0.2, canvas.height * 0.15, canvas.width * 0.6, canvas.height * 0.7, canvas.width * 0.2, canvas.height * 0.15, canvas.width * 0.6, canvas.height * 0.7);
-    } else if (type === 'command') {
-      // Background Latar Komando Dinas Militer
-      const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-      grad.addColorStop(0, '#020617');
-      grad.addColorStop(1, '#0f172a');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Gambar grid taktis dinas
-      ctx.strokeStyle = 'rgba(59, 130, 246, 0.15)';
-      ctx.lineWidth = 1;
-      for (let x = 0; x < canvas.width; x += 40) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-        ctx.stroke();
-      }
-
-      ctx.drawImage(localVideoRef.value, canvas.width * 0.15, canvas.height * 0.1, canvas.width * 0.7, canvas.height * 0.85);
-    } else if (type === 'office') {
-      // Background Ruang Sidang Mabes
-      const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-      grad.addColorStop(0, '#042f2e');
-      grad.addColorStop(1, '#022c22');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      ctx.drawImage(localVideoRef.value, canvas.width * 0.15, canvas.height * 0.1, canvas.width * 0.7, canvas.height * 0.85);
-    }
-
-    ctx.restore();
-    canvasAnimId = requestAnimationFrame(renderLoop);
-  };
-
-  renderLoop();
-
-  try {
-    const canvasStream = canvas.captureStream(30);
-    const canvasTrack = canvasStream.getVideoTracks()[0];
-    if (sender && canvasTrack) {
-      sender.replaceTrack(canvasTrack);
-    }
-  } catch (e) {
-    console.debug('Canvas capture stream tidak didukung:', e);
-  }
-};
-
-// ==========================================
-// 6. PEMBERSIHAN SUMBER DAYA & EVENT LIFECYCLE
+// 6. PEMBERSIHAN SUMBER DAYA & EVENT SIKLUS
 // ==========================================
 const cleanupMedia = () => {
   stopSignalingPoll();
   stopOutgoingTimeout();
   stopConnectingTimer();
-  addedCandidateKeys.clear();
-  pendingCandidates.length = 0;
-  localCandidateList.length = 0;
-  isRemoteMediaActive.value = false;
-  isSendingAnswer.value = false;
   isInitiator.value = false;
+  isJitsiLoading.value = false;
 
   if (durationTimer) {
     clearInterval(durationTimer);
     durationTimer = null;
   }
-  if (canvasAnimId) {
-    cancelAnimationFrame(canvasAnimId);
-    canvasAnimId = null;
+
+  if (jitsiApiInstance) {
+    try {
+      jitsiApiInstance.dispose();
+    } catch (e) {
+      console.debug('Jitsi dispose error:', e);
+    }
+    jitsiApiInstance = null;
   }
-  if (localStream) {
-    localStream.getTracks().forEach((track) => track.stop());
-    localStream = null;
+
+  if (jitsiContainerRef.value) {
+    jitsiContainerRef.value.innerHTML = '';
   }
-  if (remoteStream) {
-    remoteStream.getTracks().forEach((track) => track.stop());
-    remoteStream = null;
-  }
-  if (screenStream) {
-    screenStream.getTracks().forEach((track) => track.stop());
-    screenStream = null;
-  }
-  if (peerConnection) {
-    peerConnection.close();
-    peerConnection = null;
-  }
-  if (localVideoRef.value) {
-    localVideoRef.value.srcObject = null;
-  }
-  if (remoteVideoRef.value) {
-    remoteVideoRef.value.srcObject = null;
-  }
+
   callDuration.value = 0;
-  isScreenSharing.value = false;
-  isMuted.value = false;
-  isCameraOff.value = false;
   connectionStatusText.value = 'Menghubungkan...';
 };
 
-// Pantau perubahan status panggilan untuk memastikan elemen video menerima aliran media
-watch(
-  () => callStatus.value,
-  async (newStatus) => {
-    if (newStatus === 'CONNECTING' || newStatus === 'CONNECTED') {
-      await nextTick();
-      if (localVideoRef.value && localStream) {
-        localVideoRef.value.srcObject = localStream;
-      }
-      if (remoteVideoRef.value && remoteStream) {
-        remoteVideoRef.value.srcObject = remoteStream;
-        remoteVideoRef.value.play().catch(() => {});
-      }
-    }
-  }
-);
-
-// Pantau perubahan properti tampil / sembunyi modal
+// Pantau properti show
 watch(
   () => props.show,
   (newVal) => {
@@ -1614,7 +829,7 @@ watch(
 );
 
 onMounted(() => {
-  loadIceServers();
+  loadJitsiScript().catch(() => {});
 });
 
 onUnmounted(() => {
