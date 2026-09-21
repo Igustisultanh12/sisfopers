@@ -1227,7 +1227,12 @@ class LiveChatController extends Controller
             return response()->json(['iceServers' => array_merge($coturnServers, $baseStunServers)]);
         }
 
-        return response()->json(['iceServers' => $baseStunServers]);
+        $agoraAppId = Setting::where('key', 'agora_app_id')->value('value') ?: env('AGORA_APP_ID', '19daeb63baec46f2be2197c9fbbe81d6');
+
+        return response()->json([
+            'agoraAppId' => $agoraAppId,
+            'iceServers' => $baseStunServers,
+        ]);
     }
 
     /**

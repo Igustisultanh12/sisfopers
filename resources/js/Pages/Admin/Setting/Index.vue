@@ -143,6 +143,21 @@
                   class="w-full px-3.5 py-2 bg-white border border-[#E2E8F0] rounded-xl text-xs font-mono outline-none focus:border-[#2563EB]" 
                 />
               </div>
+
+              <div class="md:col-span-3 border-t border-slate-200/80 pt-3 mt-1">
+                <span class="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">Opsi 3: Layanan Agora RTC (Alternatif 2 - Rekomendasi Bebas Hambatan)</span>
+                <p class="text-[11px] text-slate-500 mb-3">10.000 menit gratis/bulan, tanpa popup login pihak ketiga, menyatu langsung dengan antarmuka SISFOPERS KC.</p>
+              </div>
+
+              <div class="md:col-span-3">
+                <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">Agora App ID</label>
+                <input 
+                  type="text" 
+                  v-model="form.agora_app_id" 
+                  placeholder="Contoh: 19daeb63baec46f2be2197c9fbbe81d6" 
+                  class="w-full px-3.5 py-2 bg-white border border-[#E2E8F0] rounded-xl text-xs font-mono outline-none focus:border-[#2563EB]" 
+                />
+              </div>
             </div>
           </div>
 
@@ -311,6 +326,7 @@ const form = useForm({
   coturn_secret: props.settings.coturn_secret || 'sisfoperskc2026secret',
   metered_app_name: props.settings.metered_app_name || '',
   metered_api_key: props.settings.metered_api_key || '',
+  agora_app_id: props.settings.agora_app_id || '19daeb63baec46f2be2197c9fbbe81d6',
   login_background: null,
   logo_tni: null,
   logo_ad: null,

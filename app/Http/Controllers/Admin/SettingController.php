@@ -37,6 +37,7 @@ class SettingController extends Controller
             'coturn_secret' => 'nullable|string|max:100',
             'metered_app_name' => 'nullable|string|max:100',
             'metered_api_key' => 'nullable|string|max:200',
+            'agora_app_id' => 'nullable|string|max:100',
         ]);
 
         foreach ($validated as $key => $value) {
