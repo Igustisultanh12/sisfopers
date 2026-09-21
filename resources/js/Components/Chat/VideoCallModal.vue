@@ -498,6 +498,7 @@ let canvasAnimId = null;
 // Antrean & Deduplikasi Kandidat ICE
 const addedCandidateKeys = new Set();
 const pendingCandidates = [];
+const isSendingAnswer = ref(false);
 
 // Konfigurasi STUN & TURN Resmi Komprehensif (Google, Cloudflare, dan Public OpenRelay Metered)
 const rtcConfig = {
@@ -540,8 +541,27 @@ const formatDuration = (totalSeconds) => {
 };
 
 // ==========================================
-// 1. UTILITAS SERIALISASI & VALIDASI SDP
+// 1. UTILITAS SERIALISASI & NORMALISASI SDP
 // ==========================================
+const normalizeSdp = (raw) => {
+  if (!raw) return null;
+  let parsed = raw;
+  if (typeof raw === 'string') {
+    try {
+      parsed = JSON.parse(raw);
+    } catch (e) {
+      return null;
+    }
+  }
+  if (parsed && typeof parsed === 'object' && typeof parsed.type === 'string' && typeof parsed.sdp === 'string') {
+    return {
+      type: parsed.type,
+      sdp: parsed.sdp,
+    };
+  }
+  return null;
+};
+
 const toSessionDescriptionPayload = (desc) => {
   if (!desc) return null;
   if (typeof desc.toJSON === 'function') {
@@ -557,36 +577,88 @@ const toSessionDescriptionPayload = (desc) => {
 };
 
 const isValidSdp = (desc) => {
-  if (!desc || typeof desc !== 'object') return false;
-  return typeof desc.type === 'string' && typeof desc.sdp === 'string' && desc.sdp.trim().length > 0;
+  return Boolean(normalizeSdp(desc));
 };
 
-const setRemoteDescriptionSafely = async (desc) => {
-  if (!peerConnection || !isValidSdp(desc)) return false;
+const setRemoteDescriptionSafely = async (rawDesc) => {
+  const desc = normalizeSdp(rawDesc);
+  if (!peerConnection || !desc) return false;
+
   try {
-    if (peerConnection.remoteDescription && peerConnection.remoteDescription.type === desc.type) {
-      return false;
+    // Jika remote description persis sama dengan yang sudah terpasang, lewati
+    if (peerConnection.remoteDescription && peerConnection.remoteDescription.sdp === desc.sdp) {
+      return true;
     }
 
+    // Penanganan penawaran (offer)
     if (desc.type === 'offer' && peerConnection.signalingState !== 'stable') {
+      if (peerConnection.signalingState === 'have-remote-offer') {
+        return true;
+      }
       console.warn('Signaling state belum stabil untuk penawaran baru:', peerConnection.signalingState);
       return false;
     }
 
+    // Penanganan jawaban (answer)
     if (desc.type === 'answer' && peerConnection.signalingState !== 'have-local-offer') {
+      if (peerConnection.remoteDescription && peerConnection.remoteDescription.type === 'answer') {
+        return true;
+      }
       console.warn('Signaling state bukan have-local-offer saat memproses jawaban:', peerConnection.signalingState);
       return false;
     }
 
-    await peerConnection.setRemoteDescription(new RTCSessionDescription({
+    await peerConnection.setRemoteDescription({
       type: desc.type,
       sdp: desc.sdp,
-    }));
+    });
     await flushPendingCandidates();
     return true;
   } catch (err) {
     console.warn('Gagal menerapkan remote description:', err);
     return false;
+  }
+};
+
+const handleCalleeAnswerNegotiation = async (rawOffer) => {
+  if (isCaller.value || !peerConnection || isSendingAnswer.value) return;
+
+  const offerDesc = normalizeSdp(rawOffer);
+  if (!offerDesc) return;
+
+  try {
+    isSendingAnswer.value = true;
+
+    // 1. Terapkan remote offer jika belum terpasang atau ada pembaruan SDP
+    if (!peerConnection.remoteDescription || peerConnection.remoteDescription.sdp !== offerDesc.sdp) {
+      const applied = await setRemoteDescriptionSafely(offerDesc);
+      if (!applied) {
+        console.warn('Gagal menerapkan remote offer pada penerima');
+        return;
+      }
+    }
+
+    // 2. Buat dan pasang local answer jika belum terpasang
+    if (!peerConnection.localDescription || peerConnection.localDescription.type !== 'answer') {
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+      await waitForIceGathering(peerConnection, 500);
+    }
+
+    // 3. Kirimkan sinyal jawaban ke server
+    const answerPayload = toSessionDescriptionPayload(peerConnection.localDescription);
+    if (answerPayload) {
+      await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
+        action: 'answer',
+        data: answerPayload,
+        sender: 'callee',
+      });
+      console.debug('Sinyal jawaban WebRTC berhasil dikirimkan ke server');
+    }
+  } catch (err) {
+    console.error('Kendala pada negosiasi jawaban panggilan:', err);
+  } finally {
+    isSendingAnswer.value = false;
   }
 };
 
@@ -670,10 +742,15 @@ const addCandidateSafely = async (cand) => {
   }
 
   try {
-    await peerConnection.addIceCandidate(new RTCIceCandidate(cand));
+    await peerConnection.addIceCandidate(cand);
     addedCandidateKeys.add(candKey);
-  } catch (err) {
-    console.debug('Kandidat ICE dilewati atau telah usang:', err);
+  } catch (e) {
+    try {
+      await peerConnection.addIceCandidate(new RTCIceCandidate(cand));
+      addedCandidateKeys.add(candKey);
+    } catch (err) {
+      console.debug('Kandidat ICE dilewati atau telah usang:', err);
+    }
   }
 };
 
@@ -684,10 +761,15 @@ const flushPendingCandidates = async () => {
     const candKey = `${cand.sdpMid || ''}_${cand.sdpMLineIndex || 0}_${cand.candidate}`;
     if (!addedCandidateKeys.has(candKey)) {
       try {
-        await peerConnection.addIceCandidate(new RTCIceCandidate(cand));
+        await peerConnection.addIceCandidate(cand);
         addedCandidateKeys.add(candKey);
-      } catch (err) {
-        console.debug('Gagal menerapkan kandidat tertunda:', err);
+      } catch (e) {
+        try {
+          await peerConnection.addIceCandidate(new RTCIceCandidate(cand));
+          addedCandidateKeys.add(candKey);
+        } catch (err) {
+          console.debug('Gagal menerapkan kandidat tertunda:', err);
+        }
       }
     }
   }
@@ -702,16 +784,30 @@ const createPeerConnection = () => {
   peerConnection = new RTCPeerConnection(rtcConfig);
 
   // Pasang media lokal ke Peer Connection jika tersedia
-  if (localStream && localStream.getTracks().length > 0) {
-    localStream.getTracks().forEach((track) => {
+  const hasAudio = localStream && localStream.getAudioTracks().length > 0;
+  const hasVideo = localStream && localStream.getVideoTracks().length > 0;
+
+  if (hasAudio) {
+    localStream.getAudioTracks().forEach((track) => {
       peerConnection.addTrack(track, localStream);
     });
   } else {
     try {
       peerConnection.addTransceiver('audio', { direction: 'recvonly' });
+    } catch (e) {
+      console.debug('Transceiver fallback audio:', e);
+    }
+  }
+
+  if (hasVideo) {
+    localStream.getVideoTracks().forEach((track) => {
+      peerConnection.addTrack(track, localStream);
+    });
+  } else {
+    try {
       peerConnection.addTransceiver('video', { direction: 'recvonly' });
     } catch (e) {
-      console.debug('Transceiver fallback:', e);
+      console.debug('Transceiver fallback video:', e);
     }
   }
 
@@ -752,33 +848,6 @@ const createPeerConnection = () => {
     }
   };
 
-  // Penanganan saat jalur P2P berhasil terhubung
-  const handleConnected = () => {
-    if (callStatus.value !== 'CONNECTED') {
-      callStatus.value = 'CONNECTED';
-      connectionStatusText.value = 'Tersambung (P2P)';
-      stopOutgoingDialRing();
-      stopIncomingCallRing();
-      stopOutgoingTimeout();
-      stopConnectingTimer();
-      startDurationTimer();
-
-      nextTick(() => {
-        if (remoteVideoRef.value && remoteStream) {
-          remoteVideoRef.value.srcObject = remoteStream;
-          remoteVideoRef.value.play().catch(() => {});
-        }
-        if (localVideoRef.value && localStream) {
-          localVideoRef.value.srcObject = localStream;
-        }
-      });
-
-      axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
-        action: 'connected',
-      }).catch(() => {});
-    }
-  };
-
   peerConnection.onconnectionstatechange = () => {
     if (!peerConnection) return;
     const state = peerConnection.connectionState;
@@ -804,6 +873,33 @@ const createPeerConnection = () => {
       retryIceNegotiation();
     }
   };
+};
+
+// Penanganan saat jalur P2P berhasil terhubung
+const handleConnected = () => {
+  if (callStatus.value !== 'CONNECTED') {
+    callStatus.value = 'CONNECTED';
+    connectionStatusText.value = 'Tersambung (P2P)';
+    stopOutgoingDialRing();
+    stopIncomingCallRing();
+    stopOutgoingTimeout();
+    stopConnectingTimer();
+    startDurationTimer();
+
+    nextTick(() => {
+      if (remoteVideoRef.value && remoteStream) {
+        remoteVideoRef.value.srcObject = remoteStream;
+        remoteVideoRef.value.play().catch(() => {});
+      }
+      if (localVideoRef.value && localStream) {
+        localVideoRef.value.srcObject = localStream;
+      }
+    });
+
+    axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
+      action: 'connected',
+    }).catch(() => {});
+  }
 };
 
 // Penyegaran jalur ICE bila terjadi hambatan NAT / Firewall
@@ -952,21 +1048,7 @@ const acceptIncomingCall = async () => {
     const call = resSignal.data?.call;
 
     if (call?.offer) {
-      const applied = await setRemoteDescriptionSafely(call.offer);
-      if (applied) {
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
-        await waitForIceGathering(peerConnection, 500);
-
-        const answerPayload = toSessionDescriptionPayload(peerConnection.localDescription || answer);
-        if (answerPayload) {
-          await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
-            action: 'answer',
-            data: answerPayload,
-            sender: 'callee',
-          });
-        }
-      }
+      await handleCalleeAnswerNegotiation(call.offer);
     }
 
     startSignalingPoll();
@@ -1103,31 +1185,22 @@ const startSignalingPoll = () => {
         }
       }
 
-      // 3. Penerima menerima Offer dari Pemanggil dan membuat Answer
-      if (!isCallerUser && call.offer && peerConnection && !peerConnection.remoteDescription) {
-        const applied = await setRemoteDescriptionSafely(call.offer);
-        if (applied) {
-          const answer = await peerConnection.createAnswer();
-          await peerConnection.setLocalDescription(answer);
-          await waitForIceGathering(peerConnection, 500);
-
-          const answerPayload = toSessionDescriptionPayload(peerConnection.localDescription || answer);
-          if (answerPayload) {
-            await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
-              action: 'answer',
-              data: answerPayload,
-              sender: 'callee',
-            });
-          }
-        }
+      // 3. Penerima menerima Offer dari Pemanggil dan memastikan Answer terkirim
+      if (!isCallerUser && call.offer && peerConnection && (!call.answer || !peerConnection.remoteDescription || peerConnection.remoteDescription.sdp !== call.offer.sdp)) {
+        await handleCalleeAnswerNegotiation(call.offer);
       }
 
       // 4. Pemanggil menerima Answer dari Penerima
-      if (isCallerUser && call.answer && peerConnection && !peerConnection.remoteDescription) {
+      if (isCallerUser && call.answer && peerConnection && (!peerConnection.remoteDescription || peerConnection.remoteDescription.sdp !== call.answer.sdp)) {
         await setRemoteDescriptionSafely(call.answer);
       }
 
-      // 5. Pertukaran Kandidat ICE tambahan secara aman tanpa redundansi
+      // 5. Sinkronisasi status terhubung jika salah satu pihak atau server telah terhubung
+      if (call.status === 'CONNECTED' && callStatus.value !== 'CONNECTED') {
+        handleConnected();
+      }
+
+      // 6. Pertukaran Kandidat ICE tambahan secara aman tanpa redundansi
       const incomingCandidates = isCallerUser ? (call.candidates_callee || []) : (call.candidates_caller || []);
       if (Array.isArray(incomingCandidates)) {
         for (const cand of incomingCandidates) {
@@ -1340,6 +1413,7 @@ const cleanupMedia = () => {
   stopConnectingTimer();
   addedCandidateKeys.clear();
   pendingCandidates.length = 0;
+  isSendingAnswer.value = false;
   isInitiator.value = false;
 
   if (durationTimer) {
