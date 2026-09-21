@@ -1097,8 +1097,16 @@ class LiveChatController extends Controller
             ];
         }
 
-        // Bersihkan cache kandidat ICE sebelumnya agar sesi baru selalu bersih
-        Cache::forget("live_chat:call:{$thread->uuid}:candidates_caller");
+        // Bersihkan dan siapkan cache kandidat ICE untuk sesi panggilan baru
+        $initialCandidates = $request->input('candidates', []);
+        $existingCaller = Cache::get("live_chat:call:{$thread->uuid}:candidates_caller", []);
+        if (!is_array($existingCaller)) {
+            $existingCaller = [];
+        }
+        if (is_array($initialCandidates) && !empty($initialCandidates)) {
+            $existingCaller = array_merge($existingCaller, $initialCandidates);
+        }
+        Cache::put("live_chat:call:{$thread->uuid}:candidates_caller", $existingCaller, now()->addMinutes(10));
         Cache::forget("live_chat:call:{$thread->uuid}:candidates_callee");
 
         $callData = [
@@ -1110,7 +1118,7 @@ class LiveChatController extends Controller
             'call_type' => $request->input('call_type', 'video'),
             'offer' => $request->input('offer', null),
             'answer' => null,
-            'candidates_caller' => [],
+            'candidates_caller' => $existingCaller,
             'candidates_callee' => [],
             'created_at' => now()->timestamp,
             'started_at' => null,
@@ -1147,26 +1155,12 @@ class LiveChatController extends Controller
      */
     public function sendCallSignal(Request $request, $uuid)
     {
-        $callData = Cache::get("live_chat:call:{$uuid}");
-
-        if (!$callData) {
-            return response()->json(['error' => 'Sesi panggilan tidak ditemukan atau telah berakhir.'], 404);
-        }
-
         $action = $request->input('action');
         $payload = $request->input('data');
         $sender = $request->input('sender'); // 'caller' | 'callee'
 
-        if ($action === 'accept') {
-            $callData['status'] = 'ACCEPTED';
-            Cache::put("live_chat:call:{$uuid}", $callData, now()->addMinutes(10));
-        } elseif ($action === 'offer') {
-            $callData['offer'] = $payload;
-            Cache::put("live_chat:call:{$uuid}", $callData, now()->addMinutes(10));
-        } elseif ($action === 'answer') {
-            $callData['answer'] = $payload;
-            Cache::put("live_chat:call:{$uuid}", $callData, now()->addMinutes(10));
-        } elseif ($action === 'candidate') {
+        // Tangkap dan simpan kandidat ICE secara aman meski sesi sedang dalam inisiasi
+        if ($action === 'candidate') {
             $candKey = ($sender === 'caller')
                 ? "live_chat:call:{$uuid}:candidates_caller"
                 : "live_chat:call:{$uuid}:candidates_callee";
@@ -1177,11 +1171,80 @@ class LiveChatController extends Controller
             }
 
             if (isset($payload['candidate']) || isset($payload['sdpMid'])) {
-                $existing[] = $payload;
+                $candStr = $payload['candidate'] ?? '';
+                $found = false;
+                foreach ($existing as $ex) {
+                    if (isset($ex['candidate']) && $ex['candidate'] === $candStr) {
+                        $found = true;
+                        break;
+                    }
+                }
+                if (!$found) {
+                    $existing[] = $payload;
+                }
             } elseif (is_array($payload)) {
-                $existing = array_merge($existing, $payload);
+                foreach ($payload as $item) {
+                    if (is_array($item) && (isset($item['candidate']) || isset($item['sdpMid']))) {
+                        $candStr = $item['candidate'] ?? '';
+                        $found = false;
+                        foreach ($existing as $ex) {
+                            if (isset($ex['candidate']) && $ex['candidate'] === $candStr) {
+                                $found = true;
+                                break;
+                            }
+                        }
+                        if (!$found) {
+                            $existing[] = $item;
+                        }
+                    }
+                }
             }
             Cache::put($candKey, $existing, now()->addMinutes(10));
+        }
+
+        $callData = Cache::get("live_chat:call:{$uuid}");
+
+        if (!$callData && $action === 'candidate') {
+            return response()->json(['success' => true]);
+        }
+
+        if (!$callData) {
+            return response()->json(['error' => 'Sesi panggilan tidak ditemukan atau telah berakhir.'], 404);
+        }
+
+        if ($action === 'accept') {
+            $callData['status'] = 'ACCEPTED';
+            Cache::put("live_chat:call:{$uuid}", $callData, now()->addMinutes(10));
+        } elseif ($action === 'offer') {
+            $callData['offer'] = $payload;
+            Cache::put("live_chat:call:{$uuid}", $callData, now()->addMinutes(10));
+        } elseif ($action === 'answer') {
+            $callData['answer'] = $payload;
+            $answerCandidates = $request->input('candidates', []);
+            if (is_array($answerCandidates) && !empty($answerCandidates)) {
+                $candKey = "live_chat:call:{$uuid}:candidates_callee";
+                $existingCallee = Cache::get($candKey, []);
+                if (!is_array($existingCallee)) {
+                    $existingCallee = [];
+                }
+                foreach ($answerCandidates as $cand) {
+                    if (is_array($cand) && isset($cand['candidate'])) {
+                        $candStr = $cand['candidate'];
+                        $found = false;
+                        foreach ($existingCallee as $ex) {
+                            if (isset($ex['candidate']) && $ex['candidate'] === $candStr) {
+                                $found = true;
+                                break;
+                            }
+                        }
+                        if (!$found) {
+                            $existingCallee[] = $cand;
+                        }
+                    }
+                }
+                Cache::put($candKey, $existingCallee, now()->addMinutes(10));
+            }
+            Cache::put("live_chat:call:{$uuid}", $callData, now()->addMinutes(10));
         } elseif ($action === 'connected') {
             $callData['status'] = 'CONNECTED';
             if (empty($callData['started_at'])) {

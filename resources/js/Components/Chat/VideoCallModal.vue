@@ -190,7 +190,7 @@
 
         <!-- Placeholder jika Remote Video Belum Terhubung atau Kamera Lawan Nonaktif -->
         <div 
-          v-if="callStatus === 'CONNECTING' || isRemoteVideoOff" 
+          v-if="(!isRemoteMediaActive && callStatus !== 'CONNECTED') || isRemoteVideoOff" 
           class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/80 text-center space-y-3 p-6 z-10"
         >
           <img 
@@ -200,10 +200,10 @@
           <div>
             <h4 class="text-base font-bold text-white">{{ partnerUser?.pangkat }} {{ partnerUser?.name }}</h4>
             <p class="text-xs text-slate-400 mt-0.5">
-              {{ callStatus === 'CONNECTING' ? 'Mempersiapkan jalur komunikasi terenkripsi...' : 'Kamera lawan bicara sedang dinonaktifkan' }}
+              {{ (!isRemoteMediaActive && callStatus !== 'CONNECTED') ? 'Mempersiapkan jalur komunikasi terenkripsi...' : 'Kamera lawan bicara sedang dinonaktifkan' }}
             </p>
           </div>
-          <div v-if="callStatus === 'CONNECTING'" class="flex flex-col items-center gap-2 text-xs text-blue-400">
+          <div v-if="!isRemoteMediaActive && callStatus !== 'CONNECTED'" class="flex flex-col items-center gap-2 text-xs text-blue-400">
             <div class="flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full bg-blue-500 animate-ping"></span>
               <span>{{ connectionStatusText }}</span>
@@ -474,6 +474,7 @@ const isScreenSharing = ref(false);
 const isMirrorCamera = ref(true);
 const isFullscreen = ref(false);
 const isRemoteVideoOff = ref(false);
+const isRemoteMediaActive = ref(false);
 
 // State Virtual Background
 const showBgMenu = ref(false);
@@ -498,40 +499,27 @@ let canvasAnimId = null;
 // Antrean & Deduplikasi Kandidat ICE
 const addedCandidateKeys = new Set();
 const pendingCandidates = [];
+const localCandidateList = [];
 const isSendingAnswer = ref(false);
 
-// Konfigurasi STUN & TURN Resmi Komprehensif (Google, Cloudflare, dan Public OpenRelay Metered)
+// Konfigurasi STUN Resmi Berkecepatan Tinggi (Google, Cloudflare, Mozilla)
 const rtcConfig = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' },
     { urls: 'stun:stun.cloudflare.com:3478' },
-    { urls: 'stun:relay.metered.ca:80' },
-    {
-      urls: 'turn:relay.metered.ca:80',
-      username: 'openrelayproject',
-      credential: 'openrelayproject',
-    },
-    {
-      urls: 'turn:relay.metered.ca:443',
-      username: 'openrelayproject',
-      credential: 'openrelayproject',
-    },
-    {
-      urls: 'turn:relay.metered.ca:443?transport=tcp',
-      username: 'openrelayproject',
-      credential: 'openrelayproject',
-    },
+    { urls: 'stun:stun.services.mozilla.com' },
   ],
   iceCandidatePoolSize: 10,
 };
 
 // Penentuan peran pemanggil secara absolut
 const isCaller = computed(() => {
-  if (isInitiator.value) return true;
   if (props.incomingCallData) return false;
-  return props.userRole === 'OPERATOR';
+  return Boolean(isInitiator.value);
 });
 
 const formatDuration = (totalSeconds) => {
@@ -651,6 +639,7 @@ const handleCalleeAnswerNegotiation = async (rawOffer) => {
       await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
         action: 'answer',
         data: answerPayload,
+        candidates: localCandidateList,
         sender: 'callee',
       });
       console.debug('Sinyal jawaban WebRTC berhasil dikirimkan ke server');
@@ -819,8 +808,17 @@ const createPeerConnection = () => {
     if (event.streams && event.streams[0]) {
       remoteStream = event.streams[0];
     } else if (event.track) {
+      if (!remoteStream.getTracks().some((t) => t.id === event.track.id)) {
+        remoteStream.addTrack(event.track);
+      }
+    }
+
+    if (event.track && !remoteStream.getTracks().some((t) => t.id === event.track.id)) {
       remoteStream.addTrack(event.track);
     }
+
+    isRemoteMediaActive.value = true;
+    isRemoteVideoOff.value = false;
 
     nextTick(() => {
       if (remoteVideoRef.value) {
@@ -828,18 +826,20 @@ const createPeerConnection = () => {
         remoteVideoRef.value.play().catch(() => {});
       }
     });
-    isRemoteVideoOff.value = false;
+
+    handleConnected();
   };
 
   // Tangkap kandidat ICE lokal dan pancarkan ke server
   peerConnection.onicecandidate = (event) => {
     if (event.candidate && props.threadUuid) {
-      const sender = isCaller.value ? 'caller' : 'callee';
       const candPayload = event.candidate.toJSON ? event.candidate.toJSON() : {
         candidate: event.candidate.candidate,
         sdpMid: event.candidate.sdpMid,
         sdpMLineIndex: event.candidate.sdpMLineIndex,
       };
+      localCandidateList.push(candPayload);
+      const sender = isCaller.value ? 'caller' : 'callee';
       axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
         action: 'candidate',
         data: candPayload,
@@ -877,6 +877,7 @@ const createPeerConnection = () => {
 
 // Penanganan saat jalur P2P berhasil terhubung
 const handleConnected = () => {
+  isRemoteMediaActive.value = true;
   if (callStatus.value !== 'CONNECTED') {
     callStatus.value = 'CONNECTED';
     connectionStatusText.value = 'Tersambung (P2P)';
@@ -1008,10 +1009,11 @@ const startCall = async () => {
 
     const offerPayload = toSessionDescriptionPayload(peerConnection.localDescription || offer);
 
-    // Inisiasi panggilan ke server dengan data penawaran awal
+    // Inisiasi panggilan ke server dengan data penawaran awal dan kandidat ICE lokal
     const res = await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/initiate`, {
       call_type: 'video',
       offer: offerPayload,
+      candidates: localCandidateList,
     });
 
     if (res.data.success) {
@@ -1197,6 +1199,9 @@ const startSignalingPoll = () => {
 
       // 5. Sinkronisasi status terhubung jika salah satu pihak atau server telah terhubung
       if (call.status === 'CONNECTED' && callStatus.value !== 'CONNECTED') {
+        handleConnected();
+      }
+      if (call.offer && call.answer && remoteStream && remoteStream.getTracks().length > 0 && callStatus.value !== 'CONNECTED') {
         handleConnected();
       }
 
@@ -1413,6 +1418,8 @@ const cleanupMedia = () => {
   stopConnectingTimer();
   addedCandidateKeys.clear();
   pendingCandidates.length = 0;
+  localCandidateList.length = 0;
+  isRemoteMediaActive.value = false;
   isSendingAnswer.value = false;
   isInitiator.value = false;
 
