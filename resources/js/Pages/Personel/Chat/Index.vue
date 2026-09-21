@@ -110,8 +110,12 @@
                   Terhubung
                 </span>
               </div>
-              <p class="text-[11px] text-slate-600 font-medium">
-                <strong class="text-slate-800">{{ personel?.pangkat }} {{ personel?.name }}</strong> <span class="text-slate-500">(NIKC: {{ personel?.nikc }})</span>
+              <p class="text-[11px] text-slate-600 font-medium flex items-center gap-2 mt-0.5">
+                <span><strong class="text-slate-800">{{ personel?.pangkat }} {{ personel?.name }}</strong> <span class="text-slate-500">(NIKC: {{ personel?.nikc }})</span></span>
+                <span class="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded-full">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Online
+                </span>
               </p>
             </div>
           </div>

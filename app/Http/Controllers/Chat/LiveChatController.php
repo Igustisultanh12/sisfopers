@@ -28,6 +28,8 @@ class LiveChatController extends Controller
             abort(404, 'Data profil personel tidak ditemukan.');
         }
 
+        $this->touchPersonelPresence($personel->id);
+
         // Cari utas terbuka aktif atau utas terakhir yang pernah dibuat
         $thread = LiveChatThread::where('personel_id', $personel->id)
             ->where('status', 'OPEN')
@@ -88,6 +90,8 @@ class LiveChatController extends Controller
             return response()->json(['error' => 'Profil personel tidak ditemukan.'], 404);
         }
 
+        $this->touchPersonelPresence($personel->id);
+
         $thread = LiveChatThread::firstOrCreate(
             [
                 'personel_id' => $personel->id,
@@ -137,6 +141,8 @@ class LiveChatController extends Controller
             return response()->json(['error' => 'Profil personel tidak ditemukan.'], 404);
         }
 
+        $this->touchPersonelPresence($personel->id);
+
         $thread = LiveChatThread::where('uuid', $uuid)
             ->where('personel_id', $personel->id)
             ->firstOrFail();
@@ -179,6 +185,8 @@ class LiveChatController extends Controller
         if (!$personel) {
             return response()->json(['error' => 'Profil personel tidak ditemukan.'], 404);
         }
+
+        $this->touchPersonelPresence($personel->id);
 
         $thread = LiveChatThread::where('uuid', $uuid)
             ->where('personel_id', $personel->id)
@@ -295,6 +303,8 @@ class LiveChatController extends Controller
             return response()->json(['error' => 'Profil personel tidak ditemukan.'], 404);
         }
 
+        $this->touchPersonelPresence($personel->id);
+
         $thread = LiveChatThread::where('uuid', $uuid)
             ->where('personel_id', $personel->id)
             ->firstOrFail();
@@ -341,6 +351,14 @@ class LiveChatController extends Controller
 
         $threads = $threadsQuery->paginate(20)->withQueryString();
 
+        $threads->getCollection()->transform(function ($th) {
+            if ($th->personel) {
+                $th->personel->is_online = Cache::has("live_chat:presence:personel:{$th->personel_id}");
+                $th->personel->last_seen_at = Cache::get("live_chat:last_seen:personel:{$th->personel_id}");
+            }
+            return $th;
+        });
+
         $activeThread = null;
         $activeMessages = [];
         $activeUuid = $request->query('thread');
@@ -360,6 +378,11 @@ class LiveChatController extends Controller
                     ->update(['is_read' => true]);
 
                 $activeMessages = $activeThread->messages()->orderBy('id', 'asc')->get();
+
+                if ($activeThread->personel) {
+                    $activeThread->personel->is_online = Cache::has("live_chat:presence:personel:{$activeThread->personel_id}");
+                    $activeThread->personel->last_seen_at = Cache::get("live_chat:last_seen:personel:{$activeThread->personel_id}");
+                }
             }
         }
 
@@ -405,6 +428,8 @@ class LiveChatController extends Controller
         }
 
         $personelTyping = Cache::get("live_chat:typing:{$thread->uuid}:personel");
+        $isOnline = Cache::has("live_chat:presence:personel:{$thread->personel_id}");
+        $lastSeenAt = Cache::get("live_chat:last_seen:personel:{$thread->personel_id}");
 
         return response()->json([
             'status' => $thread->status,
@@ -412,6 +437,10 @@ class LiveChatController extends Controller
             'typing' => [
                 'is_typing' => !empty($personelTyping),
                 'name' => $personelTyping['name'] ?? null,
+            ],
+            'presence' => [
+                'is_online' => $isOnline,
+                'last_seen_at' => $lastSeenAt,
             ],
         ]);
     }
@@ -730,6 +759,8 @@ class LiveChatController extends Controller
                 'photo_profile' => $p->photo_profile,
                 'has_open_thread' => isset($openThreads[$p->id]),
                 'open_thread_uuid' => $openThreads[$p->id] ?? null,
+                'is_online' => Cache::has("live_chat:presence:personel:{$p->id}"),
+                'last_seen_at' => Cache::get("live_chat:last_seen:personel:{$p->id}"),
             ];
         });
 
@@ -861,5 +892,14 @@ class LiveChatController extends Controller
         $thread->delete();
 
         return back()->with('success', 'Sesi obrolan dan seluruh berkas lampiran berhasil dihapus permanen.');
+    }
+
+    /**
+     * Memperbarui stempel waktu presensi online Personel pada Cache
+     */
+    protected function touchPersonelPresence($personelId)
+    {
+        Cache::put("live_chat:presence:personel:{$personelId}", now()->timestamp, now()->addSeconds(35));
+        Cache::put("live_chat:last_seen:personel:{$personelId}", now()->toIso8601String(), now()->addDays(30));
     }
 }

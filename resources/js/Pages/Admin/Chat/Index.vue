@@ -124,11 +124,18 @@
               :class="selectedThread?.uuid === th.uuid ? 'bg-blue-50/70 border-l-4 border-blue-600' : 'hover:bg-slate-50 border-l-4 border-transparent'"
               class="p-4 cursor-pointer transition flex items-start gap-3 text-left"
             >
-              <!-- Avatar Personel -->
-              <img 
-                :src="th.personel?.photo_profile ? `/documents/private-stream?path=${encodeURIComponent(th.personel.photo_profile)}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(th.personel?.full_name || 'P')}&background=e2e8f0&color=334155`" 
-                class="w-11 h-11 object-cover rounded-xl border border-slate-200 shrink-0 mt-0.5" 
-              />
+              <!-- Avatar Personel dengan Indikator Online/Offline -->
+              <div class="relative shrink-0 mt-0.5">
+                <img 
+                  :src="th.personel?.photo_profile ? `/documents/private-stream?path=${encodeURIComponent(th.personel.photo_profile)}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(th.personel?.full_name || 'P')}&background=e2e8f0&color=334155`" 
+                  class="w-11 h-11 object-cover rounded-xl border border-slate-200" 
+                />
+                <span 
+                  :class="th.personel?.is_online ? 'bg-emerald-500 ring-white' : 'bg-slate-300 ring-white'"
+                  class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full ring-2 shadow-xs"
+                  :title="th.personel?.is_online ? 'Personel Online' : 'Personel Offline'"
+                ></span>
+              </div>
 
               <!-- Info Personel & Pesan Terakhir -->
               <div class="flex-1 min-w-0">
@@ -174,14 +181,37 @@
             <!-- Header Utas Aktif -->
             <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-white shrink-0">
               <div class="flex items-center gap-3">
-                <img 
-                  :src="selectedThread.personel?.photo_profile ? `/documents/private-stream?path=${encodeURIComponent(selectedThread.personel.photo_profile)}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedThread.personel?.full_name || 'P')}&background=e2e8f0&color=334155`" 
-                  class="w-11 h-11 object-cover rounded-xl border border-slate-200 shrink-0" 
-                />
+                <div class="relative shrink-0">
+                  <img 
+                    :src="selectedThread.personel?.photo_profile ? `/documents/private-stream?path=${encodeURIComponent(selectedThread.personel.photo_profile)}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedThread.personel?.full_name || 'P')}&background=e2e8f0&color=334155`" 
+                    class="w-11 h-11 object-cover rounded-xl border border-slate-200" 
+                  />
+                  <span 
+                    :class="selectedPersonelOnline ? 'bg-emerald-500 ring-white' : 'bg-slate-300 ring-white'"
+                    class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full ring-2 shadow-xs"
+                    :title="selectedPersonelOnline ? 'Personel Online' : 'Personel Offline'"
+                  ></span>
+                </div>
                 <div>
-                  <h3 class="text-sm font-extrabold text-slate-900">
-                    {{ selectedThread.personel?.pangkat }} {{ selectedThread.personel?.full_name }}
-                  </h3>
+                  <div class="flex items-center gap-2">
+                    <h3 class="text-sm font-extrabold text-slate-900">
+                      {{ selectedThread.personel?.pangkat }} {{ selectedThread.personel?.full_name }}
+                    </h3>
+                    <span 
+                      v-if="selectedPersonelOnline" 
+                      class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full"
+                    >
+                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      Online
+                    </span>
+                    <span 
+                      v-else 
+                      class="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full"
+                    >
+                      <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                      Offline
+                    </span>
+                  </div>
                   <div class="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
                     <span>NIKC: <strong>{{ selectedThread.personel?.nikc || selectedThread.personel?.nik }}</strong></span>
                     <span>&bull;</span>
@@ -192,6 +222,9 @@
                     </span>
                     <span v-else :class="selectedThread.status === 'OPEN' ? 'text-emerald-600 font-bold' : 'text-slate-500 font-bold'">
                       {{ selectedThread.status === 'OPEN' ? 'Sesi Terbuka' : 'Sesi Ditutup' }}
+                    </span>
+                    <span v-if="!selectedPersonelOnline && selectedPersonelLastSeen" class="text-slate-400 hidden sm:inline">
+                      &bull; Terakhir aktif: {{ formatLastSeen(selectedPersonelLastSeen) }}
                     </span>
                   </div>
                 </div>
@@ -528,8 +561,22 @@
 
                 <div class="shrink-0 flex items-center gap-2">
                   <span 
+                    v-if="p.is_online" 
+                    class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold flex items-center gap-1"
+                  >
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Online
+                  </span>
+                  <span 
+                    v-else 
+                    class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 border border-slate-200 text-[10px] font-medium"
+                  >
+                    Offline
+                  </span>
+
+                  <span 
                     v-if="p.has_open_thread" 
-                    class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold"
+                    class="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold"
                   >
                     Sesi Aktif
                   </span>
@@ -698,6 +745,25 @@ const isPersonelTyping = ref(false);
 const personelTypingName = ref('');
 let personelTypingTimer = null;
 let lastAdminTypingSentAt = 0;
+
+// State Presensi Online / Offline Personel
+const selectedPersonelOnline = ref(props.activeThread?.personel?.is_online ?? false);
+const selectedPersonelLastSeen = ref(props.activeThread?.personel?.last_seen_at || null);
+
+const formatLastSeen = (isoString) => {
+  if (!isoString) return 'Belum pernah aktif';
+  try {
+    const date = new Date(isoString);
+    const now = new Date();
+    const diffSec = Math.floor((now - date) / 1000);
+    if (diffSec < 60) return 'Baru saja';
+    if (diffSec < 3600) return `${Math.floor(diffSec / 60)} menit lalu`;
+    if (diffSec < 86400) return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')} WIB`;
+    return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return '-';
+  }
+};
 
 const updatePersonelTypingStatus = (typing) => {
   if (typing?.is_typing) {
@@ -904,6 +970,8 @@ const selectThread = (th) => {
   selectedThread.value = th;
   th.unread_admin = 0;
   isPersonelTyping.value = false;
+  selectedPersonelOnline.value = th.personel?.is_online ?? false;
+  selectedPersonelLastSeen.value = th.personel?.last_seen_at || null;
   loadThreadMessages(th.uuid);
 };
 
@@ -922,6 +990,15 @@ const loadThreadMessages = async (uuid) => {
     activeMessagesList.value = res.data.messages || [];
     if (res.data.typing) {
       updatePersonelTypingStatus(res.data.typing);
+    }
+    if (res.data.presence) {
+      selectedPersonelOnline.value = res.data.presence.is_online;
+      selectedPersonelLastSeen.value = res.data.presence.last_seen_at;
+      const targetTh = props.threads?.data?.find(t => t.uuid === uuid);
+      if (targetTh && targetTh.personel) {
+        targetTh.personel.is_online = res.data.presence.is_online;
+        targetTh.personel.last_seen_at = res.data.presence.last_seen_at;
+      }
     }
     scrollAdminChatToBottom();
   } catch (err) {
@@ -946,6 +1023,16 @@ const pollAdminMessages = async () => {
 
     if (res.data.typing) {
       updatePersonelTypingStatus(res.data.typing);
+    }
+
+    if (res.data.presence) {
+      selectedPersonelOnline.value = res.data.presence.is_online;
+      selectedPersonelLastSeen.value = res.data.presence.last_seen_at;
+      const targetTh = props.threads?.data?.find(t => t.uuid === selectedThread.value?.uuid);
+      if (targetTh && targetTh.personel) {
+        targetTh.personel.is_online = res.data.presence.is_online;
+        targetTh.personel.last_seen_at = res.data.presence.last_seen_at;
+      }
     }
 
     if (res.data.messages && res.data.messages.length > 0) {
