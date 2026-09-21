@@ -1186,8 +1186,9 @@ class LiveChatController extends Controller
                 if ($response->successful()) {
                     $meteredServers = $response->json();
                     if (is_array($meteredServers) && !empty($meteredServers)) {
-                        Cache::put($cacheKey, $meteredServers, now()->addMinutes(60));
-                        return response()->json(['iceServers' => $meteredServers]);
+                        $combined = array_merge($meteredServers, $baseStunServers);
+                        Cache::put($cacheKey, $combined, now()->addMinutes(60));
+                        return response()->json(['iceServers' => $combined]);
                     }
                 }
             } catch (\Throwable $e) {
