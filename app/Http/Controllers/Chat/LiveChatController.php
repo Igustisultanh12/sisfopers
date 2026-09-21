@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -1148,6 +1149,71 @@ class LiveChatController extends Controller
         return response()->json([
             'call' => $callData,
         ]);
+    }
+
+    /**
+     * Mengambil konfigurasi ICE Servers (STUN & TURN) secara dinamis
+     */
+    public function getIceServers(Request $request)
+    {
+        $meteredApiKey = env('METERED_API_KEY');
+        $meteredAppName = env('METERED_APP_NAME');
+
+        $baseStunServers = [
+            ['urls' => 'stun:stun.l.google.com:19302'],
+            ['urls' => 'stun:stun1.l.google.com:19302'],
+            ['urls' => 'stun:stun2.l.google.com:19302'],
+            ['urls' => 'stun:stun3.l.google.com:19302'],
+            ['urls' => 'stun:stun4.l.google.com:19302'],
+            ['urls' => 'stun:stun.cloudflare.com:3478'],
+            ['urls' => 'stun:stun.services.mozilla.com'],
+        ];
+
+        // 1. Prioritas Layanan Relay Terkelola (Metered TURN) jika disetel pada .env
+        if (!empty($meteredApiKey) && !empty($meteredAppName)) {
+            $cached = Cache::get('live_chat:metered_ice_servers');
+            if (is_array($cached) && !empty($cached)) {
+                return response()->json(['iceServers' => $cached]);
+            }
+
+            try {
+                $response = Http::timeout(4)->get("https://{$meteredAppName}.metered.live/api/v1/turn/credentials", [
+                    'apiKey' => $meteredApiKey,
+                ]);
+
+                if ($response->successful()) {
+                    $meteredServers = $response->json();
+                    if (is_array($meteredServers) && !empty($meteredServers)) {
+                        Cache::put('live_chat:metered_ice_servers', $meteredServers, now()->addMinutes(60));
+                        return response()->json(['iceServers' => $meteredServers]);
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Gunakan rute fallback jika koneksi API terhambat
+            }
+        }
+
+        // 2. Prioritas Layanan Relay Mandiri (Self-Hosted Coturn) jika disetel pada .env
+        $coturnHost = env('COTURN_HOST');
+        $coturnSecret = env('COTURN_SECRET');
+        if (!empty($coturnHost) && !empty($coturnSecret)) {
+            $userId = Auth::id() ?? 'guest';
+            $username = (string) (time() + 86400) . ':' . $userId;
+            $credential = base64_encode(hash_hmac('sha1', $username, $coturnSecret, true));
+            $coturnPort = (int) env('COTURN_PORT', 3478);
+            $coturnTlsPort = (int) env('COTURN_TLS_PORT', 5349);
+
+            $coturnServers = [
+                ['urls' => "stun:{$coturnHost}:{$coturnPort}"],
+                ['urls' => "turn:{$coturnHost}:{$coturnPort}?transport=udp", 'username' => $username, 'credential' => $credential],
+                ['urls' => "turn:{$coturnHost}:{$coturnPort}?transport=tcp", 'username' => $username, 'credential' => $credential],
+                ['urls' => "turns:{$coturnHost}:{$coturnTlsPort}?transport=tcp", 'username' => $username, 'credential' => $credential],
+            ];
+
+            return response()->json(['iceServers' => array_merge($coturnServers, $baseStunServers)]);
+        }
+
+        return response()->json(['iceServers' => $baseStunServers]);
     }
 
     /**

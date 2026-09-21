@@ -516,6 +516,17 @@ const rtcConfig = {
   iceCandidatePoolSize: 10,
 };
 
+const loadIceServers = async () => {
+  try {
+    const res = await axios.get(`/${props.urlPrefix}/live-chat/ice-servers`);
+    if (res.data?.iceServers && Array.isArray(res.data.iceServers) && res.data.iceServers.length > 0) {
+      rtcConfig.iceServers = res.data.iceServers;
+    }
+  } catch (e) {
+    console.debug('Menggunakan konfigurasi STUN bawaan:', e);
+  }
+};
+
 // Penentuan peran pemanggil secara absolut
 const isCaller = computed(() => {
   if (props.incomingCallData) return false;
@@ -1000,6 +1011,7 @@ const startCall = async () => {
     startOutgoingTimeout();
 
     await initLocalMedia();
+    await loadIceServers();
     createPeerConnection();
 
     // Buat Offer seketika dan kumpulkan kandidat lokal dalam SDP
@@ -1037,6 +1049,7 @@ const acceptIncomingCall = async () => {
 
   try {
     await initLocalMedia();
+    await loadIceServers();
     createPeerConnection();
 
     // Pastikan status penerimaan dikirim ke server
