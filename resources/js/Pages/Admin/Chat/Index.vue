@@ -405,6 +405,10 @@
             </div>
           </template>
 
+        </div>
+      </div>
+    </div>
+
     <!-- MODAL MULAI CHAT DENGAN PERSONEL -->
     <div 
       v-if="showNewChatModal" 
