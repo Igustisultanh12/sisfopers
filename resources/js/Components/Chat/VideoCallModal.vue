@@ -540,14 +540,65 @@ const formatDuration = (totalSeconds) => {
 };
 
 // ==========================================
-// 1. INISIASI MEDIA & WEBRTC PEER CONNECTION
+// 1. UTILITAS SERIALISASI & VALIDASI SDP
+// ==========================================
+const toSessionDescriptionPayload = (desc) => {
+  if (!desc) return null;
+  if (typeof desc.toJSON === 'function') {
+    const json = desc.toJSON();
+    if (json && json.type && json.sdp) {
+      return { type: json.type, sdp: json.sdp };
+    }
+  }
+  if (desc.type && desc.sdp) {
+    return { type: desc.type, sdp: desc.sdp };
+  }
+  return null;
+};
+
+const isValidSdp = (desc) => {
+  if (!desc || typeof desc !== 'object') return false;
+  return typeof desc.type === 'string' && typeof desc.sdp === 'string' && desc.sdp.trim().length > 0;
+};
+
+const setRemoteDescriptionSafely = async (desc) => {
+  if (!peerConnection || !isValidSdp(desc)) return false;
+  try {
+    if (peerConnection.remoteDescription && peerConnection.remoteDescription.type === desc.type) {
+      return false;
+    }
+
+    if (desc.type === 'offer' && peerConnection.signalingState !== 'stable') {
+      console.warn('Signaling state belum stabil untuk penawaran baru:', peerConnection.signalingState);
+      return false;
+    }
+
+    if (desc.type === 'answer' && peerConnection.signalingState !== 'have-local-offer') {
+      console.warn('Signaling state bukan have-local-offer saat memproses jawaban:', peerConnection.signalingState);
+      return false;
+    }
+
+    await peerConnection.setRemoteDescription(new RTCSessionDescription({
+      type: desc.type,
+      sdp: desc.sdp,
+    }));
+    await flushPendingCandidates();
+    return true;
+  } catch (err) {
+    console.warn('Gagal menerapkan remote description:', err);
+    return false;
+  }
+};
+
+// ==========================================
+// 2. INISIASI MEDIA & WEBRTC PEER CONNECTION
 // ==========================================
 const initLocalMedia = async () => {
   try {
     localStream = await navigator.mediaDevices.getUserMedia({
       video: {
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
+        width: { ideal: 1280, max: 1920 },
+        height: { ideal: 720, max: 1080 },
         facingMode: 'user',
       },
       audio: {
@@ -556,17 +607,33 @@ const initLocalMedia = async () => {
         autoGainControl: true,
       },
     });
-
-    rawVideoTrack = localStream.getVideoTracks()[0];
-    rawAudioTrack = localStream.getAudioTracks()[0];
-
-    await nextTick();
-    if (localVideoRef.value) {
-      localVideoRef.value.srcObject = localStream;
+  } catch (videoAudioErr) {
+    console.warn('Akses kamera dan mikrofon bersamaan gagal, beralih ke audio saja:', videoAudioErr);
+    try {
+      localStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+      isCameraOff.value = true;
+    } catch (audioErr) {
+      console.warn('Akses mikrofon ditolak atau tidak tersedia, menggunakan stream cadangan:', audioErr);
+      localStream = new MediaStream();
+      isCameraOff.value = true;
+      isMuted.value = true;
     }
-  } catch (err) {
-    console.error('Akses kamera atau mikrofon ditolak:', err);
-    throw err;
+  }
+
+  if (localStream) {
+    rawVideoTrack = localStream.getVideoTracks()[0] || null;
+    rawAudioTrack = localStream.getAudioTracks()[0] || null;
+  }
+
+  await nextTick();
+  if (localVideoRef.value && localStream) {
+    localVideoRef.value.srcObject = localStream;
   }
 };
 
@@ -597,7 +664,7 @@ const addCandidateSafely = async (cand) => {
   const candKey = `${cand.sdpMid || ''}_${cand.sdpMLineIndex || 0}_${cand.candidate}`;
   if (addedCandidateKeys.has(candKey)) return;
 
-  if (!peerConnection || !peerConnection.currentRemoteDescription) {
+  if (!peerConnection || !peerConnection.remoteDescription) {
     pendingCandidates.push(cand);
     return;
   }
@@ -611,7 +678,7 @@ const addCandidateSafely = async (cand) => {
 };
 
 const flushPendingCandidates = async () => {
-  if (!peerConnection || !peerConnection.currentRemoteDescription) return;
+  if (!peerConnection || !peerConnection.remoteDescription) return;
   while (pendingCandidates.length > 0) {
     const cand = pendingCandidates.shift();
     const candKey = `${cand.sdpMid || ''}_${cand.sdpMLineIndex || 0}_${cand.candidate}`;
@@ -634,11 +701,18 @@ const createPeerConnection = () => {
 
   peerConnection = new RTCPeerConnection(rtcConfig);
 
-  // Pasang media lokal ke Peer Connection
-  if (localStream) {
+  // Pasang media lokal ke Peer Connection jika tersedia
+  if (localStream && localStream.getTracks().length > 0) {
     localStream.getTracks().forEach((track) => {
       peerConnection.addTrack(track, localStream);
     });
+  } else {
+    try {
+      peerConnection.addTransceiver('audio', { direction: 'recvonly' });
+      peerConnection.addTransceiver('video', { direction: 'recvonly' });
+    } catch (e) {
+      console.debug('Transceiver fallback:', e);
+    }
   }
 
   // Tangkap media lawan bicara dan pasang ke objek stream
@@ -652,10 +726,12 @@ const createPeerConnection = () => {
       remoteStream.addTrack(event.track);
     }
 
-    if (remoteVideoRef.value) {
-      remoteVideoRef.value.srcObject = remoteStream;
-      remoteVideoRef.value.play().catch(() => {});
-    }
+    nextTick(() => {
+      if (remoteVideoRef.value) {
+        remoteVideoRef.value.srcObject = remoteStream;
+        remoteVideoRef.value.play().catch(() => {});
+      }
+    });
     isRemoteVideoOff.value = false;
   };
 
@@ -663,9 +739,14 @@ const createPeerConnection = () => {
   peerConnection.onicecandidate = (event) => {
     if (event.candidate && props.threadUuid) {
       const sender = isCaller.value ? 'caller' : 'callee';
+      const candPayload = event.candidate.toJSON ? event.candidate.toJSON() : {
+        candidate: event.candidate.candidate,
+        sdpMid: event.candidate.sdpMid,
+        sdpMLineIndex: event.candidate.sdpMLineIndex,
+      };
       axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
         action: 'candidate',
-        data: event.candidate.toJSON ? event.candidate.toJSON() : event.candidate,
+        data: candPayload,
         sender: sender,
       }).catch(() => {});
     }
@@ -737,11 +818,15 @@ const retryIceNegotiation = async () => {
       const offer = await peerConnection.createOffer({ iceRestart: true });
       await peerConnection.setLocalDescription(offer);
       await waitForIceGathering(peerConnection, 500);
-      await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
-        action: 'offer',
-        data: peerConnection.localDescription,
-        sender: 'caller',
-      });
+
+      const offerPayload = toSessionDescriptionPayload(peerConnection.localDescription || offer);
+      if (offerPayload) {
+        await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
+          action: 'offer',
+          data: offerPayload,
+          sender: 'caller',
+        });
+      }
     }
   } catch (err) {
     console.debug('Gagal restart ICE:', err);
@@ -749,7 +834,7 @@ const retryIceNegotiation = async () => {
 };
 
 // ==========================================
-// 2. PENANGAN BATAS WAKTU (TIMEOUT HANDLERS)
+// 3. PENANGAN BATAS WAKTU (TIMEOUT HANDLERS)
 // ==========================================
 const startOutgoingTimeout = () => {
   stopOutgoingTimeout();
@@ -782,17 +867,19 @@ const startConnectingTimer = () => {
   connectingSeconds.value = 0;
   connectingTimeoutTimer = setInterval(() => {
     connectingSeconds.value++;
-    if (connectingSeconds.value === 10) {
+    if (connectingSeconds.value === 12) {
       retryIceNegotiation();
-    } else if (connectingSeconds.value >= 25) {
+    } else if (connectingSeconds.value >= 35) {
       stopConnectingTimer();
-      Swal.fire({
-        icon: 'warning',
-        title: 'Koneksi P2P Terkendala',
-        text: 'Koneksi terhambat oleh pembatas jaringan lawan bicara. Silakan gunakan saluran pesan tertulis.',
-        confirmButtonColor: '#2563eb',
-      });
-      hangUpCall();
+      if (callStatus.value !== 'CONNECTED') {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Koneksi P2P Terkendala',
+          text: 'Koneksi terhambat oleh pembatas jaringan lawan bicara. Silakan gunakan saluran obrolan dinas tertulis.',
+          confirmButtonColor: '#2563eb',
+        });
+        hangUpCall();
+      }
     }
   }, 1000);
 };
@@ -806,7 +893,7 @@ const stopConnectingTimer = () => {
 };
 
 // ==========================================
-// 3. LOGIKA PANGGILAN KELUAR & MASUK
+// 4. LOGIKA PANGGILAN KELUAR & MASUK
 // ==========================================
 const startCall = async () => {
   try {
@@ -823,10 +910,12 @@ const startCall = async () => {
     await peerConnection.setLocalDescription(offer);
     await waitForIceGathering(peerConnection, 600);
 
+    const offerPayload = toSessionDescriptionPayload(peerConnection.localDescription || offer);
+
     // Inisiasi panggilan ke server dengan data penawaran awal
     const res = await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/initiate`, {
       call_type: 'video',
-      offer: peerConnection.localDescription,
+      offer: offerPayload,
     });
 
     if (res.data.success) {
@@ -858,35 +947,41 @@ const acceptIncomingCall = async () => {
       sender: 'callee',
     });
 
-    // Ambil sinyal panggilan terbaru untuk memperoleh data penawaran
+    // Ambil sinyal panggilan terbaru untuk memperoleh data penawaran pemanggil
     const resSignal = await axios.get(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`);
     const call = resSignal.data?.call;
 
-    if (call?.offer && !peerConnection.currentRemoteDescription) {
-      await peerConnection.setRemoteDescription(new RTCSessionDescription(call.offer));
-      await flushPendingCandidates();
+    if (call?.offer) {
+      const applied = await setRemoteDescriptionSafely(call.offer);
+      if (applied) {
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+        await waitForIceGathering(peerConnection, 500);
 
-      const answer = await peerConnection.createAnswer();
-      await peerConnection.setLocalDescription(answer);
-      await waitForIceGathering(peerConnection, 500);
-
-      await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
-        action: 'answer',
-        data: peerConnection.localDescription,
-        sender: 'callee',
-      });
+        const answerPayload = toSessionDescriptionPayload(peerConnection.localDescription || answer);
+        if (answerPayload) {
+          await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
+            action: 'answer',
+            data: answerPayload,
+            sender: 'callee',
+          });
+        }
+      }
     }
 
     startSignalingPoll();
     emit('call-accepted');
   } catch (err) {
-    console.error('Gagal menerima panggilan:', err);
-    hangUpCall();
+    console.error('Peringatan saat menerima panggilan:', err);
+    // Pertahankan polling sinyal agar proses negosiasi tetap berjalan tanpa terputus
+    startSignalingPoll();
   }
 };
 
 const rejectIncomingCall = async () => {
   stopIncomingCallRing();
+  stopConnectingTimer();
+  stopSignalingPoll();
   cleanupMedia();
   try {
     await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/end`, {
@@ -900,6 +995,8 @@ const rejectIncomingCall = async () => {
 const cancelOutgoingCall = async () => {
   stopOutgoingDialRing();
   stopOutgoingTimeout();
+  stopConnectingTimer();
+  stopSignalingPoll();
   cleanupMedia();
   try {
     await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/end`, {
@@ -915,6 +1012,7 @@ const hangUpCall = async () => {
   stopOutgoingDialRing();
   stopOutgoingTimeout();
   stopConnectingTimer();
+  stopSignalingPoll();
   playCallEndedSound();
 
   const finalDuration = callDuration.value;
@@ -932,11 +1030,31 @@ const hangUpCall = async () => {
   emit('close');
 };
 
+const handleRemoteEnded = (reason = 'ended') => {
+  stopIncomingCallRing();
+  stopOutgoingDialRing();
+  stopOutgoingTimeout();
+  stopConnectingTimer();
+  stopSignalingPoll();
+  playCallEndedSound();
+
+  const finalDuration = callDuration.value;
+  cleanupMedia();
+
+  callStatus.value = 'IDLE';
+  emit('call-ended', finalDuration);
+  emit('close');
+};
+
 // ==========================================
-// 4. SINKRONISASI SINYAL WEBRTC TERARAH
+// 5. SINKRONISASI SINYAL WEBRTC TERARAH
 // ==========================================
+let missedPollCount = 0;
+
 const startSignalingPoll = () => {
   stopSignalingPoll();
+  missedPollCount = 0;
+
   signalingTimer = setInterval(async () => {
     if (!props.threadUuid) return;
 
@@ -944,9 +1062,18 @@ const startSignalingPoll = () => {
       const res = await axios.get(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`);
       const call = res.data?.call;
 
-      if (!call || call.status === 'ENDED' || call.status === 'REJECTED') {
-        stopSignalingPoll();
-        hangUpCall();
+      if (!call) {
+        missedPollCount++;
+        if (missedPollCount >= 8) {
+          handleRemoteEnded('Panggilan terputus');
+        }
+        return;
+      }
+
+      missedPollCount = 0;
+
+      if (call.status === 'ENDED' || call.status === 'REJECTED') {
+        handleRemoteEnded(call.status === 'REJECTED' ? 'Panggilan ditolak' : 'Panggilan selesai');
         return;
       }
 
@@ -960,45 +1087,52 @@ const startSignalingPoll = () => {
         startConnectingTimer();
       }
 
-      // 2. Pemanggil mengirimkan Offer jika belum sempat terkirim
-      if (isCallerUser && call.status === 'ACCEPTED' && !call.offer && peerConnection) {
+      // 2. Pemanggil mengirimkan Offer jika belum sempat terkirim atau perlu pembaharuan
+      if (isCallerUser && (call.status === 'ACCEPTED' || call.status === 'RINGING') && !call.offer && peerConnection) {
         const offer = await peerConnection.createOffer();
         await peerConnection.setLocalDescription(offer);
         await waitForIceGathering(peerConnection, 500);
 
-        await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
-          action: 'offer',
-          data: peerConnection.localDescription,
-          sender: 'caller',
-        });
+        const offerPayload = toSessionDescriptionPayload(peerConnection.localDescription || offer);
+        if (offerPayload) {
+          await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
+            action: 'offer',
+            data: offerPayload,
+            sender: 'caller',
+          });
+        }
       }
 
       // 3. Penerima menerima Offer dari Pemanggil dan membuat Answer
-      if (!isCallerUser && call.offer && !peerConnection?.currentRemoteDescription && peerConnection) {
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(call.offer));
-        await flushPendingCandidates();
+      if (!isCallerUser && call.offer && peerConnection && !peerConnection.remoteDescription) {
+        const applied = await setRemoteDescriptionSafely(call.offer);
+        if (applied) {
+          const answer = await peerConnection.createAnswer();
+          await peerConnection.setLocalDescription(answer);
+          await waitForIceGathering(peerConnection, 500);
 
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
-        await waitForIceGathering(peerConnection, 500);
-
-        await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
-          action: 'answer',
-          data: peerConnection.localDescription,
-          sender: 'callee',
-        });
+          const answerPayload = toSessionDescriptionPayload(peerConnection.localDescription || answer);
+          if (answerPayload) {
+            await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
+              action: 'answer',
+              data: answerPayload,
+              sender: 'callee',
+            });
+          }
+        }
       }
 
       // 4. Pemanggil menerima Answer dari Penerima
-      if (isCallerUser && call.answer && peerConnection && !peerConnection.currentRemoteDescription) {
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(call.answer));
-        await flushPendingCandidates();
+      if (isCallerUser && call.answer && peerConnection && !peerConnection.remoteDescription) {
+        await setRemoteDescriptionSafely(call.answer);
       }
 
       // 5. Pertukaran Kandidat ICE tambahan secara aman tanpa redundansi
       const incomingCandidates = isCallerUser ? (call.candidates_callee || []) : (call.candidates_caller || []);
-      for (const cand of incomingCandidates) {
-        await addCandidateSafely(cand);
+      if (Array.isArray(incomingCandidates)) {
+        for (const cand of incomingCandidates) {
+          await addCandidateSafely(cand);
+        }
       }
 
     } catch (err) {

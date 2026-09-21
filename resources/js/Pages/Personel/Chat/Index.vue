@@ -473,7 +473,7 @@
     <!-- Komponen Ruang Panggilan Video Dinas (Vicon P2P WebRTC) -->
     <VideoCallModal 
       :show="showPersonelVideoCallModal"
-      :thread-uuid="thread?.uuid || activeIncomingCallData?.thread_uuid"
+      :thread-uuid="activeIncomingCallData?.thread_uuid || thread?.uuid"
       user-role="PERSONEL"
       :current-user="currentUserInfo"
       :partner-user="callPartnerInfo"
