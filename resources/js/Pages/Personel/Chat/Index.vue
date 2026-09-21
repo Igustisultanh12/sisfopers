@@ -2,58 +2,58 @@
   <AuthenticatedLayout>
     <template #header-title>Pusat Layanan Informasi</template>
 
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 font-sans space-y-5">
+    <div class="max-w-5xl mx-auto px-2 sm:px-6 lg:px-8 py-3 sm:py-6 font-sans space-y-3 sm:space-y-5">
       <!-- 1. Banner Header Militer & Status Sesi -->
-      <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-blue-950 rounded-3xl p-6 sm:p-7 text-white shadow-xl relative overflow-hidden">
+      <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-blue-950 rounded-2xl sm:rounded-3xl p-4 sm:p-7 text-white shadow-xl relative overflow-hidden">
         <div class="absolute -right-10 -top-10 w-44 h-44 rounded-full bg-blue-600/20 blur-3xl pointer-events-none"></div>
 
-        <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div class="space-y-2">
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-widest bg-blue-500/20 border border-blue-400/30 text-blue-300">
+        <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
+          <div class="space-y-1.5 sm:space-y-2">
+            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <span class="px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest bg-blue-500/20 border border-blue-400/30 text-blue-300">
                 SISTEM INFORMASI PERSONEL KOMCAD
               </span>
 
               <!-- Status Indikator Sesi / Respon -->
               <span 
                 v-if="thread?.status === 'CLOSED'"
-                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-slate-500/30 border border-slate-400/30 text-slate-300"
+                class="inline-flex items-center gap-1 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-xl text-[10px] sm:text-xs font-bold bg-slate-500/30 border border-slate-400/30 text-slate-300"
               >
                 <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                 Sesi Ditutup
               </span>
               <span 
                 v-else-if="isAwaitingResponse"
-                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-amber-500/20 border border-amber-400/30 text-amber-300 shadow-sm"
+                class="inline-flex items-center gap-1 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-xl text-[10px] sm:text-xs font-bold bg-amber-500/20 border border-amber-400/30 text-amber-300 shadow-sm"
               >
-                <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
                 Menunggu Respon
               </span>
               <span 
                 v-else
-                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 shadow-sm"
+                class="inline-flex items-center gap-1 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-xl text-[10px] sm:text-xs font-bold bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 shadow-sm"
               >
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                Anda sedang berbicara dengan {{ activeOperatorName }}
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span class="truncate max-w-[200px] sm:max-w-none">Dengan {{ activeOperatorName }}</span>
               </span>
             </div>
 
-            <h1 class="text-xl sm:text-2xl font-black text-white tracking-tight">
+            <h1 class="text-lg sm:text-2xl font-black text-white tracking-tight">
               Pusat Layanan Informasi
             </h1>
-            <p class="text-xs text-slate-300 max-w-2xl leading-relaxed">
+            <p class="text-[11px] sm:text-xs text-slate-300 max-w-2xl leading-relaxed">
               Saluran komunikasi dinas langsung dengan Pengelola Sisfopers Mabes TNI dan Satuan Pembina. Seluruh berkas yang dilampirkan akan terhapus saat Anda mengakhiri live chat.
             </p>
           </div>
 
           <!-- Aksi Sesi (Akhiri Sesi / Buka Sesi Baru) -->
-          <div class="shrink-0 flex items-center gap-2.5">
+          <div class="shrink-0 flex items-center gap-2">
             <button
               v-if="thread?.status === 'OPEN'"
               @click="confirmEndSession"
               :disabled="isEndingSession"
               type="button"
-              class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-red-600/90 hover:bg-red-600 text-white font-bold text-xs shadow-lg shadow-red-950/30 border border-red-400/30 transition cursor-pointer disabled:opacity-50"
+              class="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl bg-red-600/90 hover:bg-red-600 text-white font-bold text-xs shadow-lg shadow-red-950/30 border border-red-400/30 transition cursor-pointer disabled:opacity-50"
             >
               <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
@@ -66,7 +66,7 @@
               @click="startNewSession"
               :disabled="isStartingSession"
               type="button"
-              class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-950/40 border border-blue-400/30 transition cursor-pointer disabled:opacity-50"
+              class="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-950/40 border border-blue-400/30 transition cursor-pointer disabled:opacity-50"
             >
               <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
@@ -78,41 +78,41 @@
       </div>
 
       <!-- 2. Kotak Percakapan Standalone -->
-      <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[calc(100vh-14rem)] min-h-[580px] max-h-[850px]">
+      <div class="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[calc(100dvh-10.5rem)] sm:h-[calc(100vh-14rem)] min-h-[460px] sm:min-h-[580px] max-h-[850px]">
         
         <!-- Header Kotak Obrolan -->
-        <div class="px-6 py-4 bg-slate-50/90 border-b border-slate-200 flex items-center justify-between shrink-0">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center font-black text-sm border border-blue-200 select-none">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <div class="px-3.5 sm:px-6 py-2.5 sm:py-4 bg-slate-50/90 border-b border-slate-200 flex items-center justify-between shrink-0 gap-2">
+          <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center font-black text-sm border border-blue-200 select-none shrink-0">
+              <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
             </div>
-            <div>
-              <div class="flex items-center gap-2">
-                <h3 class="text-sm font-bold text-slate-900">Pusat Layanan Informasi</h3>
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5 sm:gap-2">
+                <h3 class="text-xs sm:text-sm font-bold text-slate-900 truncate">Pusat Layanan Informasi</h3>
                 <span 
                   v-if="thread?.status === 'CLOSED'"
-                  class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200"
+                  class="text-[9px] sm:text-[10px] font-extrabold uppercase px-1.5 sm:px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 shrink-0"
                 >
                   Sesi Ditutup
                 </span>
                 <span 
                   v-else-if="isAwaitingResponse"
-                  class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 animate-pulse"
+                  class="text-[9px] sm:text-[10px] font-extrabold uppercase px-1.5 sm:px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 animate-pulse shrink-0"
                 >
                   Menunggu Respon
                 </span>
                 <span 
                   v-else
-                  class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200"
+                  class="text-[9px] sm:text-[10px] font-extrabold uppercase px-1.5 sm:px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0"
                 >
                   Terhubung
                 </span>
               </div>
-              <p class="text-[11px] text-slate-600 font-medium flex items-center gap-2 mt-0.5">
-                <span><strong class="text-slate-800">{{ personel?.pangkat }} {{ personel?.name }}</strong> <span class="text-slate-500">(NIKC: {{ personel?.nikc }})</span></span>
-                <span class="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded-full">
+              <p class="text-[10px] sm:text-[11px] text-slate-600 font-medium flex items-center gap-1.5 sm:gap-2 mt-0.5 truncate">
+                <span class="truncate"><strong class="text-slate-800">{{ personel?.pangkat }} {{ personel?.name }}</strong> <span class="text-slate-500 hidden sm:inline">(NIKC: {{ personel?.nikc }})</span></span>
+                <span class="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded-full shrink-0">
                   <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                   Online
                 </span>
@@ -120,22 +120,22 @@
             </div>
           </div>
 
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2 sm:gap-3 shrink-0">
             <!-- Tombol Mulai Panggilan Video Dinas (Vicon P2P) -->
             <button 
               v-if="thread?.status === 'OPEN'"
               @click="openPersonelVideoCall"
               type="button" 
-              class="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+              class="px-2.5 sm:px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
               title="Mulai Panggilan Video Dinas (Vicon P2P)"
             >
               <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
               <span class="hidden sm:inline">Panggilan Video</span>
             </button>
 
-            <div class="text-right hidden sm:block">
+            <div class="text-right hidden md:block">
               <span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">Batas Lampiran</span>
               <span class="text-xs font-bold text-slate-700">Maks. 15 MB per Unggahan</span>
             </div>
@@ -394,7 +394,7 @@
           </div>
 
           <!-- Form Input Baris -->
-          <form @submit.prevent="sendMessage" class="flex items-end gap-2.5">
+          <form @submit.prevent="sendMessage" class="flex items-end gap-1.5 sm:gap-2.5">
             <!-- Tombol Lampirkan Berkas Bulk -->
             <input 
               ref="fileInputRef" 
@@ -408,7 +408,7 @@
               @click="$refs.fileInputRef.click()"
               type="button"
               title="Unggah lampiran foto atau dokumen bulk (Maks 15MB)"
-              class="p-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition cursor-pointer shrink-0 border border-slate-200/80"
+              class="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition cursor-pointer shrink-0 border border-slate-200/80"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
@@ -421,9 +421,9 @@
                 v-model="inputMessage"
                 @input="handleTyping"
                 @keydown.enter.exact.prevent="sendMessage"
-                rows="2"
-                placeholder="Tulis pesan dinas atau pertanyaan Anda di sini... (Tekan Enter untuk kirim)"
-                class="w-full resize-none px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition"
+                rows="1"
+                placeholder="Tulis pesan dinas atau pertanyaan Anda..."
+                class="w-full resize-none px-3 sm:px-4 py-2 sm:py-2.5 bg-slate-50 border border-slate-200 rounded-xl sm:rounded-2xl text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition max-h-24 sm:max-h-28"
               ></textarea>
             </div>
 
@@ -431,10 +431,10 @@
             <button
               :disabled="isSending || (!inputMessage.trim() && stagedFiles.length === 0) || totalStagedSize > maxAllowedBytes"
               type="submit"
-              class="px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition cursor-pointer flex items-center gap-2 shrink-0"
+              class="px-3.5 sm:px-5 py-2 sm:py-3 rounded-xl sm:rounded-2xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition cursor-pointer flex items-center gap-1.5 sm:gap-2 shrink-0"
             >
-              <span v-if="!isSending">Kirim</span>
-              <span v-else>Mengirim...</span>
+              <span v-if="!isSending" class="hidden sm:inline">Kirim</span>
+              <span v-else class="hidden sm:inline">Mengirim...</span>
               <svg v-if="!isSending" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
               </svg>

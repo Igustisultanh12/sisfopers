@@ -4,7 +4,7 @@
 
     <div class="space-y-5">
       <!-- 1. Statistik Ringkasan Obrolan -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div :class="selectedThread ? 'hidden lg:grid' : 'grid'" class="grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
             <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Sesi Terbuka (Aktif)</p>
@@ -43,10 +43,13 @@
       </div>
 
       <!-- 2. Antarmuka Split Obrolan (Daftar Kiri & Pesan Kanan) -->
-      <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-12 h-[calc(100vh-13.5rem)] min-h-[580px] max-h-[850px]">
+      <div 
+        :class="selectedThread ? 'h-[calc(100dvh-5.5rem)]' : 'h-[calc(100dvh-13.5rem)] sm:h-[calc(100vh-13.5rem)]'" 
+        class="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[480px] sm:min-h-[580px] max-h-[850px]"
+      >
         
         <!-- KOLOM KIRI: Daftar Percakapan Personel (lg:col-span-5) -->
-        <div class="lg:col-span-5 border-r border-slate-200 flex flex-col h-full min-h-0 bg-slate-50/40">
+        <div :class="selectedThread ? 'hidden lg:flex' : 'flex'" class="lg:col-span-5 border-r border-slate-200 flex-col h-full min-h-0 bg-slate-50/40">
           
           <!-- Filter & Pencarian -->
           <div class="p-4 border-b border-slate-200 bg-white space-y-3 shrink-0">
@@ -175,68 +178,80 @@
         </div>
 
         <!-- KOLOM KANAN: Ruang Obrolan Aktif (lg:col-span-7) -->
-        <div class="lg:col-span-7 flex flex-col h-full min-h-0 bg-white">
+        <div :class="selectedThread ? 'flex' : 'hidden lg:flex'" class="lg:col-span-7 flex-col h-full min-h-0 bg-white">
           
           <template v-if="selectedThread">
             <!-- Header Utas Aktif -->
-            <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-white shrink-0">
-              <div class="flex items-center gap-3">
+            <div class="px-3 sm:px-6 py-2.5 sm:py-4 border-b border-slate-200 flex items-center justify-between bg-white shrink-0 gap-2">
+              <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+                <!-- Tombol Kembali ke Daftar Utas (Hanya Tampil di HP / Layar Kecil) -->
+                <button 
+                  @click="backToThreadList"
+                  type="button"
+                  class="lg:hidden p-1.5 -ml-1 text-slate-600 hover:text-slate-900 rounded-xl hover:bg-slate-100 transition cursor-pointer shrink-0"
+                  title="Kembali ke Daftar Utas"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+
                 <div class="relative shrink-0">
                   <img 
                     :src="selectedThread.personel?.photo_profile ? `/documents/private-stream?path=${encodeURIComponent(selectedThread.personel.photo_profile)}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedThread.personel?.full_name || 'P')}&background=e2e8f0&color=334155`" 
-                    class="w-11 h-11 object-cover rounded-xl border border-slate-200" 
+                    class="w-9 h-9 sm:w-11 sm:h-11 object-cover rounded-xl border border-slate-200" 
                   />
                   <span 
                     :class="selectedPersonelOnline ? 'bg-emerald-500 ring-white' : 'bg-slate-300 ring-white'"
-                    class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full ring-2 shadow-xs"
+                    class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 rounded-full ring-2 shadow-xs"
                     :title="selectedPersonelOnline ? 'Personel Online' : 'Personel Offline'"
                   ></span>
                 </div>
-                <div>
-                  <div class="flex items-center gap-2">
-                    <h3 class="text-sm font-extrabold text-slate-900">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-1.5 sm:gap-2">
+                    <h3 class="text-xs sm:text-sm font-extrabold text-slate-900 truncate">
                       {{ selectedThread.personel?.pangkat }} {{ selectedThread.personel?.full_name }}
                     </h3>
                     <span 
                       v-if="selectedPersonelOnline" 
-                      class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full"
+                      class="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 sm:px-2 py-0.5 rounded-full shrink-0"
                     >
                       <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                       Online
                     </span>
                     <span 
                       v-else 
-                      class="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full"
+                      class="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-medium text-slate-500 bg-slate-100 border border-slate-200 px-1.5 sm:px-2 py-0.5 rounded-full shrink-0"
                     >
                       <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                       Offline
                     </span>
                   </div>
-                  <div class="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
-                    <span>NIKC: <strong>{{ selectedThread.personel?.nikc || selectedThread.personel?.nik }}</strong></span>
-                    <span>&bull;</span>
-                    <span>No HP: <strong>{{ selectedThread.personel?.phone_number || '-' }}</strong></span>
-                    <span>&bull;</span>
+                  <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] sm:text-[11px] text-slate-500 mt-0.5">
+                    <span class="truncate">NIKC: <strong>{{ selectedThread.personel?.nikc || selectedThread.personel?.nik }}</strong></span>
+                    <span class="hidden sm:inline">&bull;</span>
+                    <span class="hidden sm:inline">No HP: <strong>{{ selectedThread.personel?.phone_number || '-' }}</strong></span>
+                    <span class="hidden sm:inline">&bull;</span>
                     <span v-if="isPersonelTyping" class="text-blue-600 font-bold animate-pulse">
                       sedang mengetik...
                     </span>
                     <span v-else :class="selectedThread.status === 'OPEN' ? 'text-emerald-600 font-bold' : 'text-slate-500 font-bold'">
                       {{ selectedThread.status === 'OPEN' ? 'Sesi Terbuka' : 'Sesi Ditutup' }}
                     </span>
-                    <span v-if="!selectedPersonelOnline && selectedPersonelLastSeen" class="text-slate-400 hidden sm:inline">
-                      &bull; Terakhir aktif: {{ formatLastSeen(selectedPersonelLastSeen) }}
+                    <span v-if="!selectedPersonelOnline && selectedPersonelLastSeen" class="text-slate-400 hidden md:inline">
+                      &bull; Aktif: {{ formatLastSeen(selectedPersonelLastSeen) }}
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 <!-- Tombol Mulai Panggilan Video Dinas (Vicon P2P) -->
                 <button 
                   v-if="selectedThread.status === 'OPEN'"
                   @click="openVideoCall"
                   type="button" 
-                  class="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
                   title="Mulai Panggilan Video Dinas (Vicon P2P)"
                 >
                   <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -249,9 +264,9 @@
                   @click="toggleStatus(selectedThread.uuid)" 
                   type="button" 
                   :class="selectedThread.status === 'OPEN' ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 border-amber-200' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200'"
-                  class="px-3 py-1.5 rounded-xl border text-xs font-bold transition cursor-pointer"
+                  class="px-2.5 sm:px-3 py-1.5 rounded-xl border text-[11px] sm:text-xs font-bold transition cursor-pointer shrink-0"
                 >
-                  {{ selectedThread.status === 'OPEN' ? 'Tutup Sesi' : 'Buka Sesi Kembali' }}
+                  {{ selectedThread.status === 'OPEN' ? 'Tutup Sesi' : 'Buka Sesi' }}
                 </button>
               </div>
             </div>
@@ -421,10 +436,10 @@
               </button>
             </div>
 
-            <form v-else @submit.prevent="submitAdminReply" class="p-4 bg-white border-t border-slate-200 shrink-0">
-              <div class="flex items-end gap-2">
+            <form v-else @submit.prevent="submitAdminReply" class="p-2.5 sm:p-4 bg-white border-t border-slate-200 shrink-0">
+              <div class="flex items-end gap-1.5 sm:gap-2">
                 <label 
-                  class="p-2.5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition cursor-pointer shrink-0 flex items-center justify-center"
+                  class="p-2 sm:p-2.5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition cursor-pointer shrink-0 flex items-center justify-center"
                   title="Pilih foto atau dokumen jawaban (Bulk max 15MB)"
                 >
                   <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -447,17 +462,17 @@
                     @keydown.enter.exact.prevent="submitAdminReply"
                     rows="1" 
                     placeholder="Tulis balasan arahan dinas..." 
-                    class="w-full text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 resize-none max-h-28"
+                    class="w-full text-xs px-3 py-2 sm:px-3.5 sm:py-2.5 bg-slate-50 border border-slate-300 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 resize-none max-h-24 sm:max-h-28"
                   ></textarea>
                 </div>
 
                 <button 
                   type="submit" 
                   :disabled="isAdminSending || adminTotalStagedSize > maxAllowedBytes || (!adminReplyMessage.trim() && adminStagedFiles.length === 0)"
-                  class="px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-blue-600/20 transition cursor-pointer shrink-0"
+                  class="px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-blue-600/20 transition cursor-pointer shrink-0"
                 >
-                  <span v-if="!isAdminSending">Kirim</span>
-                  <span v-else>Mengirim...</span>
+                  <span v-if="!isAdminSending" class="hidden sm:inline">Kirim</span>
+                  <span v-else-if="isAdminSending" class="hidden sm:inline">Mengirim...</span>
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                   </svg>
@@ -1090,7 +1105,22 @@ const selectThread = (th) => {
   isPersonelTyping.value = false;
   selectedPersonelOnline.value = th.personel?.is_online ?? false;
   selectedPersonelLastSeen.value = th.personel?.last_seen_at || null;
+  if (typeof window !== 'undefined') {
+    const url = new URL(window.location.href);
+    url.searchParams.set('thread', th.uuid);
+    window.history.replaceState({}, '', url.toString());
+  }
   loadThreadMessages(th.uuid);
+};
+
+const backToThreadList = () => {
+  selectedThread.value = null;
+  activeMessagesList.value = [];
+  if (typeof window !== 'undefined') {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('thread');
+    window.history.replaceState({}, '', url.toString());
+  }
 };
 
 const getPrefix = () => {

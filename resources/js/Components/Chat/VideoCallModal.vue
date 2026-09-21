@@ -1,10 +1,10 @@
 <template>
-  <div v-if="show" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-2 sm:p-4 select-none">
+  <div v-if="show" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-0 sm:p-4 select-none">
     
     <!-- 1. KONDISI A: PANGGILAN KELUAR (OUTGOING CALLING) -->
     <div 
       v-if="callStatus === 'OUTGOING'" 
-      class="w-full max-w-md bg-slate-900 border border-slate-700/80 rounded-3xl p-6 sm:p-8 text-center text-white shadow-2xl space-y-6 relative overflow-hidden"
+      class="w-full h-full sm:h-auto max-w-md bg-slate-900 border-0 sm:border border-slate-700/80 rounded-none sm:rounded-3xl p-6 sm:p-8 text-center text-white shadow-2xl space-y-6 relative overflow-hidden flex flex-col justify-center"
     >
       <!-- Background Ambient Glow -->
       <div class="absolute -top-24 -left-24 w-48 h-48 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
@@ -69,7 +69,7 @@
     <!-- 2. KONDISI B: PANGGILAN MASUK (INCOMING CALL DIALOG) -->
     <div 
       v-else-if="callStatus === 'INCOMING'" 
-      class="w-full max-w-md bg-slate-900 border border-slate-700/80 rounded-3xl p-6 sm:p-8 text-center text-white shadow-2xl space-y-6 relative overflow-hidden"
+      class="w-full h-full sm:h-auto max-w-md bg-slate-900 border-0 sm:border border-slate-700/80 rounded-none sm:rounded-3xl p-6 sm:p-8 text-center text-white shadow-2xl space-y-6 relative overflow-hidden flex flex-col justify-center"
     >
       <div class="absolute -top-20 -right-20 w-40 h-40 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -129,30 +129,30 @@
     <!-- 3. KONDISI C: RUANG VICON AKTIF (CONNECTED / CONNECTING ROOM) -->
     <div 
       v-else 
-      :class="isFullscreen ? 'fixed inset-0 z-50 rounded-none' : 'w-full max-w-5xl h-[90vh] max-h-[720px] rounded-3xl'"
-      class="bg-slate-900 border border-slate-800 shadow-2xl flex flex-col overflow-hidden relative"
+      :class="isFullscreen ? 'fixed inset-0 z-50 rounded-none' : 'w-full max-w-5xl h-[100dvh] sm:h-[90vh] sm:max-h-[720px] rounded-none sm:rounded-3xl border-0 sm:border border-slate-800'"
+      class="bg-slate-900 shadow-2xl flex flex-col overflow-hidden relative"
     >
       <!-- Bilah Header Atas Ruang Vicon -->
-      <div class="h-14 px-4 sm:px-6 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 flex items-center justify-between shrink-0 z-20">
-        <div class="flex items-center gap-3">
-          <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
-          <div>
-            <h4 class="text-xs sm:text-sm font-black text-white flex items-center gap-2">
-              <span>{{ partnerUser?.pangkat }} {{ partnerUser?.name }}</span>
-              <span class="hidden sm:inline text-[10px] font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded-md">
+      <div class="h-14 px-3 sm:px-6 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 flex items-center justify-between shrink-0 z-20">
+        <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></div>
+          <div class="min-w-0">
+            <h4 class="text-xs sm:text-sm font-black text-white flex items-center gap-1.5 sm:gap-2 truncate">
+              <span class="truncate">{{ partnerUser?.pangkat }} {{ partnerUser?.name }}</span>
+              <span class="hidden sm:inline text-[10px] font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded-md shrink-0">
                 {{ partnerUser?.matra ? `Matra ${partnerUser.matra}` : 'Dinas' }}
               </span>
             </h4>
-            <div class="flex items-center gap-2 text-[10px] text-slate-400">
+            <div class="flex items-center gap-1.5 sm:gap-2 text-[10px] text-slate-400">
               <span>Durasi: <strong class="text-slate-200 font-mono">{{ formatDuration(callDuration) }}</strong></span>
               <span>&bull;</span>
-              <span class="text-emerald-400 font-semibold">{{ connectionStatusText }}</span>
+              <span class="text-emerald-400 font-semibold truncate">{{ connectionStatusText }}</span>
             </div>
           </div>
         </div>
 
         <!-- Lencana Keamanan Militer -->
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 shrink-0">
           <div class="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/60 border border-emerald-800/60 text-[10px] font-bold text-emerald-400">
             <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -185,7 +185,7 @@
           ref="remoteVideoRef" 
           autoplay 
           playsinline 
-          class="w-full h-full object-contain"
+          class="w-full h-full object-cover sm:object-contain"
         ></video>
 
         <!-- Placeholder jika Remote Video Belum Terhubung atau Kamera Lawan Nonaktif -->
@@ -225,7 +225,7 @@
 
         <!-- Video Lokal Pengguna (Miniatur PiP di Sudut Kanan Bawah) -->
         <div 
-          class="absolute bottom-4 right-4 w-36 sm:w-48 aspect-video bg-slate-900 border-2 border-slate-700/90 rounded-2xl shadow-2xl overflow-hidden z-20 group transition-all"
+          class="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 w-28 sm:w-44 aspect-[3/4] sm:aspect-video bg-slate-900 border-2 border-slate-700/90 rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden z-20 group transition-all"
         >
           <video 
             ref="localVideoRef" 
@@ -261,7 +261,7 @@
       <!-- Bilah Menu Pilihan Virtual Background (Bila Dibuka) -->
       <div 
         v-if="showBgMenu" 
-        class="absolute bottom-20 left-1/2 -translate-x-1/2 w-full max-w-md bg-slate-950/95 border border-slate-800 rounded-2xl p-4 shadow-2xl z-30 space-y-3 backdrop-blur-xl"
+        class="absolute bottom-18 sm:bottom-22 left-1/2 -translate-x-1/2 w-[92%] sm:w-full max-w-md bg-slate-950/95 border border-slate-800 rounded-2xl p-3 sm:p-4 shadow-2xl z-30 space-y-2.5 sm:space-y-3 backdrop-blur-xl"
       >
         <div class="flex items-center justify-between pb-2 border-b border-slate-800">
           <h5 class="text-xs font-bold text-white flex items-center gap-1.5">
@@ -273,12 +273,12 @@
           <button @click="showBgMenu = false" type="button" class="text-slate-400 hover:text-white text-xs cursor-pointer">&times;</button>
         </div>
 
-        <div class="grid grid-cols-3 gap-2 text-center text-[10px] font-bold">
+        <div class="grid grid-cols-3 gap-1.5 sm:gap-2 text-center text-[10px] font-bold">
           <!-- Tanpa Efek -->
           <button 
             @click="applyBackground('none')"
             :class="currentBackground === 'none' ? 'border-blue-500 bg-blue-500/10 text-blue-400' : 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800'"
-            class="p-2.5 rounded-xl border flex flex-col items-center gap-1.5 transition cursor-pointer"
+            class="p-2 sm:p-2.5 rounded-xl border flex flex-col items-center gap-1 sm:gap-1.5 transition cursor-pointer"
           >
             <div class="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -292,7 +292,7 @@
           <button 
             @click="applyBackground('blur-light')"
             :class="currentBackground === 'blur-light' ? 'border-blue-500 bg-blue-500/10 text-blue-400' : 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800'"
-            class="p-2.5 rounded-xl border flex flex-col items-center gap-1.5 transition cursor-pointer"
+            class="p-2 sm:p-2.5 rounded-xl border flex flex-col items-center gap-1 sm:gap-1.5 transition cursor-pointer"
           >
             <div class="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center backdrop-blur-xs">
               <span class="text-xs">BL</span>
@@ -304,7 +304,7 @@
           <button 
             @click="applyBackground('blur-heavy')"
             :class="currentBackground === 'blur-heavy' ? 'border-blue-500 bg-blue-500/10 text-blue-400' : 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800'"
-            class="p-2.5 rounded-xl border flex flex-col items-center gap-1.5 transition cursor-pointer"
+            class="p-2 sm:p-2.5 rounded-xl border flex flex-col items-center gap-1 sm:gap-1.5 transition cursor-pointer"
           >
             <div class="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center backdrop-blur-md">
               <span class="text-xs">BP</span>
@@ -316,7 +316,7 @@
           <button 
             @click="applyBackground('command')"
             :class="currentBackground === 'command' ? 'border-blue-500 bg-blue-500/10 text-blue-400' : 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800'"
-            class="p-2.5 rounded-xl border flex flex-col items-center gap-1.5 transition cursor-pointer"
+            class="p-2 sm:p-2.5 rounded-xl border flex flex-col items-center gap-1 sm:gap-1.5 transition cursor-pointer"
           >
             <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-slate-950 to-blue-900 flex items-center justify-center">
               <span class="text-[9px] text-blue-300">KC</span>
@@ -328,7 +328,7 @@
           <button 
             @click="applyBackground('office')"
             :class="currentBackground === 'office' ? 'border-blue-500 bg-blue-500/10 text-blue-400' : 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800'"
-            class="p-2.5 rounded-xl border flex flex-col items-center gap-1.5 transition cursor-pointer"
+            class="p-2 sm:p-2.5 rounded-xl border flex flex-col items-center gap-1 sm:gap-1.5 transition cursor-pointer"
           >
             <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-slate-900 to-emerald-950 flex items-center justify-center">
               <span class="text-[9px] text-emerald-300">MBS</span>
@@ -339,14 +339,14 @@
       </div>
 
       <!-- Bilah Kontrol Bawah (Toolbar Melayang Gaya Zoom / Meet / WhatsApp) -->
-      <div class="h-20 px-4 bg-slate-950/90 backdrop-blur-md border-t border-slate-800 flex items-center justify-center gap-2 sm:gap-4 shrink-0 z-20">
+      <div class="h-16 sm:h-20 px-2 sm:px-4 bg-slate-950/95 backdrop-blur-md border-t border-slate-800 flex items-center justify-around sm:justify-center gap-1 sm:gap-3 shrink-0 z-20">
         
         <!-- 1. Tombol Mikrofon (Mute/Unmute) -->
         <button 
           @click="toggleMute" 
           type="button" 
           :class="isMuted ? 'bg-red-600 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'"
-          class="p-3 sm:p-3.5 rounded-2xl shadow-md transition cursor-pointer flex flex-col items-center gap-1 active:scale-95"
+          class="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl shadow-md transition cursor-pointer flex flex-col items-center gap-1 active:scale-95"
           :title="isMuted ? 'Nyalakan Mikrofon' : 'Matikan Mikrofon'"
         >
           <svg v-if="!isMuted" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -363,7 +363,7 @@
           @click="toggleCamera" 
           type="button" 
           :class="isCameraOff ? 'bg-red-600 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'"
-          class="p-3 sm:p-3.5 rounded-2xl shadow-md transition cursor-pointer flex flex-col items-center gap-1 active:scale-95"
+          class="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl shadow-md transition cursor-pointer flex flex-col items-center gap-1 active:scale-95"
           :title="isCameraOff ? 'Nyalakan Kamera' : 'Matikan Kamera'"
         >
           <svg v-if="!isCameraOff" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -379,7 +379,7 @@
           @click="showBgMenu = !showBgMenu" 
           type="button" 
           :class="showBgMenu ? 'bg-blue-600 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'"
-          class="p-3 sm:p-3.5 rounded-2xl shadow-md transition cursor-pointer flex flex-col items-center gap-1 active:scale-95"
+          class="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl shadow-md transition cursor-pointer flex flex-col items-center gap-1 active:scale-95"
           title="Ubah Latar Belakang (Virtual Background)"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -387,12 +387,12 @@
           </svg>
         </button>
 
-        <!-- 4. Tombol Bagi Layar (Screen Share) -->
+        <!-- 4. Tombol Bagi Layar (Screen Share - Khusus Layar Komputer / Tablet) -->
         <button 
           @click="toggleScreenShare" 
           type="button" 
           :class="isScreenSharing ? 'bg-emerald-600 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'"
-          class="p-3 sm:p-3.5 rounded-2xl shadow-md transition cursor-pointer flex flex-col items-center gap-1 active:scale-95"
+          class="hidden sm:flex p-3 sm:p-3.5 rounded-2xl shadow-md transition cursor-pointer flex-col items-center gap-1 active:scale-95"
           :title="isScreenSharing ? 'Berhenti Berbagi Layar' : 'Bagi Layar Paparan (Screen Share)'"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -404,7 +404,7 @@
         <button 
           @click="flipCamera" 
           type="button" 
-          class="p-3 sm:p-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 shadow-md transition cursor-pointer flex flex-col items-center gap-1 active:scale-95"
+          class="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 shadow-md transition cursor-pointer flex flex-col items-center gap-1 active:scale-95"
           title="Ganti Sudut Kamera"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -416,7 +416,7 @@
         <button 
           @click="hangUpCall" 
           type="button" 
-          class="py-3 px-5 sm:px-6 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-black text-xs sm:text-sm rounded-2xl shadow-xl transition flex items-center gap-2 cursor-pointer ml-1 sm:ml-2"
+          class="py-2.5 sm:py-3 px-3.5 sm:px-6 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-black text-xs sm:text-sm rounded-xl sm:rounded-2xl shadow-xl transition flex items-center gap-1.5 sm:gap-2 cursor-pointer ml-1 sm:ml-2"
           title="Akhiri Panggilan Dinas"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
