@@ -339,6 +339,7 @@ Route::middleware(['auth', 'role:admin,kordinator_matra,kordinator_angkatan'])->
     Route::post('/live-chat/start', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminStartChat'])->name('chat.start');
     Route::get('/live-chat/{uuid}/messages', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminGetMessages'])->name('chat.messages');
     Route::post('/live-chat/{uuid}/send', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminSendMessage'])->name('chat.send');
+    Route::post('/live-chat/{uuid}/typing', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminTyping'])->name('chat.typing');
     Route::post('/live-chat/{uuid}/status', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminToggleStatus'])->name('chat.status');
     Route::delete('/live-chat/{uuid}', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminDestroy'])->name('chat.destroy');
 
@@ -474,6 +475,7 @@ Route::middleware(['auth', 'role:personel,admin,kordinator_angkatan,kordinator_m
         Route::get('/live-chat/thread', [\App\Http\Controllers\Chat\LiveChatController::class, 'getThread'])->name('chat.thread');
         Route::get('/live-chat/{uuid}/messages', [\App\Http\Controllers\Chat\LiveChatController::class, 'getMessages'])->name('chat.messages');
         Route::post('/live-chat/{uuid}/send', [\App\Http\Controllers\Chat\LiveChatController::class, 'sendMessage'])->name('chat.send');
+        Route::post('/live-chat/{uuid}/typing', [\App\Http\Controllers\Chat\LiveChatController::class, 'personelTyping'])->name('chat.typing');
         Route::post('/live-chat/{uuid}/end', [\App\Http\Controllers\Chat\LiveChatController::class, 'endSession'])->name('chat.end');
         Route::post('/live-chat/new', [\App\Http\Controllers\Chat\LiveChatController::class, 'newThread'])->name('chat.new');
     });
@@ -511,6 +513,7 @@ Route::middleware(['auth', 'role:kordinator_angkatan,kordinator_matra'])->prefix
         Route::post('/live-chat/start', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminStartChat'])->name('chat.start');
         Route::get('/live-chat/{uuid}/messages', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminGetMessages'])->name('chat.messages');
         Route::post('/live-chat/{uuid}/send', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminSendMessage'])->name('chat.send');
+        Route::post('/live-chat/{uuid}/typing', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminTyping'])->name('chat.typing');
         Route::post('/live-chat/{uuid}/status', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminToggleStatus'])->name('chat.status');
         Route::delete('/live-chat/{uuid}', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminDestroy'])->name('chat.destroy');
     });
@@ -553,6 +556,7 @@ Route::middleware(['auth:pju,web', 'role:ka_bacadnas,ses_bacadnas,kapus_komcad,p
     Route::post('/live-chat/start', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminStartChat'])->name('chat.start');
     Route::get('/live-chat/{uuid}/messages', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminGetMessages'])->name('chat.messages');
     Route::post('/live-chat/{uuid}/send', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminSendMessage'])->name('chat.send');
+    Route::post('/live-chat/{uuid}/typing', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminTyping'])->name('chat.typing');
     Route::post('/live-chat/{uuid}/status', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminToggleStatus'])->name('chat.status');
     Route::delete('/live-chat/{uuid}', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminDestroy'])->name('chat.destroy');
 });

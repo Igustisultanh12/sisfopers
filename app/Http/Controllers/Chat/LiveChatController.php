@@ -9,6 +9,7 @@ use App\Models\Personel;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -155,9 +156,15 @@ class LiveChatController extends Controller
             $messagesQuery->where('id', '>', $lastId);
         }
 
+        $adminTyping = Cache::get("live_chat:typing:{$thread->uuid}:admin");
+
         return response()->json([
             'status' => $thread->status,
             'messages' => $messagesQuery->get(),
+            'typing' => [
+                'is_typing' => !empty($adminTyping),
+                'name' => $adminTyping['name'] ?? null,
+            ],
         ]);
     }
 
@@ -268,9 +275,45 @@ class LiveChatController extends Controller
             'unread_admin' => $thread->unread_admin + 1,
         ]);
 
+        Cache::forget("live_chat:typing:{$thread->uuid}:personel");
+
         return response()->json([
             'success' => true,
             'message' => $message,
+        ]);
+    }
+
+    /**
+     * Memperbarui sinyal indikator sedang mengetik dari Personel
+     */
+    public function personelTyping(Request $request, $uuid)
+    {
+        $user = Auth::user();
+        $personel = $user->personel ?? Personel::where('user_id', $user->id)->first();
+
+        if (!$personel) {
+            return response()->json(['error' => 'Profil personel tidak ditemukan.'], 404);
+        }
+
+        $thread = LiveChatThread::where('uuid', $uuid)
+            ->where('personel_id', $personel->id)
+            ->firstOrFail();
+
+        if ($thread->status === 'OPEN') {
+            $senderName = trim(Personel::formatLongRank($personel->pangkat) . ' ' . $personel->full_name);
+            Cache::put("live_chat:typing:{$thread->uuid}:personel", [
+                'name' => $senderName,
+            ], now()->addSeconds(4));
+        }
+
+        $adminTyping = Cache::get("live_chat:typing:{$thread->uuid}:admin");
+
+        return response()->json([
+            'success' => true,
+            'typing' => [
+                'is_typing' => !empty($adminTyping),
+                'name' => $adminTyping['name'] ?? null,
+            ],
         ]);
     }
 
@@ -361,9 +404,15 @@ class LiveChatController extends Controller
             $messagesQuery->where('id', '>', $lastId);
         }
 
+        $personelTyping = Cache::get("live_chat:typing:{$thread->uuid}:personel");
+
         return response()->json([
             'status' => $thread->status,
             'messages' => $messagesQuery->get(),
+            'typing' => [
+                'is_typing' => !empty($personelTyping),
+                'name' => $personelTyping['name'] ?? null,
+            ],
         ]);
     }
 
@@ -473,9 +522,51 @@ class LiveChatController extends Controller
             'unread_personel' => $thread->unread_personel + 1,
         ]);
 
+        Cache::forget("live_chat:typing:{$thread->uuid}:admin");
+
         return response()->json([
             'success' => true,
             'message' => $message,
+        ]);
+    }
+
+    /**
+     * Memperbarui sinyal indikator sedang mengetik dari Admin / PJU / Koordinator
+     */
+    public function adminTyping(Request $request, $uuid)
+    {
+        $user = Auth::user();
+        $thread = LiveChatThread::where('uuid', $uuid)->firstOrFail();
+
+        if ($thread->status === 'OPEN') {
+            $personelAdmin = $user->personel;
+            $rankAdmin = $personelAdmin ? Personel::formatLongRank($personelAdmin->pangkat) : '';
+            $nameAdmin = $personelAdmin ? $personelAdmin->full_name : ($user->name ?? $user->username);
+
+            $roleTitle = match (true) {
+                $user->hasRole('admin') => 'Admin Sisfopers',
+                $user->hasRole('pju') => 'PJU Mabes TNI',
+                $user->hasRole('kordinator_angkatan') => 'Koordinator Angkatan' . ($personelAdmin?->angkatan ? " {$personelAdmin->angkatan}" : ''),
+                $user->hasRole('kordinator_matra') => 'Koordinator Matra' . ($personelAdmin?->matra ? " {$personelAdmin->matra}" : ''),
+                default => 'Operator Pelayanan',
+            };
+
+            $parts = array_filter([$roleTitle, $rankAdmin, $nameAdmin]);
+            $senderName = implode(' ', $parts);
+
+            Cache::put("live_chat:typing:{$thread->uuid}:admin", [
+                'name' => $senderName,
+            ], now()->addSeconds(4));
+        }
+
+        $personelTyping = Cache::get("live_chat:typing:{$thread->uuid}:personel");
+
+        return response()->json([
+            'success' => true,
+            'typing' => [
+                'is_typing' => !empty($personelTyping),
+                'name' => $personelTyping['name'] ?? null,
+            ],
         ]);
     }
 

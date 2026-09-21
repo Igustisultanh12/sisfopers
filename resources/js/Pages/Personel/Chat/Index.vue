@@ -125,15 +125,18 @@
         <!-- Banner Sub-Header: Status Interaktif Percakapan & Respon -->
         <div 
           v-if="thread?.status === 'OPEN'"
-          :class="isAwaitingResponse ? 'bg-amber-50/80 border-b border-amber-200/60 text-amber-900' : 'bg-emerald-50/80 border-b border-emerald-200/60 text-emerald-900'"
+          :class="isOperatorTyping ? 'bg-emerald-100/90 border-b border-emerald-300/80 text-emerald-950' : (isAwaitingResponse ? 'bg-amber-50/80 border-b border-amber-200/60 text-amber-900' : 'bg-emerald-50/80 border-b border-emerald-200/60 text-emerald-900')"
           class="px-6 py-2.5 flex items-center justify-between text-xs transition shrink-0"
         >
           <div class="flex items-center gap-2 font-bold">
             <span 
-              :class="isAwaitingResponse ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'"
+              :class="isOperatorTyping ? 'bg-emerald-600 animate-ping' : (isAwaitingResponse ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500')"
               class="w-2 h-2 rounded-full shrink-0"
             ></span>
-            <span v-if="isAwaitingResponse">
+            <span v-if="isOperatorTyping" class="text-emerald-800 animate-pulse">
+              {{ operatorTypingName }} sedang mengetik...
+            </span>
+            <span v-else-if="isAwaitingResponse">
               Menunggu Respon dari Petugas Dinas...
             </span>
             <span v-else>
@@ -312,6 +315,28 @@
               </div>
             </div>
           </template>
+
+          <!-- Animasi Indikator Operator Sedang Mengetik -->
+          <div v-if="isOperatorTyping" class="flex items-end gap-2.5 max-w-[85%] transition-all">
+            <div class="w-8 h-8 rounded-xl bg-slate-900 text-amber-400 flex items-center justify-center shrink-0 text-xs font-bold shadow-xs">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+            <div class="space-y-1">
+              <div class="flex items-center gap-1.5 text-[10px] text-slate-500 font-semibold">
+                <span>{{ operatorTypingName }}</span>
+              </div>
+              <div class="bg-white border border-slate-200 text-slate-800 text-xs px-4 py-2.5 rounded-2xl rounded-tl-xs shadow-xs flex items-center gap-2.5">
+                <div class="flex items-center gap-1 py-1">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500 animate-bounce [animation-delay:-0.3s]"></span>
+                  <span class="w-2 h-2 rounded-full bg-emerald-500 animate-bounce [animation-delay:-0.15s]"></span>
+                  <span class="w-2 h-2 rounded-full bg-emerald-500 animate-bounce"></span>
+                </div>
+                <span class="text-[11px] font-semibold text-slate-600 italic">sedang mengetik...</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Area Input Pengiriman (Jika Sesi Terbuka) -->
@@ -374,6 +399,7 @@
             <div class="flex-1 min-w-0 relative">
               <textarea
                 v-model="inputMessage"
+                @input="handleTyping"
                 @keydown.enter.exact.prevent="sendMessage"
                 rows="2"
                 placeholder="Tulis pesan dinas atau pertanyaan Anda di sini... (Tekan Enter untuk kirim)"
@@ -451,6 +477,47 @@ const isStartingSession = ref(false);
 const chatScrollContainer = ref(null);
 const fileInputRef = ref(null);
 
+const isOperatorTyping = ref(false);
+const operatorTypingName = ref('');
+let operatorTypingTimer = null;
+let lastTypingSentAt = 0;
+
+const updateOperatorTypingStatus = (typing) => {
+  if (typing?.is_typing) {
+    const wasTyping = isOperatorTyping.value;
+    isOperatorTyping.value = true;
+    operatorTypingName.value = typing.name || activeOperatorName.value || 'Petugas Layanan';
+    if (!wasTyping) {
+      scrollToBottom();
+    }
+    if (operatorTypingTimer) clearTimeout(operatorTypingTimer);
+    operatorTypingTimer = setTimeout(() => {
+      isOperatorTyping.value = false;
+    }, 4500);
+  } else {
+    isOperatorTyping.value = false;
+    if (operatorTypingTimer) {
+      clearTimeout(operatorTypingTimer);
+      operatorTypingTimer = null;
+    }
+  }
+};
+
+const handleTyping = () => {
+  if (!thread.value || !thread.value.uuid || thread.value.status !== 'OPEN') return;
+  const now = Date.now();
+  if (now - lastTypingSentAt > 2000) {
+    lastTypingSentAt = now;
+    axios.post(`/personel/live-chat/${thread.value.uuid}/typing`)
+      .then((res) => {
+        if (res.data?.typing) {
+          updateOperatorTypingStatus(res.data.typing);
+        }
+      })
+      .catch(() => {});
+  }
+};
+
 let pollingTimer = null;
 const maxAllowedBytes = 15 * 1024 * 1024; // 15 Megabytes
 
@@ -520,6 +587,10 @@ const pollMessages = async () => {
       thread.value.status = res.data.status;
     }
 
+    if (res.data.typing) {
+      updateOperatorTypingStatus(res.data.typing);
+    }
+
     if (res.data.messages && res.data.messages.length > 0) {
       const hasDinasMessage = res.data.messages.some(m => m.sender_type !== 'PERSONEL');
       messagesList.value.push(...res.data.messages);
@@ -538,7 +609,7 @@ const startPolling = () => {
   stopPolling();
   pollingTimer = setInterval(() => {
     pollMessages();
-  }, 3500); // Polling asinkron teratur setiap 3.5 detik
+  }, 2500); // Polling asinkron teratur setiap 2.5 detik
 };
 
 const stopPolling = () => {
@@ -701,5 +772,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   stopPolling();
+  if (operatorTypingTimer) clearTimeout(operatorTypingTimer);
 });
 </script>

@@ -187,7 +187,10 @@
                     <span>&bull;</span>
                     <span>No HP: <strong>{{ selectedThread.personel?.phone_number || '-' }}</strong></span>
                     <span>&bull;</span>
-                    <span :class="selectedThread.status === 'OPEN' ? 'text-emerald-600 font-bold' : 'text-slate-500 font-bold'">
+                    <span v-if="isPersonelTyping" class="text-blue-600 font-bold animate-pulse">
+                      sedang mengetik...
+                    </span>
+                    <span v-else :class="selectedThread.status === 'OPEN' ? 'text-emerald-600 font-bold' : 'text-slate-500 font-bold'">
                       {{ selectedThread.status === 'OPEN' ? 'Sesi Terbuka' : 'Sesi Ditutup' }}
                     </span>
                   </div>
@@ -309,6 +312,28 @@
                   </div>
                 </div>
               </template>
+
+              <!-- Animasi Indikator Personel Sedang Mengetik -->
+              <div v-if="isPersonelTyping" class="flex items-end gap-2.5 max-w-[85%] transition-all">
+                <div class="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 text-xs font-bold shadow-xs">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <div class="space-y-1">
+                  <div class="flex items-center gap-1.5 text-[10px] text-slate-500 font-semibold">
+                    <span>{{ personelTypingName }}</span>
+                  </div>
+                  <div class="bg-white border border-slate-200 text-slate-800 text-xs px-4 py-2.5 rounded-2xl rounded-tl-xs shadow-xs flex items-center gap-2.5">
+                    <div class="flex items-center gap-1 py-1">
+                      <span class="w-2 h-2 rounded-full bg-blue-600 animate-bounce [animation-delay:-0.3s]"></span>
+                      <span class="w-2 h-2 rounded-full bg-blue-600 animate-bounce [animation-delay:-0.15s]"></span>
+                      <span class="w-2 h-2 rounded-full bg-blue-600 animate-bounce"></span>
+                    </div>
+                    <span class="text-[11px] font-semibold text-slate-600 italic">sedang mengetik...</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- Staged File Previews Admin -->
@@ -371,6 +396,7 @@
                 <div class="flex-1 min-w-0">
                   <textarea 
                     v-model="adminReplyMessage" 
+                    @input="handleAdminTyping"
                     @keydown.enter.exact.prevent="submitAdminReply"
                     rows="1" 
                     placeholder="Tulis balasan arahan dinas..." 
@@ -667,6 +693,48 @@ const adminFileInputRef = ref(null);
 const adminChatContainer = ref(null);
 const isAdminSending = ref(false);
 
+// State Indikator Sedang Mengetik (Personel)
+const isPersonelTyping = ref(false);
+const personelTypingName = ref('');
+let personelTypingTimer = null;
+let lastAdminTypingSentAt = 0;
+
+const updatePersonelTypingStatus = (typing) => {
+  if (typing?.is_typing) {
+    const wasTyping = isPersonelTyping.value;
+    isPersonelTyping.value = true;
+    personelTypingName.value = typing.name || selectedThread.value?.personel?.full_name || 'Personel';
+    if (!wasTyping) {
+      scrollAdminChatToBottom();
+    }
+    if (personelTypingTimer) clearTimeout(personelTypingTimer);
+    personelTypingTimer = setTimeout(() => {
+      isPersonelTyping.value = false;
+    }, 4500);
+  } else {
+    isPersonelTyping.value = false;
+    if (personelTypingTimer) {
+      clearTimeout(personelTypingTimer);
+      personelTypingTimer = null;
+    }
+  }
+};
+
+const handleAdminTyping = () => {
+  if (!selectedThread.value || !selectedThread.value.uuid || selectedThread.value.status !== 'OPEN') return;
+  const now = Date.now();
+  if (now - lastAdminTypingSentAt > 2000) {
+    lastAdminTypingSentAt = now;
+    axios.post(`/${getPrefix()}/live-chat/${selectedThread.value.uuid}/typing`)
+      .then((res) => {
+        if (res.data?.typing) {
+          updatePersonelTypingStatus(res.data.typing);
+        }
+      })
+      .catch(() => {});
+  }
+};
+
 // State & Logika Modal Mulai Chat Baru dengan Personel
 const showNewChatModal = ref(false);
 const personelSearchQuery = ref('');
@@ -835,6 +903,7 @@ const setStatusFilter = (st) => {
 const selectThread = (th) => {
   selectedThread.value = th;
   th.unread_admin = 0;
+  isPersonelTyping.value = false;
   loadThreadMessages(th.uuid);
 };
 
@@ -851,6 +920,9 @@ const loadThreadMessages = async (uuid) => {
   try {
     const res = await axios.get(`/${getPrefix()}/live-chat/${uuid}/messages`);
     activeMessagesList.value = res.data.messages || [];
+    if (res.data.typing) {
+      updatePersonelTypingStatus(res.data.typing);
+    }
     scrollAdminChatToBottom();
   } catch (err) {
     console.error('Gagal mengambil pesan utas:', err);
@@ -872,6 +944,10 @@ const pollAdminMessages = async () => {
       selectedThread.value.status = res.data.status;
     }
 
+    if (res.data.typing) {
+      updatePersonelTypingStatus(res.data.typing);
+    }
+
     if (res.data.messages && res.data.messages.length > 0) {
       const hasPersonelMsg = res.data.messages.some(m => m.sender_type === 'PERSONEL');
       activeMessagesList.value.push(...res.data.messages);
@@ -889,7 +965,7 @@ const startAdminPolling = () => {
   stopAdminPolling();
   adminPollingTimer = setInterval(() => {
     pollAdminMessages();
-  }, 3500); // Polling asinkron berkala setiap 3.5 detik
+  }, 2500); // Polling asinkron berkala setiap 2.5 detik
 };
 
 const stopAdminPolling = () => {
@@ -1041,5 +1117,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   stopAdminPolling();
+  if (personelTypingTimer) clearTimeout(personelTypingTimer);
 });
 </script>
