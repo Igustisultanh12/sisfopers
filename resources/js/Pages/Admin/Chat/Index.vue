@@ -43,13 +43,13 @@
       </div>
 
       <!-- 2. Antarmuka Split Obrolan (Daftar Kiri & Pesan Kanan) -->
-      <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[620px]">
+      <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-12 h-[calc(100vh-13.5rem)] min-h-[580px] max-h-[850px]">
         
         <!-- KOLOM KIRI: Daftar Percakapan Personel (lg:col-span-5) -->
-        <div class="lg:col-span-5 border-r border-slate-200 flex flex-col h-full bg-slate-50/40">
+        <div class="lg:col-span-5 border-r border-slate-200 flex flex-col h-full min-h-0 bg-slate-50/40">
           
           <!-- Filter & Pencarian -->
-          <div class="p-4 border-b border-slate-200 bg-white space-y-3">
+          <div class="p-4 border-b border-slate-200 bg-white space-y-3 shrink-0">
             <!-- Tombol Mulai Chat Baru dengan Personel -->
             <button 
               @click="openNewChatModal" 
@@ -104,7 +104,7 @@
           </div>
 
           <!-- Daftar Utas Obrolan -->
-          <div class="flex-1 overflow-y-auto divide-y divide-slate-100">
+          <div class="flex-1 min-h-0 overflow-y-auto divide-y divide-slate-100">
             <div v-if="!threads?.data || threads.data.length === 0" class="p-8 text-center text-slate-400 text-xs space-y-2">
               <p>Tidak ada sesi obrolan yang sesuai kriteria.</p>
               <button 
@@ -168,7 +168,7 @@
         </div>
 
         <!-- KOLOM KANAN: Ruang Obrolan Aktif (lg:col-span-7) -->
-        <div class="lg:col-span-7 flex flex-col h-full bg-white">
+        <div class="lg:col-span-7 flex flex-col h-full min-h-0 bg-white">
           
           <template v-if="selectedThread">
             <!-- Header Utas Aktif -->
@@ -209,7 +209,7 @@
             <!-- Wadah Pesan Obrolan -->
             <div 
               ref="adminChatContainer" 
-              class="flex-1 p-4 overflow-y-auto space-y-4 bg-slate-50/50 scroll-smooth min-h-[380px]"
+              class="flex-1 min-h-0 p-4 overflow-y-auto space-y-4 bg-slate-50/50 scroll-smooth"
             >
               <div v-if="activeMessagesList.length === 0" class="flex flex-col items-center justify-center h-48 text-slate-400 text-xs">
                 Belum ada pesan dalam sesi obrolan ini.

@@ -78,10 +78,10 @@
       </div>
 
       <!-- 2. Kotak Percakapan Standalone -->
-      <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[650px]">
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[calc(100vh-14rem)] min-h-[580px] max-h-[850px]">
         
         <!-- Header Kotak Obrolan -->
-        <div class="px-6 py-4 bg-slate-50/90 border-b border-slate-200 flex items-center justify-between">
+        <div class="px-6 py-4 bg-slate-50/90 border-b border-slate-200 flex items-center justify-between shrink-0">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center font-black text-sm border border-blue-200 select-none">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -126,7 +126,7 @@
         <div 
           v-if="thread?.status === 'OPEN'"
           :class="isAwaitingResponse ? 'bg-amber-50/80 border-b border-amber-200/60 text-amber-900' : 'bg-emerald-50/80 border-b border-emerald-200/60 text-emerald-900'"
-          class="px-6 py-2.5 flex items-center justify-between text-xs transition"
+          class="px-6 py-2.5 flex items-center justify-between text-xs transition shrink-0"
         >
           <div class="flex items-center gap-2 font-bold">
             <span 
@@ -148,7 +148,7 @@
         <!-- Wadah Daftar Pesan -->
         <div 
           ref="chatScrollContainer"
-          class="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/40"
+          class="flex-1 min-h-0 overflow-y-auto p-6 space-y-4 bg-slate-50/40 scroll-smooth"
         >
           <!-- Pesan Sambutan Sistem -->
           <div class="bg-blue-50/70 border border-blue-200/80 rounded-2xl p-4 text-xs text-blue-900 space-y-1.5 shadow-xs">
@@ -315,7 +315,7 @@
         </div>
 
         <!-- Area Input Pengiriman (Jika Sesi Terbuka) -->
-        <div v-if="thread?.status === 'OPEN'" class="p-4 bg-white border-t border-slate-200 space-y-3">
+        <div v-if="thread?.status === 'OPEN'" class="p-4 bg-white border-t border-slate-200 space-y-3 shrink-0">
           <!-- Daftar Lampiran Siap Unggah -->
           <div v-if="stagedFiles.length > 0" class="flex flex-wrap items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl">
             <span class="text-[10px] font-extrabold uppercase text-slate-500 px-1">
@@ -401,7 +401,7 @@
         </div>
 
         <!-- Banner Jika Sesi Telah Ditutup -->
-        <div v-else class="p-5 bg-slate-100 border-t border-slate-200 text-center space-y-3">
+        <div v-else class="p-5 bg-slate-100 border-t border-slate-200 text-center space-y-3 shrink-0">
           <div class="flex items-center justify-center gap-2 text-xs font-bold text-slate-700">
             <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
