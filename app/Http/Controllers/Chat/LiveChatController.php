@@ -647,7 +647,7 @@ class LiveChatController extends Controller
 
     /**
      * Memulai sesi chat baru dengan personel dari sisi Pengelola (Admin/PJU/Koordinator)
-     * Mengirimkan notifikasi multi-channel ke Aplikasi Sinden, Email, dan WhatsApp
+     * Mengirimkan notifikasi multi-channel ke Aplikasi SISFOPERS KC, Email, dan WhatsApp
      */
     public function adminStartChat(Request $request)
     {
@@ -717,7 +717,7 @@ class LiveChatController extends Controller
             ]);
         }
 
-        // 4. Kirim notifikasi multi-channel (Aplikasi Sinden, Email, WhatsApp)
+        // 4. Kirim notifikasi multi-channel (Aplikasi SISFOPERS KC, Email, WhatsApp)
         $notification = new \App\Notifications\LiveChatInitiatedNotification(
             $senderName,
             $initialMessage !== '' ? $initialMessage : null,
@@ -741,7 +741,7 @@ class LiveChatController extends Controller
         return response()->json([
             'success' => true,
             'is_first_time' => $isFirstTime,
-            'message' => 'Sesi obrolan berhasil dibuka dan notifikasi telah dikirim ke Aplikasi Sinden, Email, serta WhatsApp personel.',
+            'message' => 'Sesi obrolan berhasil dibuka dan notifikasi telah dikirim ke Aplikasi SISFOPERS KC, Email, serta WhatsApp personel.',
             'thread' => [
                 'id' => $thread->id,
                 'uuid' => $thread->uuid,

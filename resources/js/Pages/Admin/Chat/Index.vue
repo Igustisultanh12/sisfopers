@@ -584,7 +584,7 @@
                 <svg class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
-                <span>Aplikasi Sinden</span>
+                <span>Aplikasi SISFOPERS KC</span>
               </div>
               <div class="flex items-center gap-1.5 p-2 bg-white rounded-xl border border-blue-100 text-[10px] font-bold text-slate-700 shadow-2xs">
                 <svg class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -749,7 +749,7 @@ const executeStartChat = async () => {
       Swal.fire({
         icon: 'success',
         title: 'Sesi Chat Dimulai',
-        text: res.data.message || 'Sesi obrolan dibuka. Notifikasi telah terkirim ke Aplikasi Sinden, Email, dan WhatsApp personel.',
+        text: res.data.message || 'Sesi obrolan dibuka. Notifikasi telah terkirim ke Aplikasi SISFOPERS KC, Email, dan WhatsApp personel.',
         confirmButtonColor: '#2563EB',
         customClass: { popup: 'rounded-2xl' },
       });

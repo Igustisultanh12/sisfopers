@@ -48,7 +48,7 @@ class LiveChatInitiatedNotification extends Notification
                 $waMsg .= "\nPesan Pembuka:\n\"{$this->initialMessage}\"\n";
             }
 
-            $waMsg .= "\nSilakan buka aplikasi Sinden atau akses tautan berikut untuk membaca dan membalas pesan:\n";
+            $waMsg .= "\nSilakan buka aplikasi SISFOPERS KC atau akses tautan berikut untuk membaca dan membalas pesan:\n";
             $waMsg .= "{$this->chatUrl}\n\n";
             $waMsg .= "Komando Pembina Komponen Cadangan";
 
@@ -66,7 +66,7 @@ class LiveChatInitiatedNotification extends Notification
             if ($this->initialMessage) {
                 $emailBody .= "\n\nPesan Pembuka:\n\"{$this->initialMessage}\"";
             }
-            $emailBody .= "\n\nSilakan klik tombol di bawah ini atau buka aplikasi Sinden Anda untuk merespons percakapan dinas ini.";
+            $emailBody .= "\n\nSilakan klik tombol di bawah ini atau buka aplikasi SISFOPERS KC Anda untuk merespons percakapan dinas ini.";
 
             try {
                 Mail::to($email)->send(
@@ -77,12 +77,12 @@ class LiveChatInitiatedNotification extends Notification
             }
         }
 
-        // 3. Notifikasi Database (Aplikasi Sinden & Bel Notifikasi Web)
+        // 3. Notifikasi Database (Aplikasi SISFOPERS KC & Bel Notifikasi Web)
         return ['database'];
     }
 
     /**
-     * Format payload yang tersimpan pada tabel notifications untuk Aplikasi Sinden
+     * Format payload yang tersimpan pada tabel notifications untuk Aplikasi SISFOPERS KC
      */
     public function toArray($notifiable): array
     {
