@@ -514,6 +514,7 @@ const callPartnerInfo = computed(() => {
       photo: activeIncomingCallData.value.caller.photo,
       matra: 'Pengelola',
       nikc: null,
+      is_online: true,
     };
   }
   return {
@@ -523,6 +524,7 @@ const callPartnerInfo = computed(() => {
     photo: null,
     matra: 'KC',
     nikc: null,
+    is_online: true,
   };
 });
 

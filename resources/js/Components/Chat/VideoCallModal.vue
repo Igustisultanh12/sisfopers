@@ -38,9 +38,18 @@
         </p>
       </div>
 
-      <p class="text-xs text-slate-400 animate-pulse">
-        Menunggu lawan bicara menerima sambungan...
-      </p>
+      <div v-if="partnerUser?.is_online === false" class="px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[11px] text-amber-300">
+        Perhatian: Personel saat ini berstatus offline. Sinyal panggilan tetap dipancarkan dan akan berdering saat personel membuka aplikasi.
+      </div>
+
+      <div class="space-y-1">
+        <p class="text-xs text-slate-400 animate-pulse">
+          Menunggu lawan bicara menerima sambungan...
+        </p>
+        <p class="text-[11px] font-mono text-slate-500">
+          Batas waktu panggil: {{ Math.max(0, 40 - outgoingSeconds) }} detik
+        </p>
+      </div>
 
       <!-- Tombol Batalkan Panggilan -->
       <div class="pt-2">
@@ -194,9 +203,23 @@
               {{ callStatus === 'CONNECTING' ? 'Mempersiapkan jalur komunikasi terenkripsi...' : 'Kamera lawan bicara sedang dinonaktifkan' }}
             </p>
           </div>
-          <div v-if="callStatus === 'CONNECTING'" class="flex items-center gap-1 text-xs text-blue-400">
-            <span class="w-2 h-2 rounded-full bg-blue-500 animate-ping"></span>
-            <span>Menyelaraskan Sinyal P2P...</span>
+          <div v-if="callStatus === 'CONNECTING'" class="flex flex-col items-center gap-2 text-xs text-blue-400">
+            <div class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-blue-500 animate-ping"></span>
+              <span>{{ connectionStatusText }}</span>
+            </div>
+            <div v-if="connectingSeconds > 7" class="pt-1">
+              <button 
+                @click="retryIceNegotiation" 
+                type="button" 
+                class="px-3 py-1.5 bg-blue-600/80 hover:bg-blue-600 text-white text-[11px] font-bold rounded-xl border border-blue-400/30 transition flex items-center gap-1.5 cursor-pointer shadow active:scale-95"
+              >
+                <svg class="w-3.5 h-3.5 animate-spin" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span>Segarkan Penyelarasan Sinyal</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -410,6 +433,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 import { 
   startIncomingCallRing, 
   stopIncomingCallRing, 
@@ -435,6 +459,13 @@ const callStatus = ref('IDLE'); // 'IDLE' | 'OUTGOING' | 'INCOMING' | 'CONNECTIN
 const callDuration = ref(0);
 const connectionStatusText = ref('Menghubungkan...');
 const activeCaller = ref(null);
+const isInitiator = ref(false);
+
+// State Penanda Waktu Timeout
+const outgoingSeconds = ref(0);
+const connectingSeconds = ref(0);
+let outgoingTimeoutTimer = null;
+let connectingTimeoutTimer = null;
 
 // State Kontrol Media
 const isMuted = ref(false);
@@ -455,6 +486,7 @@ const bgCanvasRef = ref(null);
 
 // Stream & WebRTC Variables
 let localStream = null;
+let remoteStream = null;
 let rawVideoTrack = null;
 let rawAudioTrack = null;
 let screenStream = null;
@@ -463,14 +495,43 @@ let signalingTimer = null;
 let durationTimer = null;
 let canvasAnimId = null;
 
-// Konfigurasi STUN Publik Google untuk penembusan jaringan (NAT Traversal)
+// Antrean & Deduplikasi Kandidat ICE
+const addedCandidateKeys = new Set();
+const pendingCandidates = [];
+
+// Konfigurasi STUN & TURN Resmi Komprehensif (Google, Cloudflare, dan Public OpenRelay Metered)
 const rtcConfig = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun.cloudflare.com:3478' },
+    { urls: 'stun:relay.metered.ca:80' },
+    {
+      urls: 'turn:relay.metered.ca:80',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
+    {
+      urls: 'turn:relay.metered.ca:443',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
+    {
+      urls: 'turn:relay.metered.ca:443?transport=tcp',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
   ],
+  iceCandidatePoolSize: 10,
 };
+
+// Penentuan peran pemanggil secara absolut
+const isCaller = computed(() => {
+  if (isInitiator.value) return true;
+  if (props.incomingCallData) return false;
+  return props.userRole === 'OPERATOR';
+});
 
 const formatDuration = (totalSeconds) => {
   const m = Math.floor(totalSeconds / 60);
@@ -509,6 +570,62 @@ const initLocalMedia = async () => {
   }
 };
 
+const waitForIceGathering = (pc, maxWaitMs = 600) => {
+  return new Promise((resolve) => {
+    if (pc.iceGatheringState === 'complete') {
+      resolve();
+      return;
+    }
+    let timer = null;
+    const checkState = () => {
+      if (pc.iceGatheringState === 'complete') {
+        pc.removeEventListener('icegatheringstatechange', checkState);
+        if (timer) clearTimeout(timer);
+        resolve();
+      }
+    };
+    pc.addEventListener('icegatheringstatechange', checkState);
+    timer = setTimeout(() => {
+      pc.removeEventListener('icegatheringstatechange', checkState);
+      resolve();
+    }, maxWaitMs);
+  });
+};
+
+const addCandidateSafely = async (cand) => {
+  if (!cand || !cand.candidate) return;
+  const candKey = `${cand.sdpMid || ''}_${cand.sdpMLineIndex || 0}_${cand.candidate}`;
+  if (addedCandidateKeys.has(candKey)) return;
+
+  if (!peerConnection || !peerConnection.currentRemoteDescription) {
+    pendingCandidates.push(cand);
+    return;
+  }
+
+  try {
+    await peerConnection.addIceCandidate(new RTCIceCandidate(cand));
+    addedCandidateKeys.add(candKey);
+  } catch (err) {
+    console.debug('Kandidat ICE dilewati atau telah usang:', err);
+  }
+};
+
+const flushPendingCandidates = async () => {
+  if (!peerConnection || !peerConnection.currentRemoteDescription) return;
+  while (pendingCandidates.length > 0) {
+    const cand = pendingCandidates.shift();
+    const candKey = `${cand.sdpMid || ''}_${cand.sdpMLineIndex || 0}_${cand.candidate}`;
+    if (!addedCandidateKeys.has(candKey)) {
+      try {
+        await peerConnection.addIceCandidate(new RTCIceCandidate(cand));
+        addedCandidateKeys.add(candKey);
+      } catch (err) {
+        console.debug('Gagal menerapkan kandidat tertunda:', err);
+      }
+    }
+  }
+};
+
 const createPeerConnection = () => {
   if (peerConnection) {
     peerConnection.close();
@@ -524,64 +641,198 @@ const createPeerConnection = () => {
     });
   }
 
-  // Tangkap media lawan bicara
+  // Tangkap media lawan bicara dan pasang ke objek stream
   peerConnection.ontrack = (event) => {
-    if (remoteVideoRef.value && event.streams && event.streams[0]) {
-      remoteVideoRef.value.srcObject = event.streams[0];
-      isRemoteVideoOff.value = false;
+    if (!remoteStream) {
+      remoteStream = new MediaStream();
     }
+    if (event.streams && event.streams[0]) {
+      remoteStream = event.streams[0];
+    } else if (event.track) {
+      remoteStream.addTrack(event.track);
+    }
+
+    if (remoteVideoRef.value) {
+      remoteVideoRef.value.srcObject = remoteStream;
+      remoteVideoRef.value.play().catch(() => {});
+    }
+    isRemoteVideoOff.value = false;
   };
 
-  // Tangkap kandidat ICE
+  // Tangkap kandidat ICE lokal dan pancarkan ke server
   peerConnection.onicecandidate = (event) => {
     if (event.candidate && props.threadUuid) {
-      const sender = props.userRole === 'OPERATOR' ? 'caller' : 'callee';
+      const sender = isCaller.value ? 'caller' : 'callee';
       axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
         action: 'candidate',
-        data: event.candidate,
+        data: event.candidate.toJSON ? event.candidate.toJSON() : event.candidate,
         sender: sender,
       }).catch(() => {});
     }
   };
 
-  // Pantau status sambungan WebRTC
-  peerConnection.onconnectionstatechange = () => {
-    if (!peerConnection) return;
-    const state = peerConnection.connectionState;
-    if (state === 'connected') {
+  // Penanganan saat jalur P2P berhasil terhubung
+  const handleConnected = () => {
+    if (callStatus.value !== 'CONNECTED') {
       callStatus.value = 'CONNECTED';
       connectionStatusText.value = 'Tersambung (P2P)';
       stopOutgoingDialRing();
       stopIncomingCallRing();
+      stopOutgoingTimeout();
+      stopConnectingTimer();
       startDurationTimer();
-      // Informasikan server bahwa sambungan telah aktif
+
+      nextTick(() => {
+        if (remoteVideoRef.value && remoteStream) {
+          remoteVideoRef.value.srcObject = remoteStream;
+          remoteVideoRef.value.play().catch(() => {});
+        }
+        if (localVideoRef.value && localStream) {
+          localVideoRef.value.srcObject = localStream;
+        }
+      });
+
       axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
         action: 'connected',
       }).catch(() => {});
-    } else if (state === 'disconnected' || state === 'failed') {
+    }
+  };
+
+  peerConnection.onconnectionstatechange = () => {
+    if (!peerConnection) return;
+    const state = peerConnection.connectionState;
+    console.debug('WebRTC connectionState:', state);
+    if (state === 'connected') {
+      handleConnected();
+    } else if (state === 'failed') {
+      console.warn('WebRTC connection failed, menyegarkan ICE...');
+      retryIceNegotiation();
+    } else if (state === 'disconnected') {
       connectionStatusText.value = 'Terputus';
-      hangUpCall();
+    }
+  };
+
+  peerConnection.oniceconnectionstatechange = () => {
+    if (!peerConnection) return;
+    const iceState = peerConnection.iceConnectionState;
+    console.debug('WebRTC iceConnectionState:', iceState);
+    if (iceState === 'connected' || iceState === 'completed') {
+      handleConnected();
+    } else if (iceState === 'failed') {
+      console.warn('ICE connection failed, menyegarkan ICE...');
+      retryIceNegotiation();
     }
   };
 };
 
+// Penyegaran jalur ICE bila terjadi hambatan NAT / Firewall
+const retryIceNegotiation = async () => {
+  if (!peerConnection) return;
+  try {
+    connectionStatusText.value = 'Menyelaraskan rute cadangan...';
+    if (peerConnection.restartIce) {
+      peerConnection.restartIce();
+    }
+    if (isCaller.value) {
+      const offer = await peerConnection.createOffer({ iceRestart: true });
+      await peerConnection.setLocalDescription(offer);
+      await waitForIceGathering(peerConnection, 500);
+      await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
+        action: 'offer',
+        data: peerConnection.localDescription,
+        sender: 'caller',
+      });
+    }
+  } catch (err) {
+    console.debug('Gagal restart ICE:', err);
+  }
+};
+
 // ==========================================
-// 2. LOGIKA PANGGILAN KELUAR & MASUK
+// 2. PENANGAN BATAS WAKTU (TIMEOUT HANDLERS)
+// ==========================================
+const startOutgoingTimeout = () => {
+  stopOutgoingTimeout();
+  outgoingSeconds.value = 0;
+  outgoingTimeoutTimer = setInterval(() => {
+    outgoingSeconds.value++;
+    if (outgoingSeconds.value >= 40) {
+      stopOutgoingTimeout();
+      Swal.fire({
+        icon: 'info',
+        title: 'Panggilan Tidak Terjawab',
+        text: 'Lawan bicara tidak menjawab panggilan dinas. Silakan kirim pesan tertulis pada obrolan.',
+        confirmButtonColor: '#2563eb',
+      });
+      cancelOutgoingCall();
+    }
+  }, 1000);
+};
+
+const stopOutgoingTimeout = () => {
+  if (outgoingTimeoutTimer) {
+    clearInterval(outgoingTimeoutTimer);
+    outgoingTimeoutTimer = null;
+  }
+  outgoingSeconds.value = 0;
+};
+
+const startConnectingTimer = () => {
+  stopConnectingTimer();
+  connectingSeconds.value = 0;
+  connectingTimeoutTimer = setInterval(() => {
+    connectingSeconds.value++;
+    if (connectingSeconds.value === 10) {
+      retryIceNegotiation();
+    } else if (connectingSeconds.value >= 25) {
+      stopConnectingTimer();
+      Swal.fire({
+        icon: 'warning',
+        title: 'Koneksi P2P Terkendala',
+        text: 'Koneksi terhambat oleh pembatas jaringan lawan bicara. Silakan gunakan saluran pesan tertulis.',
+        confirmButtonColor: '#2563eb',
+      });
+      hangUpCall();
+    }
+  }, 1000);
+};
+
+const stopConnectingTimer = () => {
+  if (connectingTimeoutTimer) {
+    clearInterval(connectingTimeoutTimer);
+    connectingTimeoutTimer = null;
+  }
+  connectingSeconds.value = 0;
+};
+
+// ==========================================
+// 3. LOGIKA PANGGILAN KELUAR & MASUK
 // ==========================================
 const startCall = async () => {
   try {
+    isInitiator.value = true;
+    callStatus.value = 'OUTGOING';
+    startOutgoingDialRing();
+    startOutgoingTimeout();
+
     await initLocalMedia();
     createPeerConnection();
 
-    // Buat panggilan di server
+    // Buat Offer seketika dan kumpulkan kandidat lokal dalam SDP
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+    await waitForIceGathering(peerConnection, 600);
+
+    // Inisiasi panggilan ke server dengan data penawaran awal
     const res = await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/initiate`, {
       call_type: 'video',
+      offer: peerConnection.localDescription,
     });
 
     if (res.data.success) {
-      callStatus.value = 'OUTGOING';
-      startOutgoingDialRing();
       startSignalingPoll();
+    } else {
+      throw new Error(res.data.message || 'Gagal memulai panggilan dinas');
     }
   } catch (err) {
     console.error('Gagal memulai panggilan video:', err);
@@ -591,18 +842,40 @@ const startCall = async () => {
 };
 
 const acceptIncomingCall = async () => {
+  isInitiator.value = false;
   stopIncomingCallRing();
+  stopOutgoingTimeout();
   callStatus.value = 'CONNECTING';
+  startConnectingTimer();
 
   try {
     await initLocalMedia();
     createPeerConnection();
 
-    // Kirim konfirmasi penerimaan ke server
+    // Pastikan status penerimaan dikirim ke server
     await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
       action: 'accept',
       sender: 'callee',
     });
+
+    // Ambil sinyal panggilan terbaru untuk memperoleh data penawaran
+    const resSignal = await axios.get(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`);
+    const call = resSignal.data?.call;
+
+    if (call?.offer && !peerConnection.currentRemoteDescription) {
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(call.offer));
+      await flushPendingCandidates();
+
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+      await waitForIceGathering(peerConnection, 500);
+
+      await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
+        action: 'answer',
+        data: peerConnection.localDescription,
+        sender: 'callee',
+      });
+    }
 
     startSignalingPoll();
     emit('call-accepted');
@@ -626,6 +899,7 @@ const rejectIncomingCall = async () => {
 
 const cancelOutgoingCall = async () => {
   stopOutgoingDialRing();
+  stopOutgoingTimeout();
   cleanupMedia();
   try {
     await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/end`, {
@@ -639,6 +913,8 @@ const cancelOutgoingCall = async () => {
 const hangUpCall = async () => {
   stopIncomingCallRing();
   stopOutgoingDialRing();
+  stopOutgoingTimeout();
+  stopConnectingTimer();
   playCallEndedSound();
 
   const finalDuration = callDuration.value;
@@ -657,7 +933,7 @@ const hangUpCall = async () => {
 };
 
 // ==========================================
-// 3. SINKRONISASI SINYAL WEBRTC (POLLING CEPAT)
+// 4. SINKRONISASI SINYAL WEBRTC TERARAH
 // ==========================================
 const startSignalingPoll = () => {
   stopSignalingPoll();
@@ -674,50 +950,61 @@ const startSignalingPoll = () => {
         return;
       }
 
-      const isCaller = props.userRole === 'OPERATOR';
+      const isCallerUser = isCaller.value;
 
-      // Skenario 1: Penerima telah klik terima, Pengirim membuat Offer
-      if (isCaller && call.status === 'ACCEPTED' && !call.offer && peerConnection) {
+      // 1. Pemanggil mendeteksi bahwa penerima telah menerima sambungan
+      if (isCallerUser && call.status === 'ACCEPTED' && callStatus.value === 'OUTGOING') {
+        callStatus.value = 'CONNECTING';
+        stopOutgoingDialRing();
+        stopOutgoingTimeout();
+        startConnectingTimer();
+      }
+
+      // 2. Pemanggil mengirimkan Offer jika belum sempat terkirim
+      if (isCallerUser && call.status === 'ACCEPTED' && !call.offer && peerConnection) {
         const offer = await peerConnection.createOffer();
         await peerConnection.setLocalDescription(offer);
+        await waitForIceGathering(peerConnection, 500);
 
         await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
           action: 'offer',
-          data: offer,
+          data: peerConnection.localDescription,
           sender: 'caller',
         });
       }
 
-      // Skenario 2: Penerima menerima Offer dari Pengirim dan membuat Answer
-      if (!isCaller && call.offer && !peerConnection.currentRemoteDescription) {
+      // 3. Penerima menerima Offer dari Pemanggil dan membuat Answer
+      if (!isCallerUser && call.offer && !peerConnection?.currentRemoteDescription && peerConnection) {
         await peerConnection.setRemoteDescription(new RTCSessionDescription(call.offer));
+        await flushPendingCandidates();
+
         const answer = await peerConnection.createAnswer();
         await peerConnection.setLocalDescription(answer);
+        await waitForIceGathering(peerConnection, 500);
 
         await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
           action: 'answer',
-          data: answer,
+          data: peerConnection.localDescription,
           sender: 'callee',
         });
       }
 
-      // Skenario 3: Pengirim menerima Answer dari Penerima
-      if (isCaller && call.answer && peerConnection && !peerConnection.currentRemoteDescription) {
+      // 4. Pemanggil menerima Answer dari Penerima
+      if (isCallerUser && call.answer && peerConnection && !peerConnection.currentRemoteDescription) {
         await peerConnection.setRemoteDescription(new RTCSessionDescription(call.answer));
+        await flushPendingCandidates();
       }
 
-      // Skenario 4: Pertukaran Kandidat ICE
-      const incomingCandidates = isCaller ? (call.candidates_callee || []) : (call.candidates_caller || []);
+      // 5. Pertukaran Kandidat ICE tambahan secara aman tanpa redundansi
+      const incomingCandidates = isCallerUser ? (call.candidates_callee || []) : (call.candidates_caller || []);
       for (const cand of incomingCandidates) {
-        try {
-          await peerConnection.addIceCandidate(new RTCIceCandidate(cand));
-        } catch (e) {}
+        await addCandidateSafely(cand);
       }
 
     } catch (err) {
       console.debug('Pertukaran sinyal dinas terkendala:', err);
     }
-  }, 1000); // Polling sinyal cepat setiap 1 detik saat proses sambungan
+  }, 1000);
 };
 
 const stopSignalingPoll = () => {
@@ -915,6 +1202,12 @@ const startCanvasEffect = (type, sender) => {
 // ==========================================
 const cleanupMedia = () => {
   stopSignalingPoll();
+  stopOutgoingTimeout();
+  stopConnectingTimer();
+  addedCandidateKeys.clear();
+  pendingCandidates.length = 0;
+  isInitiator.value = false;
+
   if (durationTimer) {
     clearInterval(durationTimer);
     durationTimer = null;
@@ -926,6 +1219,10 @@ const cleanupMedia = () => {
   if (localStream) {
     localStream.getTracks().forEach((track) => track.stop());
     localStream = null;
+  }
+  if (remoteStream) {
+    remoteStream.getTracks().forEach((track) => track.stop());
+    remoteStream = null;
   }
   if (screenStream) {
     screenStream.getTracks().forEach((track) => track.stop());
@@ -945,14 +1242,33 @@ const cleanupMedia = () => {
   isScreenSharing.value = false;
   isMuted.value = false;
   isCameraOff.value = false;
+  connectionStatusText.value = 'Menghubungkan...';
 };
 
-// Pantau perubahan properti masuk
+// Pantau perubahan status panggilan untuk memastikan elemen video menerima aliran media
+watch(
+  () => callStatus.value,
+  async (newStatus) => {
+    if (newStatus === 'CONNECTING' || newStatus === 'CONNECTED') {
+      await nextTick();
+      if (localVideoRef.value && localStream) {
+        localVideoRef.value.srcObject = localStream;
+      }
+      if (remoteVideoRef.value && remoteStream) {
+        remoteVideoRef.value.srcObject = remoteStream;
+        remoteVideoRef.value.play().catch(() => {});
+      }
+    }
+  }
+);
+
+// Pantau perubahan properti tampil / sembunyi modal
 watch(
   () => props.show,
   (newVal) => {
     if (newVal) {
       if (props.incomingCallData) {
+        isInitiator.value = false;
         callStatus.value = 'INCOMING';
         activeCaller.value = props.incomingCallData.caller;
         startIncomingCallRing();
@@ -969,6 +1285,7 @@ watch(
   () => props.incomingCallData,
   (callData) => {
     if (callData && callData.status === 'RINGING') {
+      isInitiator.value = false;
       callStatus.value = 'INCOMING';
       activeCaller.value = callData.caller;
       startIncomingCallRing();
@@ -980,5 +1297,7 @@ onUnmounted(() => {
   cleanupMedia();
   stopIncomingCallRing();
   stopOutgoingDialRing();
+  stopOutgoingTimeout();
+  stopConnectingTimer();
 });
 </script>

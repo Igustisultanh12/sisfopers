@@ -770,6 +770,7 @@ const callPartnerInfo = computed(() => {
       photo: activeIncomingCallData.value.caller.photo,
       matra: selectedThread.value?.personel?.matra,
       nikc: selectedThread.value?.personel?.nikc,
+      is_online: selectedThread.value?.personel?.is_online ?? true,
     };
   }
   return {
@@ -779,6 +780,7 @@ const callPartnerInfo = computed(() => {
     photo: selectedThread.value?.personel?.photo_profile,
     matra: selectedThread.value?.personel?.matra,
     nikc: selectedThread.value?.personel?.nikc,
+    is_online: selectedThread.value?.personel?.is_online ?? true,
   };
 });
 
