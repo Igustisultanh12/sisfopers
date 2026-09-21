@@ -120,9 +120,25 @@
             </div>
           </div>
 
-          <div class="text-right hidden sm:block">
-            <span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">Batas Lampiran</span>
-            <span class="text-xs font-bold text-slate-700">Maks. 15 MB per Unggahan</span>
+          <div class="flex items-center gap-3">
+            <!-- Tombol Mulai Panggilan Video Dinas (Vicon P2P) -->
+            <button 
+              v-if="thread?.status === 'OPEN'"
+              @click="openPersonelVideoCall"
+              type="button" 
+              class="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+              title="Mulai Panggilan Video Dinas (Vicon P2P)"
+            >
+              <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              <span class="hidden sm:inline">Panggilan Video</span>
+            </button>
+
+            <div class="text-right hidden sm:block">
+              <span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">Batas Lampiran</span>
+              <span class="text-xs font-bold text-slate-700">Maks. 15 MB per Unggahan</span>
+            </div>
           </div>
         </div>
 
@@ -453,6 +469,20 @@
         </div>
       </div>
     </div>
+
+    <!-- Komponen Ruang Panggilan Video Dinas (Vicon P2P WebRTC) -->
+    <VideoCallModal 
+      :show="showPersonelVideoCallModal"
+      :thread-uuid="thread?.uuid || activeIncomingCallData?.thread_uuid"
+      user-role="PERSONEL"
+      :current-user="currentUserInfo"
+      :partner-user="callPartnerInfo"
+      :incoming-call-data="activeIncomingCallData"
+      url-prefix="personel"
+      @close="closePersonelVideoCallModal"
+      @call-ended="onPersonelCallEnded"
+      @call-accepted="onPersonelCallAccepted"
+    />
   </AuthenticatedLayout>
 </template>
 
@@ -460,9 +490,67 @@
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import VideoCallModal from '@/Components/Chat/VideoCallModal.vue';
 import { playNotificationSound } from '@/Utils/sound';
 import Swal from 'sweetalert2';
 import axios from 'axios';
+
+const showPersonelVideoCallModal = ref(false);
+const activeIncomingCallData = ref(null);
+
+const currentUserInfo = computed(() => ({
+  id: props.personel?.id,
+  name: props.personel?.name,
+  pangkat: props.personel?.pangkat,
+  photo: props.personel?.photo_profile,
+}));
+
+const callPartnerInfo = computed(() => {
+  if (activeIncomingCallData.value?.caller) {
+    return {
+      id: activeIncomingCallData.value.caller.id,
+      name: activeIncomingCallData.value.caller.name,
+      pangkat: activeIncomingCallData.value.caller.pangkat,
+      photo: activeIncomingCallData.value.caller.photo,
+      matra: 'Pengelola',
+      nikc: null,
+    };
+  }
+  return {
+    id: null,
+    name: activeOperatorName.value || 'Petugas Layanan Informasi',
+    pangkat: 'Pengelola Dinas',
+    photo: null,
+    matra: 'KC',
+    nikc: null,
+  };
+});
+
+const openPersonelVideoCall = () => {
+  if (!thread.value || thread.value.status !== 'OPEN') return;
+  activeIncomingCallData.value = null;
+  showPersonelVideoCallModal.value = true;
+};
+
+const closePersonelVideoCallModal = () => {
+  showPersonelVideoCallModal.value = false;
+  activeIncomingCallData.value = null;
+};
+
+const onPersonelCallEnded = () => {
+  if (thread.value?.uuid) {
+    axios.get(`/personel/live-chat/${thread.value.uuid}/messages`).then((res) => {
+      if (res.data.messages) {
+        messagesList.value = res.data.messages;
+        scrollToBottom();
+      }
+    });
+  }
+};
+
+const onPersonelCallAccepted = () => {
+  // Panggilan diterima
+};
 
 const props = defineProps({
   initialThread: Object,
@@ -582,6 +670,12 @@ const pollMessages = async () => {
   if (!thread.value || !thread.value.uuid || thread.value.status === 'CLOSED') {
     try {
       const activeRes = await axios.get('/personel/live-chat/active-session');
+      if (activeRes.data?.call && activeRes.data.call.status === 'RINGING' && activeRes.data.call.caller?.type !== 'PERSONEL') {
+        if (!showPersonelVideoCallModal.value) {
+          activeIncomingCallData.value = activeRes.data.call;
+          showPersonelVideoCallModal.value = true;
+        }
+      }
       if (activeRes.data?.thread && activeRes.data.thread.status === 'OPEN') {
         thread.value = activeRes.data.thread;
         messagesList.value = activeRes.data.messages || [];
@@ -609,6 +703,13 @@ const pollMessages = async () => {
 
     if (res.data.typing) {
       updateOperatorTypingStatus(res.data.typing);
+    }
+
+    if (res.data.call && res.data.call.status === 'RINGING' && res.data.call.caller?.type !== 'PERSONEL') {
+      if (!showPersonelVideoCallModal.value) {
+        activeIncomingCallData.value = res.data.call;
+        showPersonelVideoCallModal.value = true;
+      }
     }
 
     if (res.data.messages && res.data.messages.length > 0) {

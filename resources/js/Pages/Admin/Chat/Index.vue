@@ -231,6 +231,20 @@
               </div>
 
               <div class="flex items-center gap-2">
+                <!-- Tombol Mulai Panggilan Video Dinas (Vicon P2P) -->
+                <button 
+                  v-if="selectedThread.status === 'OPEN'"
+                  @click="openVideoCall"
+                  type="button" 
+                  class="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  title="Mulai Panggilan Video Dinas (Vicon P2P)"
+                >
+                  <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  <span class="hidden sm:inline">Panggilan Video</span>
+                </button>
+
                 <button 
                   @click="toggleStatus(selectedThread.uuid)" 
                   type="button" 
@@ -710,16 +724,84 @@
 
       </div>
     </div>
+
+    <!-- Komponen Ruang Panggilan Video Dinas (Vicon P2P WebRTC) -->
+    <VideoCallModal 
+      :show="showVideoCallModal"
+      :thread-uuid="selectedThread?.uuid || activeIncomingCallData?.thread_uuid"
+      user-role="OPERATOR"
+      :current-user="currentUserInfo"
+      :partner-user="callPartnerInfo"
+      :incoming-call-data="activeIncomingCallData"
+      :url-prefix="getPrefix()"
+      @close="closeVideoCallModal"
+      @call-ended="onCallEnded"
+      @call-accepted="onCallAccepted"
+    />
   </AuthenticatedLayout>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import VideoCallModal from '@/Components/Chat/VideoCallModal.vue';
 import { playNotificationSound } from '@/Utils/sound';
 import axios from 'axios';
 import Swal from 'sweetalert2';
+
+const page = usePage();
+const showVideoCallModal = ref(false);
+const activeIncomingCallData = ref(null);
+
+const currentUserInfo = computed(() => ({
+  id: page.props.auth?.user?.id,
+  name: page.props.auth?.user?.name || 'Petugas Layanan',
+  pangkat: 'Pengelola Dinas',
+  photo: page.props.auth?.user?.photo_profile || null,
+}));
+
+const callPartnerInfo = computed(() => {
+  if (activeIncomingCallData.value?.caller) {
+    return {
+      id: activeIncomingCallData.value.caller.id,
+      name: activeIncomingCallData.value.caller.name,
+      pangkat: activeIncomingCallData.value.caller.pangkat,
+      photo: activeIncomingCallData.value.caller.photo,
+      matra: selectedThread.value?.personel?.matra,
+      nikc: selectedThread.value?.personel?.nikc,
+    };
+  }
+  return {
+    id: selectedThread.value?.personel?.id,
+    name: selectedThread.value?.personel?.full_name,
+    pangkat: selectedThread.value?.personel?.pangkat,
+    photo: selectedThread.value?.personel?.photo_profile,
+    matra: selectedThread.value?.personel?.matra,
+    nikc: selectedThread.value?.personel?.nikc,
+  };
+});
+
+const openVideoCall = () => {
+  if (!selectedThread.value || selectedThread.value.status !== 'OPEN') return;
+  activeIncomingCallData.value = null;
+  showVideoCallModal.value = true;
+};
+
+const closeVideoCallModal = () => {
+  showVideoCallModal.value = false;
+  activeIncomingCallData.value = null;
+};
+
+const onCallEnded = () => {
+  if (selectedThread.value?.uuid) {
+    loadThreadMessages(selectedThread.value.uuid);
+  }
+};
+
+const onCallAccepted = () => {
+  // Sambungan diterima
+};
 
 const props = defineProps({
   threads: Object,
@@ -1120,7 +1202,21 @@ const pollAdminSync = async () => {
       }
     }
 
-    // 3. Sinkronisasi statistik dinas
+    // 3. Deteksi Panggilan Masuk dari Personel
+    if (res.data.incoming_call && res.data.incoming_call.status === 'RINGING') {
+      if (!showVideoCallModal.value) {
+        activeIncomingCallData.value = res.data.incoming_call;
+        showVideoCallModal.value = true;
+      }
+    } else if (res.data.active_thread?.call) {
+      const activeCall = res.data.active_thread.call;
+      if (activeCall.status === 'RINGING' && activeCall.caller?.type === 'PERSONEL' && !showVideoCallModal.value) {
+        activeIncomingCallData.value = activeCall;
+        showVideoCallModal.value = true;
+      }
+    }
+
+    // 4. Sinkronisasi statistik dinas
     if (res.data.stats) {
       chatStats.value = res.data.stats;
     }

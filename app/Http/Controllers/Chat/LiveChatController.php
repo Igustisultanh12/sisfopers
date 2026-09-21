@@ -160,9 +160,13 @@ class LiveChatController extends Controller
             ->where('is_read', false)
             ->update(['is_read' => true]);
 
+        $callData = Cache::get("live_chat:call:{$thread->uuid}");
+        $activeCall = ($callData && in_array($callData['status'], ['RINGING', 'ACCEPTED', 'CONNECTED'])) ? $callData : null;
+
         return response()->json([
             'thread' => $thread,
             'messages' => $thread->messages()->orderBy('id', 'asc')->get(),
+            'call' => $activeCall,
         ]);
     }
 
@@ -200,6 +204,8 @@ class LiveChatController extends Controller
         }
 
         $adminTyping = Cache::get("live_chat:typing:{$thread->uuid}:admin");
+        $callData = Cache::get("live_chat:call:{$thread->uuid}");
+        $activeCall = ($callData && in_array($callData['status'], ['RINGING', 'ACCEPTED', 'CONNECTED'])) ? $callData : null;
 
         return response()->json([
             'status' => $thread->status,
@@ -208,6 +214,7 @@ class LiveChatController extends Controller
                 'is_typing' => !empty($adminTyping),
                 'name' => $adminTyping['name'] ?? null,
             ],
+            'call' => $activeCall,
         ]);
     }
 
@@ -502,6 +509,9 @@ class LiveChatController extends Controller
                 $isOnline = Cache::has("live_chat:presence:personel:{$activeThread->personel_id}");
                 $lastSeenAt = Cache::get("live_chat:last_seen:personel:{$activeThread->personel_id}");
 
+                $callData = Cache::get("live_chat:call:{$activeThread->uuid}");
+                $activeCall = ($callData && in_array($callData['status'], ['RINGING', 'ACCEPTED', 'CONNECTED'])) ? $callData : null;
+
                 $activeData = [
                     'uuid' => $activeThread->uuid,
                     'status' => $activeThread->status,
@@ -514,7 +524,18 @@ class LiveChatController extends Controller
                         'is_online' => $isOnline,
                         'last_seen_at' => $lastSeenAt,
                     ],
+                    'call' => $activeCall,
                 ];
+            }
+        }
+
+        // Periksa apakah ada panggilan masuk dari personel pada seluruh utas aktif
+        $incomingCall = null;
+        foreach ($threads as $th) {
+            $c = Cache::get("live_chat:call:{$th->uuid}");
+            if ($c && $c['status'] === 'RINGING' && ($c['caller']['type'] ?? '') === 'PERSONEL') {
+                $incomingCall = $c;
+                break;
             }
         }
 
@@ -524,6 +545,7 @@ class LiveChatController extends Controller
         return response()->json([
             'threads' => $threads,
             'active_thread' => $activeData,
+            'incoming_call' => $incomingCall,
             'stats' => [
                 'total_open' => $totalOpen,
                 'total_unread' => $totalUnread,
@@ -1018,6 +1040,186 @@ class LiveChatController extends Controller
         $thread->delete();
 
         return back()->with('success', 'Sesi obrolan dan seluruh berkas lampiran berhasil dihapus permanen.');
+    }
+
+    /**
+     * Memulai panggilan video dinas baru pada utas obrolan (P2P WebRTC)
+     */
+    public function initiateCall(Request $request, $uuid)
+    {
+        $user = Auth::user();
+        $thread = LiveChatThread::with('personel.user')->where('uuid', $uuid)->firstOrFail();
+
+        $isPersonel = false;
+        if ($user->personel && $user->personel->id === $thread->personel_id) {
+            $isPersonel = true;
+        }
+
+        if ($isPersonel) {
+            $caller = [
+                'type' => 'PERSONEL',
+                'id' => $user->personel->id,
+                'name' => $user->personel->full_name,
+                'pangkat' => Personel::formatLongRank($user->personel->pangkat),
+                'photo' => $user->personel->photo_profile,
+            ];
+            $callee = [
+                'type' => 'OPERATOR',
+                'id' => null,
+                'name' => 'Petugas Layanan Informasi',
+                'pangkat' => 'Pengelola Dinas',
+                'photo' => null,
+            ];
+        } else {
+            $callerName = $user->name ?? 'Petugas Layanan';
+            $callerRank = 'Pengelola Dinas';
+            $callerPhoto = null;
+
+            if ($user->personel) {
+                $callerName = $user->personel->full_name;
+                $callerRank = Personel::formatLongRank($user->personel->pangkat);
+                $callerPhoto = $user->personel->photo_profile;
+            }
+
+            $caller = [
+                'type' => 'OPERATOR',
+                'id' => $user->id,
+                'name' => $callerName,
+                'pangkat' => $callerRank,
+                'photo' => $callerPhoto,
+            ];
+            $callee = [
+                'type' => 'PERSONEL',
+                'id' => $thread->personel?->id,
+                'name' => $thread->personel?->full_name ?? 'Personel',
+                'pangkat' => Personel::formatLongRank($thread->personel?->pangkat ?? ''),
+                'photo' => $thread->personel?->photo_profile,
+            ];
+        }
+
+        $callData = [
+            'call_id' => (string) Str::uuid(),
+            'thread_uuid' => $thread->uuid,
+            'status' => 'RINGING', // RINGING, ACCEPTED, CONNECTED, REJECTED, ENDED
+            'caller' => $caller,
+            'callee' => $callee,
+            'call_type' => $request->input('call_type', 'video'),
+            'offer' => null,
+            'answer' => null,
+            'candidates_caller' => [],
+            'candidates_callee' => [],
+            'created_at' => now()->timestamp,
+            'started_at' => null,
+            'ended_at' => null,
+        ];
+
+        Cache::put("live_chat:call:{$thread->uuid}", $callData, now()->addMinutes(10));
+
+        return response()->json([
+            'success' => true,
+            'call' => $callData,
+        ]);
+    }
+
+    /**
+     * Mengambil status sinyal WebRTC pada sesi panggilan aktif
+     */
+    public function getCallSignal(Request $request, $uuid)
+    {
+        $callData = Cache::get("live_chat:call:{$uuid}");
+
+        return response()->json([
+            'call' => $callData,
+        ]);
+    }
+
+    /**
+     * Mengirimkan sinyal negosiasi WebRTC (Offer, Answer, ICE Candidates, atau Status Terhubung)
+     */
+    public function sendCallSignal(Request $request, $uuid)
+    {
+        $callData = Cache::get("live_chat:call:{$uuid}");
+
+        if (!$callData) {
+            return response()->json(['error' => 'Sesi panggilan tidak ditemukan atau telah berakhir.'], 404);
+        }
+
+        $action = $request->input('action');
+        $payload = $request->input('data');
+        $sender = $request->input('sender'); // 'caller' | 'callee'
+
+        if ($action === 'accept') {
+            $callData['status'] = 'ACCEPTED';
+        } elseif ($action === 'offer') {
+            $callData['offer'] = $payload;
+        } elseif ($action === 'answer') {
+            $callData['answer'] = $payload;
+        } elseif ($action === 'candidate') {
+            if ($sender === 'caller') {
+                $callData['candidates_caller'][] = $payload;
+            } else {
+                $callData['candidates_callee'][] = $payload;
+            }
+        } elseif ($action === 'connected') {
+            $callData['status'] = 'CONNECTED';
+            if (empty($callData['started_at'])) {
+                $callData['started_at'] = now()->timestamp;
+            }
+        }
+
+        Cache::put("live_chat:call:{$uuid}", $callData, now()->addMinutes(10));
+
+        return response()->json([
+            'success' => true,
+            'call' => $callData,
+        ]);
+    }
+
+    /**
+     * Mengakhiri sesi panggilan video dinas dan mencatat ringkasan ke riwayat percakapan
+     */
+    public function endCall(Request $request, $uuid)
+    {
+        $callData = Cache::get("live_chat:call:{$uuid}");
+        $reason = $request->input('reason', 'ended'); // 'ended', 'rejected', 'canceled', 'missed'
+        $durationSeconds = (int) $request->input('duration_seconds', 0);
+
+        if ($callData) {
+            $callData['status'] = ($reason === 'rejected') ? 'REJECTED' : 'ENDED';
+            $callData['ended_at'] = now()->timestamp;
+            Cache::put("live_chat:call:{$uuid}", $callData, now()->addSeconds(30));
+        }
+
+        $thread = LiveChatThread::where('uuid', $uuid)->first();
+        if ($thread) {
+            if ($durationSeconds > 0) {
+                $minutes = floor($durationSeconds / 60);
+                $seconds = $durationSeconds % 60;
+                $formattedTime = sprintf('%02d:%02d', $minutes, $seconds);
+                $logMsg = "Panggilan video dinas selesai. (Durasi: {$formattedTime})";
+            } elseif ($reason === 'rejected') {
+                $logMsg = "Panggilan video dinas ditolak.";
+            } elseif ($reason === 'canceled') {
+                $logMsg = "Panggilan video dinas dibatalkan.";
+            } else {
+                $logMsg = "Panggilan video dinas tidak terjawab.";
+            }
+
+            LiveChatMessage::create([
+                'thread_id' => $thread->id,
+                'sender_type' => 'SYSTEM',
+                'sender_name' => 'Sistem Vicon Dinas',
+                'message' => $logMsg,
+                'is_read' => true,
+            ]);
+
+            $thread->update(['last_message_at' => now()]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Panggilan berhasil diakhiri.',
+        ]);
     }
 
     /**
