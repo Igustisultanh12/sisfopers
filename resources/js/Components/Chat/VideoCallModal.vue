@@ -1,5 +1,5 @@
 <template>
-  <div v-if="show" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-0 sm:p-4 select-none">
+  <div v-if="show" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-0 sm:p-4 select-none overscroll-none touch-none">
     
     <!-- 1. KONDISI A: PANGGILAN KELUAR (OUTGOING CALLING) -->
     <div 
@@ -130,7 +130,7 @@
     <div 
       v-else 
       :class="isFullscreen ? 'fixed inset-0 z-50 rounded-none' : 'w-full max-w-5xl h-[100dvh] sm:h-[90vh] sm:max-h-[720px] rounded-none sm:rounded-3xl border-0 sm:border border-slate-800'"
-      class="bg-slate-900 shadow-2xl flex flex-col overflow-hidden relative"
+      class="bg-slate-900 shadow-2xl flex flex-col overflow-hidden relative overscroll-none"
     >
       <!-- Bilah Header Atas Ruang Vicon -->
       <div class="h-14 px-3 sm:px-6 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 flex items-center justify-between shrink-0 z-20">
@@ -339,7 +339,7 @@
       </div>
 
       <!-- Bilah Kontrol Bawah (Toolbar Melayang Gaya Zoom / Meet / WhatsApp) -->
-      <div class="h-16 sm:h-20 px-2 sm:px-4 bg-slate-950/95 backdrop-blur-md border-t border-slate-800 flex items-center justify-around sm:justify-center gap-1 sm:gap-3 shrink-0 z-20">
+      <div class="h-16 sm:h-20 pb-[env(safe-area-inset-bottom,0px)] px-2 sm:px-4 bg-slate-950/95 backdrop-blur-md border-t border-slate-800 flex items-center justify-around sm:justify-center gap-1 sm:gap-3 shrink-0 z-20">
         
         <!-- 1. Tombol Mikrofon (Mute/Unmute) -->
         <button 
@@ -529,7 +529,9 @@ const loadIceServers = async () => {
 
 // Penentuan peran pemanggil secara absolut
 const isCaller = computed(() => {
-  if (props.incomingCallData) return false;
+  if (props.incomingCallData) {
+    return (props.incomingCallData.caller?.type === props.userRole);
+  }
   return Boolean(isInitiator.value);
 });
 
@@ -563,14 +565,17 @@ const normalizeSdp = (raw) => {
 
 const toSessionDescriptionPayload = (desc) => {
   if (!desc) return null;
-  if (typeof desc.toJSON === 'function') {
-    const json = desc.toJSON();
-    if (json && json.type && json.sdp) {
-      return { type: json.type, sdp: json.sdp };
-    }
-  }
+  // Prioritas pertama: ambil langsung dari properti type dan sdp objek deskripsi
   if (desc.type && desc.sdp) {
     return { type: desc.type, sdp: desc.sdp };
+  }
+  if (typeof desc.toJSON === 'function') {
+    try {
+      const json = desc.toJSON();
+      if (json && json.type && json.sdp) {
+        return { type: json.type, sdp: json.sdp };
+      }
+    } catch (e) {}
   }
   return null;
 };
@@ -607,15 +612,26 @@ const setRemoteDescriptionSafely = async (rawDesc) => {
       return false;
     }
 
-    await peerConnection.setRemoteDescription({
-      type: desc.type,
-      sdp: desc.sdp,
-    });
+    const rtcDesc = (typeof RTCSessionDescription !== 'undefined')
+      ? new RTCSessionDescription({ type: desc.type, sdp: desc.sdp })
+      : { type: desc.type, sdp: desc.sdp };
+
+    await peerConnection.setRemoteDescription(rtcDesc);
     await flushPendingCandidates();
     return true;
   } catch (err) {
-    console.warn('Gagal menerapkan remote description:', err);
-    return false;
+    console.warn('Gagal menerapkan remote description awal:', err);
+    try {
+      await peerConnection.setRemoteDescription({
+        type: desc.type,
+        sdp: desc.sdp,
+      });
+      await flushPendingCandidates();
+      return true;
+    } catch (fallbackErr) {
+      console.error('Fallback setRemoteDescription juga gagal:', fallbackErr);
+      return false;
+    }
   }
 };
 
@@ -638,15 +654,21 @@ const handleCalleeAnswerNegotiation = async (rawOffer) => {
     }
 
     // 2. Buat dan pasang local answer jika belum terpasang
-    if (!peerConnection.localDescription || peerConnection.localDescription.type !== 'answer') {
-      const answer = await peerConnection.createAnswer();
+    let answer = peerConnection.localDescription;
+    if (!answer || answer.type !== 'answer') {
+      answer = await peerConnection.createAnswer();
       await peerConnection.setLocalDescription(answer);
-      await waitForIceGathering(peerConnection, 500);
+      await waitForIceGathering(peerConnection, 300);
     }
 
     // 3. Kirimkan sinyal jawaban ke server
-    const answerPayload = toSessionDescriptionPayload(peerConnection.localDescription);
-    if (answerPayload) {
+    const currentDesc = peerConnection.localDescription || answer;
+    const answerPayload = toSessionDescriptionPayload(currentDesc) || {
+      type: 'answer',
+      sdp: currentDesc?.sdp || answer?.sdp,
+    };
+
+    if (answerPayload && answerPayload.sdp) {
       await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
         action: 'answer',
         data: answerPayload,
@@ -1017,9 +1039,13 @@ const startCall = async () => {
     // Buat Offer seketika dan kumpulkan kandidat lokal dalam SDP
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
-    await waitForIceGathering(peerConnection, 600);
+    await waitForIceGathering(peerConnection, 300);
 
-    const offerPayload = toSessionDescriptionPayload(peerConnection.localDescription || offer);
+    const currentDesc = peerConnection.localDescription || offer;
+    const offerPayload = toSessionDescriptionPayload(currentDesc) || {
+      type: 'offer',
+      sdp: currentDesc?.sdp || offer?.sdp,
+    };
 
     // Inisiasi panggilan ke server dengan data penawaran awal dan kandidat ICE lokal
     const res = await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/initiate`, {
@@ -1141,6 +1167,53 @@ const handleRemoteEnded = (reason = 'ended') => {
   callStatus.value = 'IDLE';
   emit('call-ended', finalDuration);
   emit('close');
+};
+
+const resumeActiveCall = async (callData) => {
+  if (!callData) return;
+  const isCallerUser = (callData.caller?.type === props.userRole);
+  isInitiator.value = isCallerUser;
+  stopIncomingCallRing();
+  stopOutgoingDialRing();
+  stopOutgoingTimeout();
+
+  callStatus.value = (callData.status === 'CONNECTED') ? 'CONNECTED' : 'CONNECTING';
+  if (callData.status === 'CONNECTED') {
+    startDurationTimer();
+  } else {
+    startConnectingTimer();
+  }
+
+  try {
+    await initLocalMedia();
+    await loadIceServers();
+    createPeerConnection();
+
+    if (!isCallerUser && callData.offer) {
+      await handleCalleeAnswerNegotiation(callData.offer);
+    } else if (isCallerUser && !callData.offer) {
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
+      await waitForIceGathering(peerConnection, 300);
+      const currentDesc = peerConnection.localDescription || offer;
+      const offerPayload = toSessionDescriptionPayload(currentDesc) || {
+        type: 'offer',
+        sdp: currentDesc?.sdp || offer?.sdp,
+      };
+      if (offerPayload && offerPayload.sdp) {
+        await axios.post(`/${props.urlPrefix}/live-chat/${props.threadUuid}/call/signal`, {
+          action: 'offer',
+          data: offerPayload,
+          sender: 'caller',
+        });
+      }
+    }
+
+    startSignalingPoll();
+  } catch (err) {
+    console.error('Kendala saat menyambung ulang sesi aktif:', err);
+    startSignalingPoll();
+  }
 };
 
 // ==========================================
@@ -1496,30 +1569,53 @@ watch(
   (newVal) => {
     if (newVal) {
       if (props.incomingCallData) {
-        isInitiator.value = false;
-        callStatus.value = 'INCOMING';
         activeCaller.value = props.incomingCallData.caller;
-        startIncomingCallRing();
+        const status = props.incomingCallData.status;
+        const isCallerUser = (props.incomingCallData.caller?.type === props.userRole);
+        isInitiator.value = isCallerUser;
+
+        if (status === 'RINGING') {
+          if (isCallerUser) {
+            callStatus.value = 'OUTGOING';
+            startOutgoingDialRing();
+            startOutgoingTimeout();
+          } else {
+            callStatus.value = 'INCOMING';
+            startIncomingCallRing();
+          }
+        } else if (['ACCEPTED', 'CONNECTING', 'CONNECTED'].includes(status)) {
+          resumeActiveCall(props.incomingCallData);
+        }
       } else {
         startCall();
       }
     } else {
       cleanupMedia();
     }
-  }
+  },
+  { immediate: true }
 );
 
 watch(
   () => props.incomingCallData,
   (callData) => {
-    if (callData && callData.status === 'RINGING') {
+    if (!callData) return;
+    activeCaller.value = callData.caller;
+    const isCallerUser = (callData.caller?.type === props.userRole);
+
+    if (callData.status === 'RINGING' && !isCallerUser && callStatus.value !== 'INCOMING' && callStatus.value !== 'CONNECTING' && callStatus.value !== 'CONNECTED') {
       isInitiator.value = false;
       callStatus.value = 'INCOMING';
-      activeCaller.value = callData.caller;
       startIncomingCallRing();
+    } else if (['ACCEPTED', 'CONNECTING', 'CONNECTED'].includes(callData.status) && callStatus.value === 'IDLE' && props.show) {
+      resumeActiveCall(callData);
     }
   }
 );
+
+onMounted(() => {
+  loadIceServers();
+});
 
 onUnmounted(() => {
   cleanupMedia();

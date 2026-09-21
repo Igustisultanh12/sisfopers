@@ -766,8 +766,18 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 
 const page = usePage();
-const showVideoCallModal = ref(false);
-const activeIncomingCallData = ref(null);
+
+const props = defineProps({
+  threads: Object,
+  activeThread: Object,
+  activeMessages: Array,
+  initialCall: Object,
+  filters: Object,
+  stats: Object,
+});
+
+const showVideoCallModal = ref(Boolean(props.initialCall));
+const activeIncomingCallData = ref(props.initialCall || null);
 
 const currentUserInfo = computed(() => ({
   id: page.props.auth?.user?.id,
@@ -819,14 +829,6 @@ const onCallEnded = () => {
 const onCallAccepted = () => {
   // Sambungan diterima
 };
-
-const props = defineProps({
-  threads: Object,
-  activeThread: Object,
-  activeMessages: Array,
-  filters: Object,
-  stats: Object,
-});
 
 const searchQuery = ref(props.filters?.search || '');
 const statusFilter = ref(props.filters?.status || 'all');
@@ -1234,17 +1236,20 @@ const pollAdminSync = async () => {
       }
     }
 
-    // 3. Deteksi Panggilan Masuk dari Personel
-    if (res.data.incoming_call && res.data.incoming_call.status === 'RINGING') {
+    // 3. Deteksi Panggilan Masuk dari Personel atau Sesi Aktif
+    if (res.data.incoming_call && ['RINGING', 'ACCEPTED', 'CONNECTING', 'CONNECTED'].includes(res.data.incoming_call.status)) {
       if (!showVideoCallModal.value) {
         activeIncomingCallData.value = res.data.incoming_call;
         showVideoCallModal.value = true;
       }
     } else if (res.data.active_thread?.call) {
       const activeCall = res.data.active_thread.call;
-      if (activeCall.status === 'RINGING' && activeCall.caller?.type === 'PERSONEL' && !showVideoCallModal.value) {
+      if (['RINGING', 'ACCEPTED', 'CONNECTING', 'CONNECTED'].includes(activeCall.status) && !showVideoCallModal.value) {
         activeIncomingCallData.value = activeCall;
         showVideoCallModal.value = true;
+      } else if (['ENDED', 'REJECTED'].includes(activeCall.status) && showVideoCallModal.value) {
+        showVideoCallModal.value = false;
+        activeIncomingCallData.value = null;
       }
     }
 

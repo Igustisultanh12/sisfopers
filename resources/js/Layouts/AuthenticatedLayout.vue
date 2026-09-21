@@ -812,6 +812,10 @@ let notificationInterval = null;
 
 onMounted(() => {
   notificationInterval = setInterval(() => {
+    // Lewati reload asinkron jika sedang berada di rute live-chat agar sesi WebRTC tetap utuh tanpa gangguan
+    if (typeof window !== 'undefined' && window.location.pathname.includes('/live-chat')) {
+      return;
+    }
     router.reload({
       only: ['auth'],
       preserveScroll: true,

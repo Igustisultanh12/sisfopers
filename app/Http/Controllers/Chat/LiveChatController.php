@@ -66,9 +66,13 @@ class LiveChatController extends Controller
 
         $messages = $thread->messages()->orderBy('id', 'asc')->get();
 
+        $callData = Cache::get("live_chat:call:{$thread->uuid}");
+        $activeCall = ($callData && in_array($callData['status'], ['RINGING', 'ACCEPTED', 'CONNECTING', 'CONNECTED'])) ? $callData : null;
+
         return Inertia::render('Personel/Chat/Index', [
             'initialThread' => $thread,
             'initialMessages' => $messages,
+            'initialCall' => $activeCall,
             'personel' => [
                 'id' => $personel->id,
                 'name' => $personel->full_name,
@@ -435,10 +439,17 @@ class LiveChatController extends Controller
         $totalOpen = LiveChatThread::where('status', 'OPEN')->count();
         $totalUnread = LiveChatThread::where('unread_admin', '>', 0)->count();
 
+        $activeCall = null;
+        if ($activeThread) {
+            $callData = Cache::get("live_chat:call:{$activeThread->uuid}");
+            $activeCall = ($callData && in_array($callData['status'], ['RINGING', 'ACCEPTED', 'CONNECTING', 'CONNECTED'])) ? $callData : null;
+        }
+
         return Inertia::render('Admin/Chat/Index', [
             'threads' => $threads,
             'activeThread' => $activeThread,
             'activeMessages' => $activeMessages,
+            'initialCall' => $activeCall,
             'filters' => [
                 'search' => $search,
                 'status' => $status,
@@ -535,7 +546,7 @@ class LiveChatController extends Controller
         $incomingCall = null;
         foreach ($threads as $th) {
             $c = Cache::get("live_chat:call:{$th->uuid}");
-            if ($c && $c['status'] === 'RINGING' && ($c['caller']['type'] ?? '') === 'PERSONEL') {
+            if ($c && in_array($c['status'], ['RINGING', 'ACCEPTED', 'CONNECTING', 'CONNECTED']) && ($c['caller']['type'] ?? '') === 'PERSONEL') {
                 $incomingCall = $c;
                 break;
             }

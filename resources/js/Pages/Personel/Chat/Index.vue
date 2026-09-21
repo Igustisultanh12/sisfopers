@@ -495,8 +495,15 @@ import { playNotificationSound } from '@/Utils/sound';
 import Swal from 'sweetalert2';
 import axios from 'axios';
 
-const showPersonelVideoCallModal = ref(false);
-const activeIncomingCallData = ref(null);
+const props = defineProps({
+  initialThread: Object,
+  initialMessages: Array,
+  initialCall: Object,
+  personel: Object,
+});
+
+const showPersonelVideoCallModal = ref(Boolean(props.initialCall));
+const activeIncomingCallData = ref(props.initialCall || null);
 
 const currentUserInfo = computed(() => ({
   id: props.personel?.id,
@@ -553,12 +560,6 @@ const onPersonelCallEnded = () => {
 const onPersonelCallAccepted = () => {
   // Panggilan diterima
 };
-
-const props = defineProps({
-  initialThread: Object,
-  initialMessages: Array,
-  personel: Object,
-});
 
 const thread = ref(props.initialThread || null);
 const messagesList = ref(props.initialMessages || []);
@@ -672,10 +673,15 @@ const pollMessages = async () => {
   if (!thread.value || !thread.value.uuid || thread.value.status === 'CLOSED') {
     try {
       const activeRes = await axios.get('/personel/live-chat/active-session');
-      if (activeRes.data?.call && activeRes.data.call.status === 'RINGING' && activeRes.data.call.caller?.type !== 'PERSONEL') {
+      if (activeRes.data?.call && ['RINGING', 'ACCEPTED', 'CONNECTING', 'CONNECTED'].includes(activeRes.data.call.status) && activeRes.data.call.caller?.type !== 'PERSONEL') {
         if (!showPersonelVideoCallModal.value) {
           activeIncomingCallData.value = activeRes.data.call;
           showPersonelVideoCallModal.value = true;
+        }
+      } else if (activeRes.data?.call && ['ENDED', 'REJECTED'].includes(activeRes.data.call.status)) {
+        if (showPersonelVideoCallModal.value) {
+          showPersonelVideoCallModal.value = false;
+          activeIncomingCallData.value = null;
         }
       }
       if (activeRes.data?.thread && activeRes.data.thread.status === 'OPEN') {
@@ -707,10 +713,15 @@ const pollMessages = async () => {
       updateOperatorTypingStatus(res.data.typing);
     }
 
-    if (res.data.call && res.data.call.status === 'RINGING' && res.data.call.caller?.type !== 'PERSONEL') {
+    if (res.data.call && ['RINGING', 'ACCEPTED', 'CONNECTING', 'CONNECTED'].includes(res.data.call.status) && res.data.call.caller?.type !== 'PERSONEL') {
       if (!showPersonelVideoCallModal.value) {
         activeIncomingCallData.value = res.data.call;
         showPersonelVideoCallModal.value = true;
+      }
+    } else if (res.data.call && ['ENDED', 'REJECTED'].includes(res.data.call.status)) {
+      if (showPersonelVideoCallModal.value) {
+        showPersonelVideoCallModal.value = false;
+        activeIncomingCallData.value = null;
       }
     }
 
