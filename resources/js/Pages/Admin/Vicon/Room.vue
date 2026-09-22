@@ -1,0 +1,853 @@
+<template>
+  <div class="fixed inset-0 z-50 bg-slate-950 text-white flex flex-col select-none overflow-hidden overscroll-none touch-none">
+    <!-- 1. TOP BAR DINAS -->
+    <header class="h-14 sm:h-16 bg-slate-900/90 border-b border-slate-800/80 px-4 sm:px-6 flex items-center justify-between shrink-0 z-20 backdrop-blur-md">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-8 h-8 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center shrink-0">
+          <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <div class="truncate">
+          <div class="flex items-center gap-2">
+            <h1 class="text-xs sm:text-sm font-bold text-white truncate max-w-xs sm:max-w-md">
+              {{ room.title }}
+            </h1>
+            <span class="hidden sm:inline-block px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+              {{ room.room_code }}
+            </span>
+          </div>
+          <div class="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
+            <span class="flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              {{ totalActiveCount }} Terhubung
+            </span>
+            <span>&bull;</span>
+            <span class="font-mono text-slate-300 font-bold">{{ meetingDurationFormatted }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions (Copy Link & Info) -->
+      <div class="flex items-center gap-2">
+        <div class="hidden md:flex items-center gap-2">
+          <button 
+            @click="copyGuestLink"
+            type="button" 
+            class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+            title="Salin Tautan Tamu Luar"
+          >
+            <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
+            <span>Link Tamu</span>
+          </button>
+
+          <button 
+            @click="copyPersonelLink"
+            type="button" 
+            class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+            title="Salin Tautan Personel Komcad"
+          >
+            <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            <span>Link Personel</span>
+          </button>
+        </div>
+
+        <button 
+          @click="toggleFullscreen" 
+          type="button" 
+          class="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-400 hover:text-white transition cursor-pointer"
+          title="Layar Penuh"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- 2. MAIN BODY: VIDEO GRID & DRAWERS -->
+    <div class="flex-1 relative flex overflow-hidden">
+      <!-- AREA VIDEO GRID -->
+      <main class="flex-1 p-2 sm:p-4 overflow-y-auto flex items-center justify-center">
+        <div 
+          class="w-full h-full grid gap-2 sm:gap-3 items-center justify-center transition-all duration-300"
+          :class="gridClass"
+        >
+          <!-- UBIN VIDEO LOKAL (ADMIN/HOST) -->
+          <div 
+            class="relative w-full h-full min-h-[160px] sm:min-h-[220px] bg-slate-900 rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-800 shadow-lg flex items-center justify-center group"
+          >
+            <!-- Wadah Video Track Lokal -->
+            <div ref="localVideoContainerRef" class="w-full h-full object-cover"></div>
+
+            <!-- Placeholder Kamera Mati -->
+            <div 
+              v-if="isCameraOff || isScreenSharing" 
+              class="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center space-y-2 z-10"
+            >
+              <div class="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-xl font-black text-amber-400">
+                {{ getInitial(currentParticipant?.display_name || 'Host') }}
+              </div>
+              <p class="text-xs font-bold text-slate-300">
+                {{ isScreenSharing ? 'Sedang Berbagi Layar' : 'Kamera Dimatikan' }}
+              </p>
+            </div>
+
+            <!-- Lencana Identitas Lokal -->
+            <div class="absolute bottom-2 left-2 right-2 flex items-center justify-between z-10 pointer-events-none">
+              <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-950/80 backdrop-blur-xs border border-slate-800 text-[11px] font-bold text-white shadow-xs">
+                <span class="w-2 h-2 rounded-full" :class="isMuted ? 'bg-red-500' : 'bg-emerald-400 animate-pulse'"></span>
+                <span class="truncate max-w-[140px] sm:max-w-[200px]">{{ currentParticipant?.display_name || 'Anda' }} (Anda)</span>
+                <span class="px-1.5 py-0.2 rounded-md bg-amber-500/20 text-amber-300 text-[9px] font-bold border border-amber-500/30">HOST</span>
+              </div>
+
+              <div class="flex items-center gap-1">
+                <span v-if="isMuted" class="p-1 rounded-lg bg-red-600/90 text-white">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 19L5 5m14 0L5 19M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+                  </svg>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- UBIN VIDEO REMOTE PESERTA -->
+          <div 
+            v-for="remoteUser in remoteUsers" 
+            :key="remoteUser.uid"
+            class="relative w-full h-full min-h-[160px] sm:min-h-[220px] bg-slate-900 rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-800 shadow-lg flex items-center justify-center group"
+          >
+            <!-- Wadah Video Track Remote -->
+            <div :id="'remote-video-' + remoteUser.uid" class="w-full h-full object-cover"></div>
+
+            <!-- Placeholder Kamera Remote Mati -->
+            <div 
+              v-if="!remoteUser.hasVideo" 
+              class="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center space-y-2 z-10"
+            >
+              <div 
+                class="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-black shadow-md border"
+                :class="getRoleColor(getParticipantByUid(remoteUser.uid)?.role).avatarClass"
+              >
+                {{ getInitial(getParticipantByUid(remoteUser.uid)?.display_name || 'P') }}
+              </div>
+              <p class="text-xs font-bold text-slate-300">
+                {{ getParticipantByUid(remoteUser.uid)?.display_name || 'Peserta Terhubung' }}
+              </p>
+            </div>
+
+            <!-- Lencana Identitas Remote -->
+            <div class="absolute bottom-2 left-2 right-2 flex items-center justify-between z-10 pointer-events-none">
+              <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-950/80 backdrop-blur-xs border border-slate-800 text-[11px] font-bold text-white shadow-xs">
+                <span class="w-2 h-2 rounded-full" :class="remoteUser.hasAudio ? 'bg-emerald-400 animate-pulse' : 'bg-red-500'"></span>
+                <span class="truncate max-w-[140px] sm:max-w-[200px]">
+                  {{ getParticipantByUid(remoteUser.uid)?.display_name || ('Peserta #' + remoteUser.uid) }}
+                </span>
+                <span 
+                  class="px-1.5 py-0.2 rounded-md text-[9px] font-bold border"
+                  :class="getRoleColor(getParticipantByUid(remoteUser.uid)?.role).badgeClass"
+                >
+                  {{ getParticipantByUid(remoteUser.uid)?.role || 'TAMU' }}
+                </span>
+              </div>
+
+              <div class="flex items-center gap-1">
+                <span v-if="!remoteUser.hasAudio" class="p-1 rounded-lg bg-red-600/90 text-white">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 19L5 5m14 0L5 19M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+                  </svg>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- 3. LACI PARTISIPAN (PARTICIPANTS DRAWER) -->
+      <aside 
+        v-if="showParticipantDrawer"
+        class="w-80 sm:w-96 bg-slate-900 border-l border-slate-800 flex flex-col shrink-0 z-30 shadow-2xl transition-all duration-300"
+      >
+        <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+          <div>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-200">Daftar Partisipan ({{ participantsList.length }})</h3>
+            <p class="text-[10px] text-slate-400">Personel dinas & tamu eksternal</p>
+          </div>
+          <button @click="showParticipantDrawer = false" class="p-1 text-slate-400 hover:text-white cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Tombol Tambah Undangan Personel -->
+        <div class="p-3 border-b border-slate-800">
+          <button 
+            @click="openInviteModal"
+            type="button" 
+            class="w-full py-2 px-3 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+            </svg>
+            <span>+ Undang Personel Baru</span>
+          </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-3 space-y-2 divide-y divide-slate-800/60">
+          <div 
+            v-for="p in participantsList" 
+            :key="p.id"
+            class="pt-2 first:pt-0 flex items-center justify-between text-xs"
+          >
+            <div class="flex items-center gap-2.5 truncate">
+              <div 
+                class="w-7 h-7 rounded-xl flex items-center justify-center font-bold text-[11px] shrink-0 border"
+                :class="getRoleColor(p.role).avatarClass"
+              >
+                {{ getInitial(p.display_name) }}
+              </div>
+              <div class="truncate">
+                <p class="font-bold text-slate-200 truncate">{{ p.display_name }}</p>
+                <div class="flex items-center gap-1 text-[10px]">
+                  <span 
+                    class="px-1.5 rounded-sm font-semibold"
+                    :class="getRoleColor(p.role).badgeClass"
+                  >
+                    {{ p.role }}
+                  </span>
+                  <span v-if="p.status === 'JOINED'" class="text-emerald-400 font-medium">&bull; Di Ruang Rapat</span>
+                  <span v-else class="text-amber-400 font-medium">&bull; Menunggu Masuk</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- 4. LACI OBROLAN (IN-MEETING CHAT DRAWER) -->
+      <aside 
+        v-if="showChatDrawer"
+        class="w-80 sm:w-96 bg-slate-900 border-l border-slate-800 flex flex-col shrink-0 z-30 shadow-2xl transition-all duration-300"
+      >
+        <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+          <div>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-200">Obrolan Ruang Rapat</h3>
+            <p class="text-[10px] text-slate-400">Pesan teks dan koordinasi dinas</p>
+          </div>
+          <button @click="showChatDrawer = false" class="p-1 text-slate-400 hover:text-white cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div ref="chatContainerRef" class="flex-1 overflow-y-auto p-4 space-y-3">
+          <div v-if="messagesList.length === 0" class="h-full flex items-center justify-center text-center text-xs text-slate-500 italic">
+            Belum ada pesan dalam sesi rapat ini.
+          </div>
+
+          <div 
+            v-for="msg in messagesList" 
+            :key="msg.id"
+            class="space-y-1"
+          >
+            <div class="flex items-center justify-between text-[10px] text-slate-400">
+              <span class="font-bold text-slate-300">{{ msg.sender_name }}</span>
+              <span>{{ formatTime(msg.created_at) }}</span>
+            </div>
+            <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-slate-200 whitespace-pre-wrap leading-relaxed">
+              {{ msg.message }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Input Pesan Obrolan -->
+        <form @submit.prevent="submitChatMessage" class="p-3 border-t border-slate-800 bg-slate-900/90 flex gap-2">
+          <input 
+            v-model="inputChatMessage" 
+            type="text" 
+            placeholder="Tulis pesan rapat..." 
+            class="flex-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+          />
+          <button 
+            type="submit" 
+            class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition cursor-pointer"
+          >
+            Kirim
+          </button>
+        </form>
+      </aside>
+    </div>
+
+    <!-- 5. BILAH KONTROL BAWAH (BOTTOM COMMAND BAR) -->
+    <footer class="h-18 sm:h-20 bg-slate-900 border-t border-slate-800 px-4 flex items-center justify-between shrink-0 z-20">
+      <!-- Info Ruang (Kiri) -->
+      <div class="hidden sm:flex items-center gap-2 text-xs text-slate-400">
+        <span class="font-bold text-slate-200">{{ room.room_code }}</span>
+      </div>
+
+      <!-- Tombol Kontrol Utama (Tengah) -->
+      <div class="flex items-center gap-2 sm:gap-3 mx-auto">
+        <!-- Mikrofon -->
+        <button 
+          @click="toggleAudio"
+          type="button" 
+          :class="isMuted ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700'"
+          class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex flex-col items-center justify-center transition active:scale-95 cursor-pointer shadow-md"
+          :title="isMuted ? 'Aktifkan Mikrofon' : 'Bisukan Mikrofon'"
+        >
+          <svg v-if="!isMuted" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+          </svg>
+          <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+          </svg>
+        </button>
+
+        <!-- Kamera -->
+        <button 
+          @click="toggleVideo"
+          type="button" 
+          :class="isCameraOff ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700'"
+          class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex flex-col items-center justify-center transition active:scale-95 cursor-pointer shadow-md"
+          :title="isCameraOff ? 'Nyalakan Kamera' : 'Matikan Kamera'"
+        >
+          <svg v-if="!isCameraOff" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+          </svg>
+        </button>
+
+        <!-- Berbagi Layar (Screen Share) -->
+        <button 
+          @click="toggleScreenShare"
+          type="button" 
+          :class="isScreenSharing ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700'"
+          class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex flex-col items-center justify-center transition active:scale-95 cursor-pointer shadow-md"
+          :title="isScreenSharing ? 'Hentikan Berbagi Layar' : 'Berbagi Layar / Dokumen'"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+        </button>
+
+        <!-- Tombol Laci Partisipan -->
+        <button 
+          @click="showParticipantDrawer = !showParticipantDrawer; if(showParticipantDrawer) showChatDrawer = false;"
+          type="button" 
+          :class="showParticipantDrawer ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700'"
+          class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex flex-col items-center justify-center transition active:scale-95 cursor-pointer shadow-md relative"
+          title="Daftar Partisipan"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+          <span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-blue-500 text-[9px] font-bold flex items-center justify-center">
+            {{ totalActiveCount }}
+          </span>
+        </button>
+
+        <!-- Tombol Laci Obrolan -->
+        <button 
+          @click="showChatDrawer = !showChatDrawer; if(showChatDrawer) showParticipantDrawer = false;"
+          type="button" 
+          :class="showChatDrawer ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700'"
+          class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex flex-col items-center justify-center transition active:scale-95 cursor-pointer shadow-md"
+          title="Obrolan Rapat"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+        </button>
+
+        <!-- Tombol Akhiri / Tinggalkan Rapat -->
+        <button 
+          @click="handleLeaveOrEnd"
+          type="button" 
+          class="px-4 sm:px-5 h-11 sm:h-12 bg-red-600 hover:bg-red-700 active:scale-95 text-white text-xs font-black rounded-2xl shadow-lg shadow-red-600/30 transition flex items-center gap-2 cursor-pointer"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M5 3a2 2 0 00-2 2v1c0 8.284 6.716 15 15 15h1a2 2 0 002-2v-3.28a1 1 0 00-.684-.948l-4.493-1.498a1 1 0 00-1.21.502l-1.13 2.257a11.042 11.042 0 01-5.516-5.517l2.257-1.128a1 1 0 00.502-1.21L9.228 3.683A1 1 0 008.279 3H5z" />
+          </svg>
+          <span class="hidden sm:inline">{{ isHost ? 'Akhiri Rapat' : 'Tinggalkan' }}</span>
+        </button>
+      </div>
+
+      <!-- Status Sambungan (Kanan) -->
+      <div class="hidden sm:flex items-center gap-2 text-[11px] text-slate-400">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+        <span>Jalur Aman</span>
+      </div>
+    </footer>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { router } from '@inertiajs/vue3';
+import Swal from 'sweetalert2';
+import axios from 'axios';
+
+const props = defineProps({
+  room: { type: Object, required: true },
+  currentParticipant: { type: Object, required: true },
+  agoraAppId: { type: String, default: '19daeb63b0ec46f2b02197c9fbbe81d6' },
+  isHost: { type: Boolean, default: false },
+});
+
+// State Media & Kontrol
+const isMuted = ref(false);
+const isCameraOff = ref(false);
+const isScreenSharing = ref(false);
+const isFullscreen = ref(false);
+
+// State Laci
+const showParticipantDrawer = ref(false);
+const showChatDrawer = ref(false);
+const inputChatMessage = ref('');
+const messagesList = ref(props.room.messages || []);
+const participantsList = ref(props.room.participants || []);
+const chatContainerRef = ref(null);
+
+// Elemen DOM & Objek Agora RTC
+const localVideoContainerRef = ref(null);
+const remoteUsers = ref([]); // Array of { uid, hasVideo, hasAudio, videoTrack, audioTrack }
+let agoraClient = null;
+let localAudioTrack = null;
+let localVideoTrack = null;
+let localScreenTrack = null;
+
+// Timer
+let meetingTimer = null;
+const meetingSeconds = ref(0);
+let syncTimer = null;
+
+const totalActiveCount = computed(() => {
+  return 1 + remoteUsers.value.length;
+});
+
+const meetingDurationFormatted = computed(() => {
+  const m = Math.floor(meetingSeconds.value / 60);
+  const s = meetingSeconds.value % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+});
+
+// Penentuan Class Grid Dinamis berdasarkan Jumlah Partisipan
+const gridClass = computed(() => {
+  const count = totalActiveCount.value;
+  if (count <= 1) return 'grid-cols-1 max-w-4xl max-h-[85vh]';
+  if (count === 2) return 'grid-cols-1 sm:grid-cols-2 max-w-5xl';
+  if (count <= 4) return 'grid-cols-2 max-w-5xl';
+  if (count <= 6) return 'grid-cols-2 sm:grid-cols-3 max-w-6xl';
+  return 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4';
+});
+
+const getInitial = (name) => {
+  if (!name) return 'P';
+  const parts = name.trim().split(' ');
+  return parts[0].charAt(0).toUpperCase();
+};
+
+const getRoleColor = (role) => {
+  if (role === 'HOST') {
+    return {
+      avatarClass: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+      badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+    };
+  }
+  if (role === 'PERSONEL') {
+    return {
+      avatarClass: 'bg-blue-600/20 text-blue-300 border-blue-500/30',
+      badgeClass: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+    };
+  }
+  return {
+    avatarClass: 'bg-emerald-600/20 text-emerald-300 border-emerald-500/30',
+    badgeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+  };
+};
+
+const getParticipantByUid = (uid) => {
+  return participantsList.value.find(p => Number(p.agora_uid) === Number(uid));
+};
+
+// ==========================================
+// INISIASI PUSTAKA & SAMBUNGAN AGORA RTC
+// ==========================================
+const loadAgoraScript = () => {
+  return new Promise((resolve, reject) => {
+    if (typeof window !== 'undefined' && window.AgoraRTC) {
+      resolve(window.AgoraRTC);
+      return;
+    }
+    const existing = document.getElementById('agora-rtc-sdk');
+    if (existing) {
+      existing.addEventListener('load', () => resolve(window.AgoraRTC));
+      existing.addEventListener('error', e => reject(e));
+      return;
+    }
+    const s = document.createElement('script');
+    s.id = 'agora-rtc-sdk';
+    s.src = 'https://download.agora.io/sdk/release/AgoraRTC_N-4.20.2.js';
+    s.async = true;
+    s.onload = () => resolve(window.AgoraRTC);
+    s.onerror = e => reject(e);
+    document.head.appendChild(s);
+  });
+};
+
+const initAgora = async () => {
+  try {
+    const AgoraRTC = await loadAgoraScript();
+    agoraClient = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+
+    // Dapatkan Token Agora Dinamis dari Backend
+    const tokenRes = await axios.get(`/vicon/${props.room.uuid}/token`, {
+      params: { uid: props.currentParticipant.agora_uid },
+    });
+
+    const { appId, channel, token, uid } = tokenRes.data;
+
+    // Pasang Event Listeners Agora
+    agoraClient.on('user-published', async (user, mediaType) => {
+      await agoraClient.subscribe(user, mediaType);
+
+      let targetUser = remoteUsers.value.find(u => u.uid === user.uid);
+      if (!targetUser) {
+        targetUser = {
+          uid: user.uid,
+          hasVideo: false,
+          hasAudio: false,
+        };
+        remoteUsers.value.push(targetUser);
+      }
+
+      if (mediaType === 'video') {
+        targetUser.hasVideo = true;
+        await nextTick();
+        user.videoTrack.play('remote-video-' + user.uid);
+      }
+
+      if (mediaType === 'audio') {
+        targetUser.hasAudio = true;
+        user.audioTrack.play();
+      }
+    });
+
+    agoraClient.on('user-unpublished', (user, mediaType) => {
+      const targetUser = remoteUsers.value.find(u => u.uid === user.uid);
+      if (targetUser) {
+        if (mediaType === 'video') targetUser.hasVideo = false;
+        if (mediaType === 'audio') targetUser.hasAudio = false;
+      }
+    });
+
+    agoraClient.on('user-left', (user) => {
+      remoteUsers.value = remoteUsers.value.filter(u => u.uid !== user.uid);
+    });
+
+    // Gabung Saluran
+    await agoraClient.join(appId, channel, token, uid);
+
+    // Buat Audio & Video Track Lokal
+    const [audioTrack, videoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
+    localAudioTrack = audioTrack;
+    localVideoTrack = videoTrack;
+
+    await nextTick();
+    if (localVideoContainerRef.value) {
+      localVideoTrack.play(localVideoContainerRef.value);
+    }
+
+    // Publikasikan Aliran ke Saluran
+    await agoraClient.publish([localAudioTrack, localVideoTrack]);
+
+    // Jalankan Penghitung Durasi Rapat
+    startMeetingTimer();
+  } catch (err) {
+    console.error('Koneksi Agora RTC Gagal:', err);
+    Swal.fire({
+      icon: 'error',
+      title: 'Koneksi Terkendala',
+      text: 'Gagal menghubungkan ke saluran Agora RTC. Pastikan izin kamera dan mikrofon telah diberikan.',
+      confirmButtonColor: '#2563EB',
+    });
+  }
+};
+
+const toggleAudio = async () => {
+  if (!localAudioTrack) return;
+  if (isMuted.value) {
+    await localAudioTrack.setEnabled(true);
+    isMuted.value = false;
+  } else {
+    await localAudioTrack.setEnabled(false);
+    isMuted.value = true;
+  }
+};
+
+const toggleVideo = async () => {
+  if (!localVideoTrack) return;
+  if (isCameraOff.value) {
+    await localVideoTrack.setEnabled(true);
+    isCameraOff.value = false;
+  } else {
+    await localVideoTrack.setEnabled(false);
+    isCameraOff.value = true;
+  }
+};
+
+const toggleScreenShare = async () => {
+  if (!agoraClient) return;
+
+  if (isScreenSharing.value) {
+    // Hentikan Screen Share dan kembali ke kamera
+    if (localScreenTrack) {
+      await agoraClient.unpublish(localScreenTrack);
+      localScreenTrack.close();
+      localScreenTrack = null;
+    }
+    if (localVideoTrack) {
+      await agoraClient.publish(localVideoTrack);
+      await nextTick();
+      if (localVideoContainerRef.value) {
+        localVideoTrack.play(localVideoContainerRef.value);
+      }
+    }
+    isScreenSharing.value = false;
+  } else {
+    try {
+      const AgoraRTC = await loadAgoraScript();
+      localScreenTrack = await AgoraRTC.createScreenVideoTrack({}, 'disable');
+      
+      if (localVideoTrack) {
+        await agoraClient.unpublish(localVideoTrack);
+      }
+      await agoraClient.publish(localScreenTrack);
+
+      await nextTick();
+      if (localVideoContainerRef.value) {
+        localScreenTrack.play(localVideoContainerRef.value);
+      }
+
+      localScreenTrack.on('track-ended', () => {
+        toggleScreenShare();
+      });
+
+      isScreenSharing.value = true;
+    } catch (e) {
+      console.warn('Screen share dibatalkan atau terkendala:', e);
+    }
+  }
+};
+
+const toggleFullscreen = () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+    isFullscreen.value = true;
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen().catch(() => {});
+    }
+    isFullscreen.value = false;
+  }
+};
+
+const startMeetingTimer = () => {
+  meetingSeconds.value = 0;
+  meetingTimer = setInterval(() => {
+    meetingSeconds.value++;
+  }, 1000);
+};
+
+// ==========================================
+// SINKRONISASI PARTISIPAN & OBROLAN RUANG
+// ==========================================
+const startRoomSync = () => {
+  syncTimer = setInterval(async () => {
+    try {
+      const res = await axios.get(`/vicon/${props.room.uuid}/sync`, {
+        params: { last_msg_id: messagesList.value[messagesList.value.length - 1]?.id || 0 }
+      });
+
+      if (res.data.status === 'ENDED') {
+        clearInterval(syncTimer);
+        leaveConference();
+        Swal.fire({
+          icon: 'info',
+          title: 'Rapat Telah Berakhir',
+          text: 'Host telah mengakhiri sesi rapat dinas ini.',
+          confirmButtonColor: '#2563EB',
+        }).then(() => {
+          router.visit(route('admin.vicon.index'));
+        });
+        return;
+      }
+
+      if (res.data.participants) {
+        participantsList.value = res.data.participants;
+      }
+
+      if (res.data.messages && res.data.messages.length > 0) {
+        messagesList.value.push(...res.data.messages);
+        await nextTick();
+        if (chatContainerRef.value) {
+          chatContainerRef.value.scrollTop = chatContainerRef.value.scrollHeight;
+        }
+      }
+    } catch (e) {
+      console.debug('Sync room terkendala:', e);
+    }
+  }, 2000);
+};
+
+const submitChatMessage = async () => {
+  const text = inputChatMessage.value.trim();
+  if (!text) return;
+
+  inputChatMessage.value = '';
+
+  const tempMsg = {
+    id: 'temp_' + Date.now(),
+    sender_name: props.currentParticipant.display_name,
+    message: text,
+    created_at: new Date().toISOString(),
+  };
+  messagesList.value.push(tempMsg);
+  await nextTick();
+  if (chatContainerRef.value) {
+    chatContainerRef.value.scrollTop = chatContainerRef.value.scrollHeight;
+  }
+
+  try {
+    const res = await axios.post(`/vicon/${props.room.uuid}/chat`, {
+      message: text,
+      sender_name: props.currentParticipant.display_name,
+    });
+    if (res.data?.message) {
+      const idx = messagesList.value.findIndex(m => m.id === tempMsg.id);
+      if (idx !== -1) {
+        messagesList.value[idx] = res.data.message;
+      }
+    }
+  } catch (err) {
+    console.error('Kirim pesan chat gagal:', err);
+  }
+};
+
+const copyGuestLink = () => {
+  const url = `${window.location.origin}/vicon/join/${props.room.room_code}`;
+  navigator.clipboard.writeText(url);
+  Swal.fire({
+    icon: 'success',
+    title: 'Tautan Tamu Luar Disalin',
+    text: 'Tautan dapat langsung dibuka oleh pihak eksternal/tamu tanpa perlu akun.',
+    confirmButtonColor: '#2563EB',
+    timer: 2500,
+    customClass: { popup: 'rounded-2xl' },
+  });
+};
+
+const copyPersonelLink = () => {
+  const url = `${window.location.origin}/personel/vicon/${props.room.uuid}`;
+  navigator.clipboard.writeText(url);
+  Swal.fire({
+    icon: 'success',
+    title: 'Tautan Personel Disalin',
+    text: 'Tautan ruang rapat khusus Personel Komcad berhasil disalin.',
+    confirmButtonColor: '#2563EB',
+    timer: 2500,
+    customClass: { popup: 'rounded-2xl' },
+  });
+};
+
+const openInviteModal = () => {
+  Swal.fire({
+    title: 'Undang Personel Tambahan',
+    text: 'Bagikan tautan langsung ke personel atau salin kode ruang.',
+    showCancelButton: true,
+    confirmButtonText: 'Salin Link Personel',
+    cancelButtonText: 'Tutup',
+    confirmButtonColor: '#2563EB',
+    customClass: { popup: 'rounded-2xl' },
+  }).then((res) => {
+    if (res.isConfirmed) {
+      copyPersonelLink();
+    }
+  });
+};
+
+const handleLeaveOrEnd = () => {
+  if (props.isHost) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Akhiri Rapat Dinas?',
+      text: 'Pilih apakah ingin mengakhiri sesi untuk seluruh peserta atau hanya meninggalkan ruangan.',
+      showCancelButton: true,
+      showDenyButton: true,
+      confirmButtonText: 'Akhiri untuk Semua',
+      denyButtonText: 'Tinggalkan Saja',
+      cancelButtonText: 'Batal',
+      confirmButtonColor: '#DC2626',
+      denyButtonColor: '#475569',
+      customClass: { popup: 'rounded-2xl' },
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        await axios.post(`/admin/vicon/${props.room.uuid}/end`);
+        leaveConference();
+        router.visit(route('admin.vicon.index'));
+      } else if (result.isDenied) {
+        leaveConference();
+        router.visit(route('admin.vicon.index'));
+      }
+    });
+  } else {
+    leaveConference();
+    router.visit(route('admin.vicon.index'));
+  }
+};
+
+const leaveConference = () => {
+  if (localAudioTrack) {
+    localAudioTrack.close();
+    localAudioTrack = null;
+  }
+  if (localVideoTrack) {
+    localVideoTrack.close();
+    localVideoTrack = null;
+  }
+  if (localScreenTrack) {
+    localScreenTrack.close();
+    localScreenTrack = null;
+  }
+  if (agoraClient) {
+    agoraClient.leave();
+    agoraClient = null;
+  }
+  if (meetingTimer) clearInterval(meetingTimer);
+  if (syncTimer) clearInterval(syncTimer);
+};
+
+const formatTime = (iso) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+};
+
+onMounted(() => {
+  initAgora();
+  startRoomSync();
+});
+
+onUnmounted(() => {
+  leaveConference();
+});
+</script>

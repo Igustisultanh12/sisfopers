@@ -85,6 +85,11 @@
                 Pusat Layanan Informasi
               </Link>
 
+              <Link :href="route('admin.vicon.index')" :class="route().current('admin.vicon.*') ? 'bg-[#2563EB]/5 text-[#2563EB] font-bold shadow-sm shadow-blue-500/[0.02]' : 'text-[#64748B] hover:text-slate-800 font-medium'" class="group flex items-center gap-4 px-5 py-3.5 rounded-2xl text-[14px] transition duration-150">
+                <svg class="w-5 h-5 opacity-80 group-hover:opacity-100" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                Vicon & Rapat Dinas
+              </Link>
+
               <Link :href="route('admin.tickets.index')" :class="route().current('admin.tickets.*') ? 'bg-[#2563EB]/5 text-[#2563EB] font-bold shadow-sm shadow-blue-500/[0.02]' : 'text-[#64748B] hover:text-slate-800 font-medium'" class="group flex items-center gap-4 px-5 py-3.5 rounded-2xl text-[14px] transition duration-150">
                 <svg class="w-5 h-5 opacity-80 group-hover:opacity-100" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path></svg>
                 Pengaduan & Tiket
@@ -224,6 +229,10 @@
             <Link :href="route('personel.chat.index')" :class="route().current('personel.chat.*') ? 'bg-[#2563EB]/5 text-[#2563EB] font-bold' : 'text-[#64748B] hover:text-slate-800 font-medium'" class="flex items-center gap-4 px-5 py-3.5 rounded-2xl text-[14px] transition duration-150">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
               Pusat Layanan Informasi
+            </Link>
+            <Link :href="route('personel.vicon.index')" :class="route().current('personel.vicon.*') ? 'bg-[#2563EB]/5 text-[#2563EB] font-bold' : 'text-[#64748B] hover:text-slate-800 font-medium'" class="flex items-center gap-4 px-5 py-3.5 rounded-2xl text-[14px] transition duration-150">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+              Vicon Dinas
             </Link>
           </template>
 
@@ -812,8 +821,8 @@ let notificationInterval = null;
 
 onMounted(() => {
   notificationInterval = setInterval(() => {
-    // Lewati reload asinkron jika sedang berada di rute live-chat agar sesi WebRTC tetap utuh tanpa gangguan
-    if (typeof window !== 'undefined' && window.location.pathname.includes('/live-chat')) {
+    // Lewati reload asinkron jika sedang berada di rute live-chat atau vicon agar sesi WebRTC tetap utuh tanpa gangguan
+    if (typeof window !== 'undefined' && (window.location.pathname.includes('/live-chat') || window.location.pathname.includes('/vicon'))) {
       return;
     }
     router.reload({

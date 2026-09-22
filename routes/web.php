@@ -70,6 +70,14 @@ Route::middleware('guest')->group(function () {
     Route::post('/reset-password-otp', [\App\Http\Controllers\Auth\PasswordResetOtpController::class, 'store'])->name('password.update-otp');
 });
 
+// Modul Konferensi Video Dinas & Akses Tamu Luar (Agora RTC)
+Route::get('/vicon/join/{code?}', [\App\Http\Controllers\Vicon\ViconController::class, 'guestJoinView'])->name('vicon.guest.join');
+Route::post('/vicon/join/{code}', [\App\Http\Controllers\Vicon\ViconController::class, 'guestJoinProcess'])->name('vicon.guest.process');
+Route::get('/vicon/room/{code}', [\App\Http\Controllers\Vicon\ViconController::class, 'guestRoomView'])->name('vicon.guest.room');
+Route::get('/vicon/{uuid}/token', [\App\Http\Controllers\Vicon\ViconController::class, 'getAgoraToken'])->name('vicon.token');
+Route::get('/vicon/{uuid}/sync', [\App\Http\Controllers\Vicon\ViconController::class, 'syncRoomState'])->name('vicon.sync');
+Route::post('/vicon/{uuid}/chat', [\App\Http\Controllers\Vicon\ViconController::class, 'sendChatMessage'])->name('vicon.chat');
+
 // Rute Global Pengguna Terautentikasi (Auth Group)
 // Rute Tampilan Under Maintenance (Bisa diakses publik/guest agar register juga bisa dialihkan ke sini)
 Route::get('/maintenance', function () {
@@ -350,6 +358,14 @@ Route::middleware(['auth', 'role:admin,kordinator_matra,kordinator_angkatan'])->
     Route::get('/live-chat/ice-servers', [\App\Http\Controllers\Chat\LiveChatController::class, 'getIceServers'])->name('chat.ice-servers');
     Route::delete('/live-chat/{uuid}', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminDestroy'])->name('chat.destroy');
 
+    // Modul Vicon & Rapat Dinas Multi-Partisipan
+    Route::get('/vicon', [\App\Http\Controllers\Vicon\ViconController::class, 'adminIndex'])->name('vicon.index');
+    Route::post('/vicon', [\App\Http\Controllers\Vicon\ViconController::class, 'storeRoom'])->name('vicon.store');
+    Route::get('/vicon/{uuid}', [\App\Http\Controllers\Vicon\ViconController::class, 'adminRoom'])->name('vicon.room');
+    Route::post('/vicon/{uuid}/invite', [\App\Http\Controllers\Vicon\ViconController::class, 'invitePersonel'])->name('vicon.invite');
+    Route::post('/vicon/{uuid}/end', [\App\Http\Controllers\Vicon\ViconController::class, 'endRoom'])->name('vicon.end');
+    Route::delete('/vicon/{uuid}', [\App\Http\Controllers\Vicon\ViconController::class, 'destroyRoom'])->name('vicon.destroy');
+
     // Monitoring Log Akses, Audit Trail, & Live Responses
     Route::get('/monitoring/login', [MonitoringController::class, 'loginLogs'])->name('monitoring.login');
     Route::get('/monitoring/aktivitas', [MonitoringController::class, 'activityLogs'])->name('monitoring.activity');
@@ -493,6 +509,10 @@ Route::middleware(['auth', 'role:personel,admin,kordinator_angkatan,kordinator_m
         Route::get('/live-chat/ice-servers', [\App\Http\Controllers\Chat\LiveChatController::class, 'getIceServers'])->name('chat.ice-servers');
         Route::post('/live-chat/{uuid}/end', [\App\Http\Controllers\Chat\LiveChatController::class, 'endSession'])->name('chat.end');
         Route::post('/live-chat/new', [\App\Http\Controllers\Chat\LiveChatController::class, 'newThread'])->name('chat.new');
+
+        // Modul Vicon Dinas Personel Komcad
+        Route::get('/vicon', [\App\Http\Controllers\Vicon\ViconController::class, 'personelIndex'])->name('vicon.index');
+        Route::get('/vicon/{uuid}', [\App\Http\Controllers\Vicon\ViconController::class, 'personelRoom'])->name('vicon.room');
     });
 });
 
@@ -538,6 +558,10 @@ Route::middleware(['auth', 'role:kordinator_angkatan,kordinator_matra'])->prefix
         Route::get('/live-chat/{uuid}/call/agora-token', [\App\Http\Controllers\Chat\LiveChatController::class, 'getAgoraToken'])->name('chat.call.agora-token');
         Route::get('/live-chat/ice-servers', [\App\Http\Controllers\Chat\LiveChatController::class, 'getIceServers'])->name('chat.ice-servers');
         Route::delete('/live-chat/{uuid}', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminDestroy'])->name('chat.destroy');
+
+        // Modul Vicon Dinas Koordinator
+        Route::get('/vicon', [\App\Http\Controllers\Vicon\ViconController::class, 'adminIndex'])->name('vicon.index');
+        Route::get('/vicon/{uuid}', [\App\Http\Controllers\Vicon\ViconController::class, 'adminRoom'])->name('vicon.room');
     });
 });
 
@@ -588,6 +612,10 @@ Route::middleware(['auth:pju,web', 'role:ka_bacadnas,ses_bacadnas,kapus_komcad,p
     Route::get('/live-chat/{uuid}/call/agora-token', [\App\Http\Controllers\Chat\LiveChatController::class, 'getAgoraToken'])->name('chat.call.agora-token');
     Route::get('/live-chat/ice-servers', [\App\Http\Controllers\Chat\LiveChatController::class, 'getIceServers'])->name('chat.ice-servers');
     Route::delete('/live-chat/{uuid}', [\App\Http\Controllers\Chat\LiveChatController::class, 'adminDestroy'])->name('chat.destroy');
+
+    // Modul Vicon Dinas PJU Mabes
+    Route::get('/vicon', [\App\Http\Controllers\Vicon\ViconController::class, 'adminIndex'])->name('vicon.index');
+    Route::get('/vicon/{uuid}', [\App\Http\Controllers\Vicon\ViconController::class, 'adminRoom'])->name('vicon.room');
 });
 
 // API Proxy Wilayah.id (Bypass CORS, SSL & Rate limits with Cache & Safe Fallbacks)
