@@ -72,7 +72,7 @@ Route::middleware('guest')->group(function () {
 
 // Modul Konferensi Video Dinas & Akses Tamu Luar (Agora RTC)
 Route::get('/vicon/join/{code?}', [\App\Http\Controllers\Vicon\ViconController::class, 'guestJoinView'])->name('vicon.guest.join');
-Route::post('/vicon/join/{code}', [\App\Http\Controllers\Vicon\ViconController::class, 'guestJoinProcess'])->name('vicon.guest.process');
+Route::post('/vicon/join/{code?}', [\App\Http\Controllers\Vicon\ViconController::class, 'guestJoinProcess'])->name('vicon.guest.process');
 Route::get('/vicon/room/{code}', [\App\Http\Controllers\Vicon\ViconController::class, 'guestRoomView'])->name('vicon.guest.room');
 Route::get('/vicon/{uuid}/token', [\App\Http\Controllers\Vicon\ViconController::class, 'getAgoraToken'])->name('vicon.token');
 Route::get('/vicon/{uuid}/sync', [\App\Http\Controllers\Vicon\ViconController::class, 'syncRoomState'])->name('vicon.sync');

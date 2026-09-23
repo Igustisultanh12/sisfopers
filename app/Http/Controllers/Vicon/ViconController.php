@@ -399,14 +399,33 @@ class ViconController extends Controller
     /**
      * Halaman Sambutan / Lobby Tamu Luar (Publik Tanpa Autentikasi)
      */
-    public function guestJoinView(Request $request, $code)
+    public function guestJoinView(Request $request, $code = null)
     {
+        $code = $code ?: $request->query('code');
+
+        if (!$code) {
+            return Inertia::render('Vicon/GuestJoin', [
+                'room' => null,
+                'errorMessage' => null,
+            ]);
+        }
+
         $room = ViconRoom::where('room_code', $code)
             ->orWhere('uuid', $code)
-            ->firstOrFail();
+            ->first();
+
+        if (!$room) {
+            return Inertia::render('Vicon/GuestJoin', [
+                'room' => null,
+                'errorMessage' => 'Ruang rapat dinas dengan kode "' . e($code) . '" tidak ditemukan atau telah ditutup.',
+            ]);
+        }
 
         if (!$room->allow_guest) {
-            abort(403, 'Ruang rapat dinas ini bersifat tertutup dan tidak menerima tamu eksternal.');
+            return Inertia::render('Vicon/GuestJoin', [
+                'room' => null,
+                'errorMessage' => 'Ruang rapat dinas ini bersifat tertutup dan tidak menerima tamu eksternal.',
+            ]);
         }
 
         return Inertia::render('Vicon/GuestJoin', [
@@ -419,17 +438,28 @@ class ViconController extends Controller
                 'started_at' => $room->started_at,
                 'scheduled_at' => $room->scheduled_at,
             ],
+            'errorMessage' => null,
         ]);
     }
 
     /**
      * Memproses Masuknya Tamu Luar ke Ruang Rapat
      */
-    public function guestJoinProcess(Request $request, $code)
+    public function guestJoinProcess(Request $request, $code = null)
     {
+        $code = $code ?: ($request->input('room_code') ?: $request->input('code'));
+
+        if (!$code) {
+            return response()->json(['error' => 'Kode ruang rapat dinas wajib disertakan.'], 422);
+        }
+
         $room = ViconRoom::where('room_code', $code)
             ->orWhere('uuid', $code)
-            ->firstOrFail();
+            ->first();
+
+        if (!$room) {
+            return response()->json(['error' => 'Ruang rapat dinas tidak ditemukan atau telah ditutup.'], 404);
+        }
 
         if (!$room->allow_guest) {
             return response()->json(['error' => 'Akses tamu luar dinonaktifkan untuk rapat ini.'], 403);
