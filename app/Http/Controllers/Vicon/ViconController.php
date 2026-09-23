@@ -304,7 +304,7 @@ class ViconController extends Controller
     }
 
     /**
-     * Halaman Daftar Vicon Dinas untuk Personel Komcad
+     * Halaman Portal Masuk / Gabung Vicon Dinas untuk Personel Komcad
      */
     public function personelIndex(Request $request)
     {
@@ -318,29 +318,66 @@ class ViconController extends Controller
             }
         })->pluck('room_id');
 
+        // Sesi rapat aktif yang sedang mengundang personel ini
         $activeRooms = ViconRoom::with(['host', 'participants'])
             ->whereIn('id', $roomIds)
             ->where('status', 'ACTIVE')
             ->orderBy('started_at', 'desc')
             ->get();
 
-        $scheduledRooms = ViconRoom::with(['host', 'participants'])
-            ->whereIn('id', $roomIds)
-            ->where('status', 'SCHEDULED')
-            ->orderBy('scheduled_at', 'asc')
-            ->get();
-
-        $pastRooms = ViconRoom::with(['host'])
-            ->whereIn('id', $roomIds)
-            ->where('status', 'ENDED')
-            ->orderBy('ended_at', 'desc')
-            ->paginate(10);
+        $rank = $personel ? Personel::formatLongRank($personel->pangkat) : '';
+        $displayName = $personel ? trim("{$rank} {$personel->full_name}") : $user->name;
 
         return Inertia::render('Personel/Vicon/Index', [
             'activeRooms' => $activeRooms,
-            'scheduledRooms' => $scheduledRooms,
-            'pastRooms' => $pastRooms,
+            'currentPersonel' => [
+                'display_name' => $displayName,
+                'pangkat' => $rank ?: 'Personel',
+                'nrp' => $personel?->nrp ?: '-',
+                'matra' => $personel?->matra ?: 'KOMCAD',
+                'angkatan' => $personel?->angkatan ?: '-',
+            ],
         ]);
+    }
+
+    /**
+     * Memproses Verifikasi & Masuk ke Ruang Rapat Dinas via Kode / Tautan
+     */
+    public function personelJoin(Request $request)
+    {
+        $request->validate([
+            'room_code' => 'required|string',
+            'passcode' => 'nullable|string',
+        ]);
+
+        $code = trim($request->input('room_code'));
+        
+        // Bersihkan jika personel menempelkan URL lengkap
+        if (str_contains($code, '/')) {
+            $parts = explode('/', rtrim($code, '/'));
+            $code = end($parts);
+            if (str_contains($code, '?')) {
+                $code = explode('?', $code)[0];
+            }
+        }
+
+        $room = ViconRoom::where('room_code', $code)
+            ->orWhere('uuid', $code)
+            ->first();
+
+        if (!$room) {
+            return back()->with('error', 'Ruang rapat dinas dengan kode "' . e($code) . '" tidak ditemukan.');
+        }
+
+        if ($room->status === 'ENDED') {
+            return back()->with('error', 'Sesi rapat dinas ini telah resmi ditutup/berakhir.');
+        }
+
+        if (!empty($room->guest_passcode) && $room->guest_passcode !== $request->input('passcode')) {
+            return back()->with('error', 'Kata sandi ruang rapat dinas tidak valid.');
+        }
+
+        return redirect()->route('personel.vicon.room', $room->uuid);
     }
 
     /**

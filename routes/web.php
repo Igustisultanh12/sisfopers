@@ -512,6 +512,7 @@ Route::middleware(['auth', 'role:personel,admin,kordinator_angkatan,kordinator_m
 
         // Modul Vicon Dinas Personel Komcad
         Route::get('/vicon', [\App\Http\Controllers\Vicon\ViconController::class, 'personelIndex'])->name('vicon.index');
+        Route::post('/vicon/join', [\App\Http\Controllers\Vicon\ViconController::class, 'personelJoin'])->name('vicon.join');
         Route::get('/vicon/{uuid}', [\App\Http\Controllers\Vicon\ViconController::class, 'personelRoom'])->name('vicon.room');
     });
 });
