@@ -381,7 +381,7 @@
                   </div>
                 </div>
                 <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 font-medium text-slate-500">
-                  {{ pers.kompi || 'Komcad' }}
+                  {{ pers.label || pers.kompi || 'Komcad' }}
                 </span>
               </div>
               <div v-if="filteredPersonels.length === 0" class="p-4 text-center text-xs text-slate-400">

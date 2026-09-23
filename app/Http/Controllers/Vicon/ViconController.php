@@ -41,7 +41,7 @@ class ViconController extends Controller
             ->paginate(15);
 
         // Daftar personel untuk modal pemilihan undangan
-        $personels = Personel::select('id', 'user_id', 'full_name', 'pangkat', 'nikc', 'matra', 'kompi', 'photo_profile')
+        $personels = Personel::select('id', 'user_id', 'full_name', 'pangkat', 'nikc', 'matra', 'angkatan', 'photo_profile')
             ->orderBy('full_name')
             ->limit(500)
             ->get()
@@ -53,7 +53,8 @@ class ViconController extends Controller
                     'pangkat' => Personel::formatLongRank($p->pangkat),
                     'nikc' => $p->nikc,
                     'matra' => $p->matra,
-                    'kompi' => $p->kompi,
+                    'kompi' => $p->angkatan ? "Angkatan {$p->angkatan}" : 'Komcad',
+                    'label' => $p->angkatan ? "Angkatan {$p->angkatan}" : 'Komcad',
                     'photo' => $p->photo_profile,
                 ];
             });
