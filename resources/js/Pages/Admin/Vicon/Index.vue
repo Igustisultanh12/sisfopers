@@ -253,149 +253,161 @@
     </div>
 
     <!-- MODAL PEMBUATAN RAPAT DINAS BARU -->
-    <div v-if="showCreateModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4 overflow-y-auto">
-      <div class="w-full max-w-xl bg-white rounded-3xl p-6 sm:p-7 shadow-2xl border border-slate-100 space-y-5 my-8">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+    <div 
+      v-if="showCreateModal" 
+      class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs"
+      @click.self="showCreateModal = false"
+    >
+      <div class="w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-slate-100 flex flex-col max-h-[90vh] sm:max-h-[85vh] overflow-hidden">
+        <!-- Header Modal (Tetap di atas) -->
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0 bg-white">
           <div class="space-y-0.5">
             <h3 class="text-base font-black text-slate-900">Inisiasi Rapat Dinas Baru</h3>
             <p class="text-xs text-slate-500">Atur parameter konferensi video, akses tamu, dan daftar personel yang diundang.</p>
           </div>
-          <button @click="showCreateModal = false" class="text-slate-400 hover:text-slate-600 cursor-pointer p-1">
+          <button 
+            @click="showCreateModal = false" 
+            type="button" 
+            class="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-full transition cursor-pointer"
+          >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        <form @submit.prevent="submitCreateRoom" class="space-y-4">
-          <!-- Judul Rapat -->
-          <div class="space-y-1">
-            <label class="block text-xs font-bold text-slate-700 uppercase">Judul Rapat Dinas <span class="text-red-500">*</span></label>
-            <input 
-              v-model="createForm.title" 
-              type="text" 
-              required
-              placeholder="Contoh: Rapat Koordinasi Kesiapsiagaan Triwulan III" 
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition"
-            />
-          </div>
-
-          <!-- Agenda / Keterangan -->
-          <div class="space-y-1">
-            <label class="block text-xs font-bold text-slate-700 uppercase">Agenda / Catatan Rapat (Opsional)</label>
-            <textarea 
-              v-model="createForm.description" 
-              rows="2"
-              placeholder="Tuliskan pokok bahasan atau agenda rapat..."
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition"
-            ></textarea>
-          </div>
-
-          <!-- Opsi Jadwal -->
-          <div class="grid grid-cols-2 gap-3 pt-1">
-            <label class="flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition" :class="!createForm.is_scheduled ? 'border-blue-600 bg-blue-50/40 text-blue-900 font-bold' : 'border-slate-200 bg-white text-slate-600'">
-              <input type="radio" :value="false" v-model="createForm.is_scheduled" class="text-blue-600" />
-              <div class="text-xs">
-                <div>Mulai Sekarang</div>
-                <div class="text-[10px] text-slate-400 font-normal">Sesi langsung aktif seketika</div>
-              </div>
-            </label>
-
-            <label class="flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition" :class="createForm.is_scheduled ? 'border-blue-600 bg-blue-50/40 text-blue-900 font-bold' : 'border-slate-200 bg-white text-slate-600'">
-              <input type="radio" :value="true" v-model="createForm.is_scheduled" class="text-blue-600" />
-              <div class="text-xs">
-                <div>Jadwalkan Rapat</div>
-                <div class="text-[10px] text-slate-400 font-normal">Tentukan waktu pelaksanaannya</div>
-              </div>
-            </label>
-          </div>
-
-          <div v-if="createForm.is_scheduled" class="space-y-1 pt-1">
-            <label class="block text-xs font-bold text-slate-700 uppercase">Waktu Mulai Rapat <span class="text-red-500">*</span></label>
-            <input 
-              v-model="createForm.scheduled_at" 
-              type="datetime-local" 
-              required
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
-            />
-          </div>
-
-          <!-- Pengaturan Tamu Luar (Orang Luar) -->
-          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-xs font-bold text-slate-800">Izinkan Tamu Luar (Orang Luar)</p>
-                <p class="text-[11px] text-slate-500">Tamu luar dapat bergabung melalui tautan tanpa akun SISFOPERS KC.</p>
-              </div>
+        <!-- Form Modal (Body dapat discroll, Footer tetap di bawah) -->
+        <form @submit.prevent="submitCreateRoom" class="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div class="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+            <!-- Judul Rapat -->
+            <div class="space-y-1">
+              <label class="block text-xs font-bold text-slate-700 uppercase">Judul Rapat Dinas <span class="text-red-500">*</span></label>
               <input 
-                type="checkbox" 
-                v-model="createForm.allow_guest" 
-                class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
-              />
-            </div>
-
-            <div v-if="createForm.allow_guest" class="pt-2 border-t border-slate-200/80 space-y-1">
-              <label class="block text-[11px] font-semibold text-slate-600">Kata Sandi Ruang (Opsional)</label>
-              <input 
-                v-model="createForm.guest_passcode" 
+                v-model="createForm.title" 
                 type="text" 
-                placeholder="Kosongkan jika bebas tanpa sandi"
-                class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-mono"
+                required
+                placeholder="Contoh: Rapat Koordinasi Kesiapsiagaan Triwulan III" 
+                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition"
               />
             </div>
-          </div>
 
-          <!-- Pemilihan Undangan Personel Komcad -->
-          <div class="space-y-2">
-            <div class="flex items-center justify-between">
-              <label class="block text-xs font-bold text-slate-700 uppercase">
-                Undang Personel Komcad ({{ selectedPersonelIds.length }} Terpilih)
-              </label>
-              <span class="text-[10px] text-slate-400">Pilih dari database</span>
+            <!-- Agenda / Keterangan -->
+            <div class="space-y-1">
+              <label class="block text-xs font-bold text-slate-700 uppercase">Agenda / Catatan Rapat (Opsional)</label>
+              <textarea 
+                v-model="createForm.description" 
+                rows="2"
+                placeholder="Tuliskan pokok bahasan atau agenda rapat..."
+                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition"
+              ></textarea>
             </div>
 
-            <input 
-              v-model="personelSearchQuery" 
-              type="text" 
-              placeholder="Cari nama personel, pangkat, atau NIKC..." 
-              class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
-            />
-
-            <!-- Daftar Personel Scrollable -->
-            <div class="max-h-48 overflow-y-auto border border-slate-200 rounded-2xl divide-y divide-slate-100 bg-white p-1">
-              <div 
-                v-for="pers in filteredPersonels" 
-                :key="pers.id"
-                @click="toggleSelectPersonel(pers.id)"
-                class="p-2 flex items-center justify-between hover:bg-blue-50/50 rounded-xl cursor-pointer transition text-xs"
-              >
-                <div class="flex items-center gap-2.5">
-                  <input 
-                    type="checkbox" 
-                    :checked="selectedPersonelIds.includes(pers.id)" 
-                    class="rounded text-blue-600 pointer-events-none"
-                  />
-                  <div>
-                    <span class="font-bold text-slate-800">{{ pers.pangkat }} {{ pers.full_name }}</span>
-                    <span class="text-[10px] text-slate-400 ml-1.5">&bull; NIKC: {{ pers.nikc || '-' }} &bull; {{ pers.matra || '' }}</span>
-                  </div>
+            <!-- Opsi Jadwal -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <label class="flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition" :class="!createForm.is_scheduled ? 'border-blue-600 bg-blue-50/40 text-blue-900 font-bold' : 'border-slate-200 bg-white text-slate-600'">
+                <input type="radio" :value="false" v-model="createForm.is_scheduled" class="text-blue-600" />
+                <div class="text-xs">
+                  <div>Mulai Sekarang</div>
+                  <div class="text-[10px] text-slate-400 font-normal">Sesi langsung aktif seketika</div>
                 </div>
-                <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 font-medium text-slate-500">
-                  {{ pers.label || pers.kompi || 'Komcad' }}
-                </span>
+              </label>
+
+              <label class="flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition" :class="createForm.is_scheduled ? 'border-blue-600 bg-blue-50/40 text-blue-900 font-bold' : 'border-slate-200 bg-white text-slate-600'">
+                <input type="radio" :value="true" v-model="createForm.is_scheduled" class="text-blue-600" />
+                <div class="text-xs">
+                  <div>Jadwalkan Rapat</div>
+                  <div class="text-[10px] text-slate-400 font-normal">Tentukan waktu pelaksanaannya</div>
+                </div>
+              </label>
+            </div>
+
+            <div v-if="createForm.is_scheduled" class="space-y-1 pt-1">
+              <label class="block text-xs font-bold text-slate-700 uppercase">Waktu Mulai Rapat <span class="text-red-500">*</span></label>
+              <input 
+                v-model="createForm.scheduled_at" 
+                type="datetime-local" 
+                required
+                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+              />
+            </div>
+
+            <!-- Pengaturan Tamu Luar (Orang Luar) -->
+            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-xs font-bold text-slate-800">Izinkan Tamu Luar (Orang Luar)</p>
+                  <p class="text-[11px] text-slate-500">Tamu luar dapat bergabung melalui tautan tanpa akun SISFOPERS KC.</p>
+                </div>
+                <input 
+                  type="checkbox" 
+                  v-model="createForm.allow_guest" 
+                  class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+                />
               </div>
-              <div v-if="filteredPersonels.length === 0" class="p-4 text-center text-xs text-slate-400">
-                Personel tidak ditemukan dengan kata kunci tersebut.
+
+              <div v-if="createForm.allow_guest" class="pt-2 border-t border-slate-200/80 space-y-1">
+                <label class="block text-[11px] font-semibold text-slate-600">Kata Sandi Ruang (Opsional)</label>
+                <input 
+                  v-model="createForm.guest_passcode" 
+                  type="text" 
+                  placeholder="Kosongkan jika bebas tanpa sandi"
+                  class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-mono"
+                />
+              </div>
+            </div>
+
+            <!-- Pemilihan Undangan Personel Komcad -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="block text-xs font-bold text-slate-700 uppercase">
+                  Undang Personel Komcad ({{ selectedPersonelIds.length }} Terpilih)
+                </label>
+                <span class="text-[10px] text-slate-400">Pilih dari database</span>
+              </div>
+
+              <input 
+                v-model="personelSearchQuery" 
+                type="text" 
+                placeholder="Cari nama personel, pangkat, atau NIKC..." 
+                class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+              />
+
+              <!-- Daftar Personel Scrollable -->
+              <div class="max-h-40 overflow-y-auto border border-slate-200 rounded-2xl divide-y divide-slate-100 bg-white p-1">
+                <div 
+                  v-for="pers in filteredPersonels" 
+                  :key="pers.id"
+                  @click="toggleSelectPersonel(pers.id)"
+                  class="p-2 flex items-center justify-between hover:bg-blue-50/50 rounded-xl cursor-pointer transition text-xs"
+                >
+                  <div class="flex items-center gap-2.5 min-w-0 pr-2">
+                    <input 
+                      type="checkbox" 
+                      :checked="selectedPersonelIds.includes(pers.id)" 
+                      class="rounded text-blue-600 pointer-events-none shrink-0"
+                    />
+                    <div class="truncate">
+                      <span class="font-bold text-slate-800">{{ pers.pangkat }} {{ pers.full_name }}</span>
+                      <span class="text-[10px] text-slate-400 ml-1.5">&bull; NIKC: {{ pers.nikc || '-' }} &bull; {{ pers.matra || '' }}</span>
+                    </div>
+                  </div>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 font-medium text-slate-500 shrink-0 whitespace-nowrap">
+                    {{ pers.label || pers.kompi || 'Komcad' }}
+                  </span>
+                </div>
+                <div v-if="filteredPersonels.length === 0" class="p-4 text-center text-xs text-slate-400">
+                  Personel tidak ditemukan dengan kata kunci tersebut.
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Tombol Aksi -->
-          <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+          <!-- Footer Aksi (Tetap di bawah) -->
+          <div class="px-6 py-3.5 border-t border-slate-100 flex items-center justify-end gap-3 shrink-0 bg-slate-50">
             <button 
               @click="showCreateModal = false" 
               type="button" 
-              class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition cursor-pointer"
+              class="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-xl transition cursor-pointer"
             >
               Batal
             </button>
@@ -408,7 +420,7 @@
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
               </svg>
-              <span>{{ createForm.is_scheduled ? 'Simpan Jadwal Rapat' : 'Mulai Rapat Langsung' }}</span>
+              <span>{{ isSubmitting ? 'Memproses...' : (createForm.is_scheduled ? 'Simpan Jadwal Rapat' : 'Mulai Rapat Langsung') }}</span>
             </button>
           </div>
         </form>
