@@ -1,29 +1,47 @@
 <template>
-  <div class="fixed inset-0 z-50 bg-slate-950 text-white flex flex-col select-none overflow-hidden overscroll-none touch-none">
-    <!-- 1. TOP BAR DINAS -->
-    <header class="h-14 sm:h-16 bg-slate-900/90 border-b border-slate-800/80 px-4 sm:px-6 flex items-center justify-between shrink-0 z-20 backdrop-blur-md">
+  <div 
+    class="fixed inset-0 z-50 text-white flex flex-col select-none overflow-hidden overscroll-none touch-none bg-cover bg-center"
+    :style="settings?.login_background ? { backgroundImage: `url(${settings.login_background})` } : { backgroundColor: '#090E1A' }"
+  >
+    <!-- Dark Glassmorphic Military Overlay -->
+    <div class="absolute inset-0 bg-slate-950/85 backdrop-blur-md z-0 pointer-events-none"></div>
+
+    <!-- 1. TOP BAR DINAS (ADMIN / HOST) -->
+    <header class="h-16 bg-slate-900/80 border-b border-slate-800/80 px-4 sm:px-6 flex items-center justify-between shrink-0 z-20 backdrop-blur-xl relative">
       <div class="flex items-center gap-3 min-w-0">
-        <div class="w-8 h-8 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center shrink-0">
-          <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <!-- Logo TNI / Tri Matra / Emblem -->
+        <img v-if="settings?.logo_tni" :src="settings.logo_tni" class="h-10 object-contain drop-shadow shrink-0" />
+        <div v-else-if="settings?.logo_ad || settings?.logo_al || settings?.logo_au" class="flex items-center gap-1 shrink-0">
+          <img v-if="settings?.logo_ad" :src="settings.logo_ad" class="h-7 object-contain" />
+          <img v-if="settings?.logo_al" :src="settings.logo_al" class="h-7 object-contain" />
+          <img v-if="settings?.logo_au" :src="settings.logo_au" class="h-7 object-contain" />
+        </div>
+        <div v-else class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center shrink-0">
+          <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
           </svg>
         </div>
+
         <div class="truncate">
           <div class="flex items-center gap-2">
-            <h1 class="text-xs sm:text-sm font-bold text-white truncate max-w-xs sm:max-w-md">
+            <span class="text-xs font-black tracking-wider text-white truncate max-w-[120px] sm:max-w-none uppercase">
+              {{ settings?.app_name || 'SISFOPERS KC' }}
+            </span>
+            <span class="text-slate-500 hidden sm:inline">&bull;</span>
+            <h1 class="text-xs sm:text-sm font-bold text-slate-200 truncate max-w-xs sm:max-w-md">
               {{ room.title }}
             </h1>
-            <span class="hidden sm:inline-block px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+            <span class="hidden md:inline-block px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
               {{ room.room_code }}
             </span>
           </div>
-          <div class="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
-            <span class="flex items-center gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              {{ totalActiveCount }} Terhubung
+          <div class="flex items-center gap-2 text-[10px] text-slate-400 font-medium mt-0.5">
+            <span class="flex items-center gap-1.5 text-emerald-400">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              {{ totalActiveCount }} Peserta Terhubung
             </span>
             <span>&bull;</span>
-            <span class="font-mono text-slate-300 font-bold">{{ meetingDurationFormatted }}</span>
+            <span class="font-mono text-slate-300 font-bold tracking-wider">{{ meetingDurationFormatted }}</span>
           </div>
         </div>
       </div>
@@ -34,7 +52,7 @@
           <button 
             @click="copyGuestLink"
             type="button" 
-            class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+            class="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm"
             title="Salin Tautan Tamu Luar"
           >
             <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -46,7 +64,7 @@
           <button 
             @click="copyPersonelLink"
             type="button" 
-            class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+            class="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm"
             title="Salin Tautan Personel Komcad"
           >
             <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -59,7 +77,7 @@
         <button 
           @click="toggleFullscreen" 
           type="button" 
-          class="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-400 hover:text-white transition cursor-pointer"
+          class="p-2 bg-slate-800/80 hover:bg-slate-700 rounded-xl text-slate-400 hover:text-white border border-slate-700/80 transition cursor-pointer"
           title="Layar Penuh"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -70,16 +88,16 @@
     </header>
 
     <!-- 2. MAIN BODY: VIDEO GRID & DRAWERS -->
-    <div class="flex-1 relative flex overflow-hidden">
+    <div class="flex-1 relative flex overflow-hidden z-10">
       <!-- AREA VIDEO GRID -->
-      <main class="flex-1 p-2 sm:p-4 overflow-y-auto flex items-center justify-center">
+      <main class="flex-1 p-3 sm:p-5 overflow-y-auto flex items-center justify-center">
         <div 
-          class="w-full h-full grid gap-2 sm:gap-3 items-center justify-center transition-all duration-300"
+          class="w-full h-full grid gap-3 sm:gap-4 items-center justify-center transition-all duration-300"
           :class="gridClass"
         >
           <!-- UBIN VIDEO LOKAL (ADMIN/HOST) -->
           <div 
-            class="relative w-full h-full min-h-[160px] sm:min-h-[220px] bg-slate-900 rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-800 shadow-lg flex items-center justify-center group"
+            class="relative w-full h-full min-h-[180px] sm:min-h-[240px] bg-slate-900/80 rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-700/60 shadow-2xl flex items-center justify-center group backdrop-blur-xs"
           >
             <!-- Wadah Video Track Lokal -->
             <div ref="localVideoContainerRef" class="w-full h-full object-cover"></div>
@@ -87,19 +105,31 @@
             <!-- Placeholder Kamera Mati -->
             <div 
               v-if="isCameraOff || isScreenSharing" 
-              class="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center space-y-2 z-10"
+              class="absolute inset-0 bg-gradient-to-b from-slate-900/90 to-slate-950 flex flex-col items-center justify-center space-y-3 z-10"
             >
-              <div class="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-xl font-black text-amber-400">
-                {{ getInitial(currentParticipant?.display_name || 'Host') }}
+              <div class="relative">
+                <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-tr from-amber-500 to-yellow-300 p-1 shadow-xl shadow-amber-900/30 flex items-center justify-center">
+                  <div class="w-full h-full rounded-full bg-slate-900 flex items-center justify-center text-2xl sm:text-3xl font-black text-amber-400 tracking-wider">
+                    {{ getInitial(currentParticipant?.display_name || 'Host') }}
+                  </div>
+                </div>
+                <span class="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-slate-900 border-2 border-slate-800 flex items-center justify-center">
+                  <span class="w-2.5 h-2.5 rounded-full" :class="isMuted ? 'bg-red-500' : 'bg-emerald-400'"></span>
+                </span>
               </div>
-              <p class="text-xs font-bold text-slate-300">
-                {{ isScreenSharing ? 'Sedang Berbagi Layar' : 'Kamera Dimatikan' }}
-              </p>
+              <div class="text-center px-4">
+                <p class="text-sm font-bold text-white tracking-wide truncate max-w-xs">
+                  {{ currentParticipant?.display_name || 'Anda (Host)' }}
+                </p>
+                <span class="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-800/80 text-slate-400 border border-slate-700">
+                  {{ isScreenSharing ? 'Sedang Berbagi Layar' : 'Kamera Dinonaktifkan' }}
+                </span>
+              </div>
             </div>
 
             <!-- Lencana Identitas Lokal -->
-            <div class="absolute bottom-2 left-2 right-2 flex items-center justify-between z-10 pointer-events-none">
-              <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-950/80 backdrop-blur-xs border border-slate-800 text-[11px] font-bold text-white shadow-xs">
+            <div class="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between z-10 pointer-events-none">
+              <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950/80 backdrop-blur-md border border-slate-800 text-[11px] font-bold text-white shadow-md">
                 <span class="w-2 h-2 rounded-full" :class="isMuted ? 'bg-red-500' : 'bg-emerald-400 animate-pulse'"></span>
                 <span class="truncate max-w-[140px] sm:max-w-[200px]">{{ currentParticipant?.display_name || 'Anda' }} (Anda)</span>
                 <span class="px-1.5 py-0.2 rounded-md bg-amber-500/20 text-amber-300 text-[9px] font-bold border border-amber-500/30">HOST</span>
@@ -119,7 +149,7 @@
           <div 
             v-for="remoteUser in remoteUsers" 
             :key="remoteUser.uid"
-            class="relative w-full h-full min-h-[160px] sm:min-h-[220px] bg-slate-900 rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-800 shadow-lg flex items-center justify-center group"
+            class="relative w-full h-full min-h-[180px] sm:min-h-[240px] bg-slate-900/80 rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-700/60 shadow-2xl flex items-center justify-center group backdrop-blur-xs"
           >
             <!-- Wadah Video Track Remote -->
             <div :id="'remote-video-' + remoteUser.uid" class="w-full h-full object-cover"></div>
@@ -127,22 +157,40 @@
             <!-- Placeholder Kamera Remote Mati -->
             <div 
               v-if="!remoteUser.hasVideo" 
-              class="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center space-y-2 z-10"
+              class="absolute inset-0 bg-gradient-to-b from-slate-900/90 to-slate-950 flex flex-col items-center justify-center space-y-3 z-10"
             >
-              <div 
-                class="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-black shadow-md border"
-                :class="getRoleColor(getParticipantByUid(remoteUser.uid)?.role).avatarClass"
-              >
-                {{ getInitial(getParticipantByUid(remoteUser.uid)?.display_name || 'P') }}
+              <div class="relative">
+                <div 
+                  class="w-20 h-20 sm:w-24 sm:h-24 rounded-full p-1 shadow-xl bg-gradient-to-tr flex items-center justify-center"
+                  :class="getRoleColor(getParticipantByUid(remoteUser.uid)?.role).borderGradient"
+                >
+                  <div 
+                    class="w-full h-full rounded-full bg-slate-900 flex items-center justify-center text-2xl sm:text-3xl font-black tracking-wider"
+                    :class="getRoleColor(getParticipantByUid(remoteUser.uid)?.role).textColor"
+                  >
+                    {{ getInitial(getParticipantByUid(remoteUser.uid)?.display_name || 'P') }}
+                  </div>
+                </div>
+                <span class="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-slate-900 border-2 border-slate-800 flex items-center justify-center">
+                  <span class="w-2.5 h-2.5 rounded-full" :class="remoteUser.hasAudio ? 'bg-emerald-400' : 'bg-red-500'"></span>
+                </span>
               </div>
-              <p class="text-xs font-bold text-slate-300">
-                {{ getParticipantByUid(remoteUser.uid)?.display_name || 'Peserta Terhubung' }}
-              </p>
+              <div class="text-center px-4">
+                <p class="text-sm font-bold text-white tracking-wide truncate max-w-xs">
+                  {{ getParticipantByUid(remoteUser.uid)?.display_name || ('Peserta #' + remoteUser.uid) }}
+                </p>
+                <span 
+                  class="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border"
+                  :class="getRoleColor(getParticipantByUid(remoteUser.uid)?.role).badgeClass"
+                >
+                  {{ getParticipantByUid(remoteUser.uid)?.role || 'PESERTA' }}
+                </span>
+              </div>
             </div>
 
             <!-- Lencana Identitas Remote -->
-            <div class="absolute bottom-2 left-2 right-2 flex items-center justify-between z-10 pointer-events-none">
-              <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-950/80 backdrop-blur-xs border border-slate-800 text-[11px] font-bold text-white shadow-xs">
+            <div class="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between z-10 pointer-events-none">
+              <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950/80 backdrop-blur-md border border-slate-800 text-[11px] font-bold text-white shadow-md">
                 <span class="w-2 h-2 rounded-full" :class="remoteUser.hasAudio ? 'bg-emerald-400 animate-pulse' : 'bg-red-500'"></span>
                 <span class="truncate max-w-[140px] sm:max-w-[200px]">
                   {{ getParticipantByUid(remoteUser.uid)?.display_name || ('Peserta #' + remoteUser.uid) }}
@@ -170,7 +218,7 @@
       <!-- 3. LACI PARTISIPAN (PARTICIPANTS DRAWER) -->
       <aside 
         v-if="showParticipantDrawer"
-        class="w-80 sm:w-96 bg-slate-900 border-l border-slate-800 flex flex-col shrink-0 z-30 shadow-2xl transition-all duration-300"
+        class="w-80 sm:w-96 bg-slate-900/95 border-l border-slate-800 flex flex-col shrink-0 z-30 shadow-2xl transition-all duration-300 backdrop-blur-xl"
       >
         <div class="p-4 border-b border-slate-800 flex items-center justify-between">
           <div>
@@ -189,7 +237,7 @@
           <button 
             @click="openInviteModal"
             type="button" 
-            class="w-full py-2 px-3 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+            class="w-full py-2 px-3 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
@@ -232,7 +280,7 @@
       <!-- 4. LACI OBROLAN (IN-MEETING CHAT DRAWER) -->
       <aside 
         v-if="showChatDrawer"
-        class="w-80 sm:w-96 bg-slate-900 border-l border-slate-800 flex flex-col shrink-0 z-30 shadow-2xl transition-all duration-300"
+        class="w-80 sm:w-96 bg-slate-900/95 border-l border-slate-800 flex flex-col shrink-0 z-30 shadow-2xl transition-all duration-300 backdrop-blur-xl"
       >
         <div class="p-4 border-b border-slate-800 flex items-center justify-between">
           <div>
@@ -285,10 +333,12 @@
     </div>
 
     <!-- 5. BILAH KONTROL BAWAH (BOTTOM COMMAND BAR) -->
-    <footer class="h-18 sm:h-20 bg-slate-900 border-t border-slate-800 px-4 flex items-center justify-between shrink-0 z-20">
+    <footer class="h-20 bg-slate-900/80 border-t border-slate-800/80 px-4 sm:px-8 flex items-center justify-between shrink-0 z-20 backdrop-blur-xl relative">
       <!-- Info Ruang (Kiri) -->
       <div class="hidden sm:flex items-center gap-2 text-xs text-slate-400">
-        <span class="font-bold text-slate-200">{{ room.room_code }}</span>
+        <span class="font-mono px-2.5 py-1 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-300 font-bold tracking-wider">
+          {{ room.room_code }}
+        </span>
       </div>
 
       <!-- Tombol Kontrol Utama (Tengah) -->
@@ -297,8 +347,8 @@
         <button 
           @click="toggleAudio"
           type="button" 
-          :class="isMuted ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700'"
-          class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex flex-col items-center justify-center transition active:scale-95 cursor-pointer shadow-md"
+          :class="isMuted ? 'bg-red-600 hover:bg-red-700 text-white shadow-red-600/30' : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700/80'"
+          class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex flex-col items-center justify-center transition active:scale-95 cursor-pointer shadow-lg"
           :title="isMuted ? 'Aktifkan Mikrofon' : 'Bisukan Mikrofon'"
         >
           <svg v-if="!isMuted" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -314,8 +364,8 @@
         <button 
           @click="toggleVideo"
           type="button" 
-          :class="isCameraOff ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700'"
-          class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex flex-col items-center justify-center transition active:scale-95 cursor-pointer shadow-md"
+          :class="isCameraOff ? 'bg-red-600 hover:bg-red-700 text-white shadow-red-600/30' : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700/80'"
+          class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex flex-col items-center justify-center transition active:scale-95 cursor-pointer shadow-lg"
           :title="isCameraOff ? 'Nyalakan Kamera' : 'Matikan Kamera'"
         >
           <svg v-if="!isCameraOff" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -330,8 +380,8 @@
         <button 
           @click="toggleScreenShare"
           type="button" 
-          :class="isScreenSharing ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700'"
-          class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex flex-col items-center justify-center transition active:scale-95 cursor-pointer shadow-md"
+          :class="isScreenSharing ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/30' : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700/80'"
+          class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex flex-col items-center justify-center transition active:scale-95 cursor-pointer shadow-lg"
           :title="isScreenSharing ? 'Hentikan Berbagi Layar' : 'Berbagi Layar / Dokumen'"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -343,8 +393,8 @@
         <button 
           @click="showParticipantDrawer = !showParticipantDrawer; if(showParticipantDrawer) showChatDrawer = false;"
           type="button" 
-          :class="showParticipantDrawer ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700'"
-          class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex flex-col items-center justify-center transition active:scale-95 cursor-pointer shadow-md relative"
+          :class="showParticipantDrawer ? 'bg-blue-600 text-white shadow-blue-600/30' : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700/80'"
+          class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex flex-col items-center justify-center transition active:scale-95 cursor-pointer shadow-lg relative"
           title="Daftar Partisipan"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -359,8 +409,8 @@
         <button 
           @click="showChatDrawer = !showChatDrawer; if(showChatDrawer) showParticipantDrawer = false;"
           type="button" 
-          :class="showChatDrawer ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700'"
-          class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex flex-col items-center justify-center transition active:scale-95 cursor-pointer shadow-md"
+          :class="showChatDrawer ? 'bg-blue-600 text-white shadow-blue-600/30' : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700/80'"
+          class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex flex-col items-center justify-center transition active:scale-95 cursor-pointer shadow-lg relative"
           title="Obrolan Rapat"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -383,8 +433,8 @@
 
       <!-- Status Sambungan (Kanan) -->
       <div class="hidden sm:flex items-center gap-2 text-[11px] text-slate-400">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-        <span>Jalur Aman</span>
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="font-semibold text-slate-300">Enkripsi Satelit Aktif</span>
       </div>
     </footer>
   </div>
@@ -392,9 +442,12 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
 import axios from 'axios';
+
+const page = usePage();
+const settings = computed(() => page.props.settings || {});
 
 const props = defineProps({
   room: { type: Object, required: true },
@@ -461,17 +514,23 @@ const getRoleColor = (role) => {
     return {
       avatarClass: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
       badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+      borderGradient: 'from-amber-500 to-yellow-300',
+      textColor: 'text-amber-400',
     };
   }
   if (role === 'PERSONEL') {
     return {
       avatarClass: 'bg-blue-600/20 text-blue-300 border-blue-500/30',
       badgeClass: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+      borderGradient: 'from-blue-600 to-cyan-400',
+      textColor: 'text-blue-400',
     };
   }
   return {
     avatarClass: 'bg-emerald-600/20 text-emerald-300 border-emerald-500/30',
     badgeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+    borderGradient: 'from-emerald-600 to-teal-400',
+    textColor: 'text-emerald-400',
   };
 };
 

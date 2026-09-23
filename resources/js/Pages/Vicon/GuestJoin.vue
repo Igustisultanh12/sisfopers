@@ -104,7 +104,9 @@
                 : 'bg-[#2563EB] hover:bg-[#1E40AF] shadow-blue-500/10'"
             >
               <span>Lanjutkan ke Ruang Rapat</span>
-              <span v-if="settings?.login_background">➜</span>
+              <svg v-if="settings?.login_background" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
             </button>
           </form>
 
@@ -303,7 +305,9 @@
                       <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                     </svg>
                     <span>{{ isJoining ? 'Memverifikasi Akses...' : 'Masuk Ruang Rapat Dinas' }}</span>
-                    <span v-if="!isJoining && settings?.login_background">➜</span>
+                    <svg v-if="!isJoining && settings?.login_background" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
                   </button>
                 </div>
               </form>
