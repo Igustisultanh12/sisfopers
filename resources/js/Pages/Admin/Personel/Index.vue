@@ -174,257 +174,226 @@
     </div>
 
     <!-- Modal Dialog Terpusat Profil Personel 360° -->
-    <div v-if="slideOpen && selectedPersonel" class="fixed inset-0 z-50 overflow-y-auto">
-      <!-- Backdrop Gelap dengan Efek Blur -->
-      <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" @click="slideOpen = false"></div>
+    <div v-if="slideOpen && selectedPersonel" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-hidden">
+      <!-- Backdrop Gelap dengan Efek Blur (Hanya menutup jika bukan salah klik scrollbar) -->
+      <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" @click="handleBackdropClick"></div>
 
       <!-- Container Dialog Terpusat (Centered Modal) -->
-      <div class="flex min-h-full items-center justify-center p-3 sm:p-6 text-center">
-        <div class="relative w-full max-w-5xl lg:max-w-6xl bg-white rounded-3xl shadow-2xl border border-[#E2E8F0] overflow-hidden flex flex-col max-h-[92vh] text-left my-auto transform transition-all animate-in fade-in zoom-in-95 duration-200">
+      <div class="relative z-10 w-full max-w-5xl lg:max-w-6xl bg-white rounded-3xl shadow-2xl border border-[#E2E8F0] overflow-hidden flex flex-col max-h-[92vh] text-left my-auto transform transition-all animate-in fade-in zoom-in-95 duration-200" @click.stop>
+        
+        <!-- Header Modal -->
+        <div class="px-6 py-4.5 border-b border-[#E2E8F0] bg-slate-50/80 flex items-center justify-between shrink-0">
+          <div class="flex items-center gap-3.5 min-w-0">
+            <div class="relative shrink-0">
+              <img 
+                :src="selectedPersonel.photo_profile ? getDocumentUrl(selectedPersonel.photo_profile) : `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedPersonel.full_name || 'PERS')}&background=e2e8f0&color=334155`" 
+                class="w-12 h-14 object-cover rounded-xl bg-slate-100 border border-[#E2E8F0] shadow-xs cursor-pointer hover:opacity-90 transition"
+                @click="previewImage(selectedPersonel.photo_profile, 'Pasfoto Resmi ' + selectedPersonel.full_name)"
+                alt="Pasfoto"
+                title="Klik untuk perbesar pasfoto"
+              />
+              <span v-if="selectedPersonel.face_verified" class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full" title="Terverifikasi"></span>
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <h3 class="text-base font-bold text-slate-900 truncate">{{ selectedPersonel.full_name }}</h3>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-blue-50 text-[#2563EB] border border-blue-200 uppercase tracking-wide shrink-0">
+                  {{ selectedPersonel.pangkat || '-' }}
+                </span>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
+                  TNI {{ selectedPersonel.matra }}
+                </span>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
+                  Angkatan {{ selectedPersonel.angkatan }}
+                </span>
+              </div>
+              <div class="flex items-center gap-3 text-xs text-slate-500 mt-1 flex-wrap">
+                <span>NIKC: <strong class="font-mono text-[#2563EB]">{{ selectedPersonel.nikc || '-' }}</strong></span>
+                <span class="text-slate-300">|</span>
+                <span>NIK: <strong class="font-mono text-slate-700">{{ selectedPersonel.nik || '-' }}</strong></span>
+                <span class="text-slate-300">|</span>
+                <span :class="selectedPersonel.face_verified ? 'text-emerald-600 font-semibold' : 'text-amber-600 font-semibold'">
+                  {{ selectedPersonel.face_verified ? 'Status: Terverifikasi' : 'Status: Belum Verifikasi OTP' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            <Link 
+              :href="route('admin.personel.edit', selectedPersonel.uuid)"
+              class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+              Edit Data
+            </Link>
+            <button 
+              type="button"
+              @click="slideOpen = false" 
+              class="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition cursor-pointer"
+              title="Tutup Modal"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Tab Bar Navigasi Profil -->
+        <div class="px-6 border-b border-[#E2E8F0] flex gap-6 text-xs font-bold select-none bg-white overflow-x-auto shrink-0 scrollbar-none">
+          <button 
+            type="button"
+            @click="currentTab = 'profile'" 
+            :class="currentTab === 'profile' ? 'text-[#2563EB] border-b-2 border-[#2563EB] py-3.5 shrink-0' : 'text-slate-400 py-3.5 hover:text-slate-700 shrink-0 transition cursor-pointer'"
+          >
+            IDENTITAS & DOKUMEN FISIK
+          </button>
+          <button 
+            type="button"
+            @click="currentTab = 'sinyalmen'" 
+            :class="currentTab === 'sinyalmen' ? 'text-[#2563EB] border-b-2 border-[#2563EB] py-3.5 shrink-0' : 'text-slate-400 py-3.5 hover:text-slate-700 shrink-0 transition cursor-pointer'"
+          >
+            SINYALMEN FISIK
+          </button>
+          <button 
+            type="button"
+            @click="currentTab = 'education'" 
+            :class="currentTab === 'education' ? 'text-[#2563EB] border-b-2 border-[#2563EB] py-3.5 shrink-0' : 'text-slate-400 py-3.5 hover:text-slate-700 shrink-0 transition cursor-pointer'"
+          >
+            RIWAYAT PENDIDIKAN ({{ selectedPersonel.riwayat_pendidikan ? selectedPersonel.riwayat_pendidikan.length : 0 }})
+          </button>
+          <button 
+            type="button"
+            @click="currentTab = 'jobs'" 
+            :class="currentTab === 'jobs' ? 'text-[#2563EB] border-b-2 border-[#2563EB] py-3.5 shrink-0' : 'text-slate-400 py-3.5 hover:text-slate-700 shrink-0 transition cursor-pointer'"
+          >
+            RIWAYAT PEKERJAAN ({{ selectedPersonel.job_histories ? selectedPersonel.job_histories.length : 0 }})
+          </button>
+          <button 
+            type="button"
+            @click="currentTab = 'activities'" 
+            :class="currentTab === 'activities' ? 'text-[#2563EB] border-b-2 border-[#2563EB] py-3.5 shrink-0' : 'text-slate-400 py-3.5 hover:text-slate-700 shrink-0 transition cursor-pointer'"
+          >
+            RIWAYAT KEGIATAN ({{ selectedItemResponses.length }})
+          </button>
+        </div>
+
+        <!-- Isi Tab (Scrollable Area dengan Single Scrollbar) -->
+        <div class="flex-1 overflow-y-auto p-6 bg-slate-50/50 space-y-6">
           
-          <!-- Header Modal -->
-          <div class="px-6 py-5 border-b border-[#E2E8F0] bg-slate-50/80 flex items-center justify-between shrink-0">
-            <div class="flex items-center gap-4 min-w-0">
-              <div class="relative shrink-0">
-                <img 
-                  :src="selectedPersonel.photo_profile ? getDocumentUrl(selectedPersonel.photo_profile) : `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedPersonel.full_name || 'PERS')}&background=e2e8f0&color=334155`" 
-                  class="w-12 h-14 object-cover rounded-xl bg-slate-100 border border-[#E2E8F0] shadow-xs cursor-pointer hover:opacity-90 transition"
-                  @click="previewImage(selectedPersonel.photo_profile, 'Pasfoto Resmi ' + selectedPersonel.full_name)"
-                  alt="Pasfoto"
-                  title="Klik untuk perbesar pasfoto"
-                />
-                <span v-if="selectedPersonel.face_verified" class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full" title="Terverifikasi"></span>
-              </div>
-              <div class="min-w-0">
-                <div class="flex items-center gap-2 flex-wrap">
-                  <h3 class="text-base font-bold text-slate-900 truncate">{{ selectedPersonel.full_name }}</h3>
-                  <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-blue-50 text-[#2563EB] border border-blue-200 uppercase tracking-wide shrink-0">
-                    {{ selectedPersonel.pangkat || '-' }}
-                  </span>
-                  <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
-                    TNI {{ selectedPersonel.matra }}
-                  </span>
-                  <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
-                    Angkatan {{ selectedPersonel.angkatan }}
-                  </span>
-                </div>
-                <div class="flex items-center gap-3 text-xs text-slate-500 mt-1 flex-wrap">
-                  <span>NIKC: <strong class="font-mono text-[#2563EB]">{{ selectedPersonel.nikc || '-' }}</strong></span>
-                  <span class="text-slate-300">|</span>
-                  <span>NIK: <strong class="font-mono text-slate-700">{{ selectedPersonel.nik || '-' }}</strong></span>
-                  <span class="text-slate-300">|</span>
-                  <span :class="selectedPersonel.face_verified ? 'text-emerald-600 font-semibold' : 'text-amber-600 font-semibold'">
-                    {{ selectedPersonel.face_verified ? 'Status: Terverifikasi' : 'Status: Belum Verifikasi OTP' }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div class="flex items-center gap-2 shrink-0">
-              <Link 
-                :href="route('admin.personel.edit', selectedPersonel.uuid)"
-                class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition"
-              >
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                Edit Data
-              </Link>
-              <button 
-                @click="slideOpen = false" 
-                class="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition cursor-pointer"
-                title="Tutup Modal"
-              >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
-              </button>
-            </div>
-          </div>
-
-          <!-- Tab Bar Navigasi Profil -->
-          <div class="px-6 border-b border-[#E2E8F0] flex gap-6 text-xs font-bold select-none bg-white overflow-x-auto shrink-0 scrollbar-none">
-            <button 
-              @click="currentTab = 'profile'" 
-              :class="currentTab === 'profile' ? 'text-[#2563EB] border-b-2 border-[#2563EB] py-3.5 shrink-0' : 'text-slate-400 py-3.5 hover:text-slate-700 shrink-0 transition cursor-pointer'"
-            >
-              IDENTITAS & DOKUMEN FISIK
-            </button>
-            <button 
-              @click="currentTab = 'sinyalmen'" 
-              :class="currentTab === 'sinyalmen' ? 'text-[#2563EB] border-b-2 border-[#2563EB] py-3.5 shrink-0' : 'text-slate-400 py-3.5 hover:text-slate-700 shrink-0 transition cursor-pointer'"
-            >
-              SINYALMEN FISIK
-            </button>
-            <button 
-              @click="currentTab = 'education'" 
-              :class="currentTab === 'education' ? 'text-[#2563EB] border-b-2 border-[#2563EB] py-3.5 shrink-0' : 'text-slate-400 py-3.5 hover:text-slate-700 shrink-0 transition cursor-pointer'"
-            >
-              RIWAYAT PENDIDIKAN ({{ selectedPersonel.riwayat_pendidikan ? selectedPersonel.riwayat_pendidikan.length : 0 }})
-            </button>
-            <button 
-              @click="currentTab = 'jobs'" 
-              :class="currentTab === 'jobs' ? 'text-[#2563EB] border-b-2 border-[#2563EB] py-3.5 shrink-0' : 'text-slate-400 py-3.5 hover:text-slate-700 shrink-0 transition cursor-pointer'"
-            >
-              RIWAYAT PEKERJAAN ({{ selectedPersonel.job_histories ? selectedPersonel.job_histories.length : 0 }})
-            </button>
-            <button 
-              @click="currentTab = 'activities'" 
-              :class="currentTab === 'activities' ? 'text-[#2563EB] border-b-2 border-[#2563EB] py-3.5 shrink-0' : 'text-slate-400 py-3.5 hover:text-slate-700 shrink-0 transition cursor-pointer'"
-            >
-              RIWAYAT KEGIATAN ({{ selectedItemResponses.length }})
-            </button>
-          </div>
-
-          <!-- Isi Tab (Scrollable Area) -->
-          <div class="flex-1 overflow-y-auto p-6 bg-slate-50/50 space-y-6">
+          <!-- TAB 1: IDENTITAS & DOKUMEN FISIK (LAYOUT 2 KOLOM BERDAMPINGAN) -->
+          <div v-if="currentTab === 'profile'" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
-            <!-- TAB 1: IDENTITAS & DOKUMEN FISIK (KTP, PASFOTO, SKEP, DOMISILI) -->
-            <div v-if="currentTab === 'profile'" class="space-y-6">
+            <!-- KOLOM KIRI: DOKUMEN FISIK (FOTO KTP + PASFOTO + SKEP/SK) -->
+            <div class="lg:col-span-5 space-y-4">
               
-              <!-- Baris Berkas Dokumen Fisik: KTP & Pasfoto Resmi -->
-              <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                
-                <!-- KARTU 1: FOTO DOKUMEN KTP FISIK -->
-                <div class="bg-white border border-[#E2E8F0] rounded-2xl p-5 shadow-xs flex flex-col justify-between">
-                  <div>
-                    <div class="flex items-center justify-between mb-3">
-                      <div class="flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
-                        <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Dokumen Fisik KTP</h4>
-                      </div>
-                      <span class="text-[10px] font-mono font-bold px-2 py-0.5 bg-blue-50 text-blue-700 rounded border border-blue-100">
-                        NIK: {{ selectedPersonel.nik || '-' }}
-                      </span>
-                    </div>
-
-                    <!-- Area Pratinjau KTP -->
-                    <div class="relative group bg-slate-100 rounded-xl border border-slate-200 overflow-hidden flex items-center justify-center min-h-[200px]">
-                      <template v-if="selectedPersonel.ktp_document">
-                        <img 
-                          :src="getDocumentUrl(selectedPersonel.ktp_document)" 
-                          class="w-full h-48 object-contain bg-slate-900/5 cursor-pointer hover:scale-[1.02] transition duration-200" 
-                          @click="previewImage(selectedPersonel.ktp_document, 'Foto KTP Fisik - ' + selectedPersonel.full_name)"
-                          alt="Foto KTP Personel"
-                          title="Klik untuk perbesar KTP"
-                        />
-                        <div class="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2.5 p-3">
-                          <button 
-                            type="button" 
-                            @click="previewImage(selectedPersonel.ktp_document, 'Foto KTP Fisik - ' + selectedPersonel.full_name)" 
-                            class="px-3 py-1.5 bg-white/95 hover:bg-white text-slate-900 rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-1.5 cursor-pointer"
-                          >
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" /></svg>
-                            Perbesar
-                          </button>
-                          <a 
-                            :href="getDocumentUrl(selectedPersonel.ktp_document)" 
-                            target="_blank" 
-                            class="px-3 py-1.5 bg-blue-600/90 hover:bg-blue-600 text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-1.5"
-                          >
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-                            Buka di Tab Baru
-                          </a>
-                        </div>
-                      </template>
-                      <div v-else class="text-center p-6 text-slate-400 space-y-1.5">
-                        <svg class="w-10 h-10 mx-auto text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5zm6-10.125a1.875 1.875 0 11-3.75 0 1.875 1.875 0 013.75 0zm1.294 6.364a4.125 4.125 0 00-6.338 0" /></svg>
-                        <p class="text-xs font-bold text-slate-500">Berkas KTP Belum Diunggah</p>
-                        <p class="text-[11px] text-slate-400">Personel belum melampirkan berkas foto KTP fisik ke dalam pangkalan data.</p>
-                      </div>
-                    </div>
+              <!-- KARTU DOKUMEN KTP FISIK -->
+              <div class="bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-xs">
+                <div class="flex items-center justify-between mb-2.5">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+                    <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Foto KTP Fisik</h4>
                   </div>
+                  <span class="text-[10px] font-mono font-bold px-2 py-0.5 bg-blue-50 text-blue-700 rounded border border-blue-100">
+                    NIK: {{ selectedPersonel.nik || '-' }}
+                  </span>
+                </div>
 
-                  <div class="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                    <span>Nama Sesuai KTP: <strong class="text-slate-800">{{ selectedPersonel.full_name }}</strong></span>
-                    <span class="text-[11px] font-semibold text-slate-400">Status KTP: {{ selectedPersonel.nik ? 'Tervalidasi' : 'Belum Ada NIK' }}</span>
+                <!-- Preview Area Gambar KTP yang Bersih dan Proporsional -->
+                <div class="bg-slate-50/80 rounded-xl border border-slate-200 overflow-hidden flex items-center justify-center p-2 min-h-[170px] max-h-[250px]">
+                  <template v-if="selectedPersonel.ktp_document">
+                    <img 
+                      :src="getDocumentUrl(selectedPersonel.ktp_document)" 
+                      class="max-h-52 max-w-full object-contain rounded-lg cursor-pointer hover:scale-[1.02] transition shadow-xs" 
+                      @click="previewImage(selectedPersonel.ktp_document, 'Foto KTP Fisik - ' + selectedPersonel.full_name)"
+                      alt="Foto KTP Personel"
+                      title="Klik untuk memperbesar foto KTP"
+                    />
+                  </template>
+                  <div v-else class="text-center p-6 text-slate-400 space-y-1.5">
+                    <svg class="w-10 h-10 mx-auto text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5zm6-10.125a1.875 1.875 0 11-3.75 0 1.875 1.875 0 013.75 0zm1.294 6.364a4.125 4.125 0 00-6.338 0" /></svg>
+                    <p class="text-xs font-bold text-slate-500">Berkas KTP Belum Diunggah</p>
+                    <p class="text-[11px] text-slate-400">Personel belum melampirkan berkas KTP fisik.</p>
                   </div>
                 </div>
 
-                <!-- KARTU 2: PASFOTO RESMI & BERKAS MILITER -->
-                <div class="bg-white border border-[#E2E8F0] rounded-2xl p-5 shadow-xs flex flex-col justify-between">
-                  <div>
-                    <div class="flex items-center justify-between mb-3">
-                      <div class="flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                        <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Pasfoto & Kelengkapan Berkas</h4>
-                      </div>
-                      <span class="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-700 rounded border border-slate-200">
-                        TNI {{ selectedPersonel.matra }} (Angkatan {{ selectedPersonel.angkatan }})
-                      </span>
-                    </div>
-
-                    <div class="flex items-start gap-4">
-                      <!-- Pasfoto Resmi -->
-                      <div class="relative group bg-slate-100 rounded-xl border border-slate-200 overflow-hidden shrink-0 w-28 h-36 flex items-center justify-center shadow-xs">
-                        <img 
-                          :src="selectedPersonel.photo_profile ? getDocumentUrl(selectedPersonel.photo_profile) : `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedPersonel.full_name || 'PERS')}&background=e2e8f0&color=334155`" 
-                          class="w-full h-full object-cover cursor-pointer hover:scale-105 transition"
-                          @click="previewImage(selectedPersonel.photo_profile, 'Pasfoto Resmi - ' + selectedPersonel.full_name)"
-                          alt="Pasfoto Resmi"
-                          title="Klik untuk perbesar pasfoto"
-                        />
-                        <div class="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                          <button 
-                            type="button" 
-                            @click="previewImage(selectedPersonel.photo_profile, 'Pasfoto Resmi - ' + selectedPersonel.full_name)"
-                            class="p-1.5 bg-white text-slate-900 rounded-lg text-xs font-bold shadow-xs cursor-pointer"
-                            title="Perbesar Pasfoto"
-                          >
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" /></svg>
-                          </button>
-                        </div>
-                      </div>
-
-                      <!-- Berkas SKEP & Kelengkapan Militer -->
-                      <div class="flex-1 space-y-2.5 text-xs">
-                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
-                          <p class="text-[10px] font-bold uppercase text-slate-400">Surat Keputusan Pengangkatan (SKEP)</p>
-                          <div v-if="selectedPersonel.skep_file" class="flex items-center justify-between">
-                            <span class="font-semibold text-slate-700 truncate max-w-[140px]">Berkas SKEP Terlampir</span>
-                            <a :href="getDocumentUrl(selectedPersonel.skep_file)" target="_blank" class="text-blue-600 hover:underline font-bold text-[11px] inline-flex items-center gap-1">
-                              Buka Dokumen
-                              <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-                            </a>
-                          </div>
-                          <p v-else class="text-slate-400 italic text-[11px]">Belum ada berkas SKEP yang terunggah.</p>
-                        </div>
-
-                        <div v-if="selectedPersonel.is_asn" class="p-3 bg-blue-50/70 border border-blue-200/60 rounded-xl space-y-1">
-                          <p class="text-[10px] font-bold uppercase text-blue-700">Surat Keputusan ASN (NIP: {{ selectedPersonel.asn_nip || '-' }})</p>
-                          <div v-if="selectedPersonel.asn_sk" class="flex items-center justify-between">
-                            <span class="font-semibold text-slate-700 text-[11px] truncate max-w-[140px]">SK {{ selectedPersonel.asn_jenis || 'ASN' }}</span>
-                            <a :href="route('personel.document.download', { path: selectedPersonel.asn_sk })" target="_blank" class="text-blue-700 hover:underline font-bold text-[11px] inline-flex items-center gap-1">
-                              Unduh SK
-                              <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                            </a>
-                          </div>
-                          <p v-else class="text-slate-400 italic text-[11px]">Berkas SK ASN belum diunggah.</p>
-                        </div>
-
-                        <div class="text-[11px] text-slate-500 space-y-1">
-                          <p>Sumber Rekrutmen: <strong class="text-slate-700">{{ selectedPersonel.sumber_rekrutmen || 'Reguler' }}</strong></p>
-                          <p>Status Keaktifan: <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">{{ selectedPersonel.status_keaktifan || 'AKTIF' }}</span></p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                    <span>Format Pangkat Resmi: <strong class="text-slate-800">{{ selectedPersonel.pangkat || '-' }} (KC)</strong></span>
-                    <span class="text-[11px] text-slate-400">Profil: {{ selectedPersonel.status_profile || 'Lengkap' }}</span>
-                  </div>
+                <!-- Tombol Aksi KTP (Tidak Menutupi Gambar) -->
+                <div v-if="selectedPersonel.ktp_document" class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                  <button 
+                    type="button" 
+                    @click="previewImage(selectedPersonel.ktp_document, 'Foto KTP Fisik - ' + selectedPersonel.full_name)" 
+                    class="flex-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" /></svg>
+                    Perbesar KTP
+                  </button>
+                  <a 
+                    :href="getDocumentUrl(selectedPersonel.ktp_document)" 
+                    target="_blank" 
+                    class="flex-1 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-[#2563EB] border border-blue-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                    Buka Tab Baru
+                  </a>
                 </div>
-
+                <div class="mt-2 text-[11px] text-slate-400 text-center">
+                  Nama di KTP: <strong class="text-slate-700">{{ selectedPersonel.full_name }}</strong>
+                </div>
               </div>
 
-              <!-- LEMBAR ADMINISTRASI LENGKAP -->
-              <div class="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-xs space-y-5">
+              <!-- PASFOTO RESMI & BERKAS MILITER -->
+              <div class="bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-xs">
+                <div class="flex items-center gap-3.5">
+                  <div class="relative group bg-slate-100 rounded-xl border border-slate-200 overflow-hidden shrink-0 w-20 h-26 flex items-center justify-center shadow-xs">
+                    <img 
+                      :src="selectedPersonel.photo_profile ? getDocumentUrl(selectedPersonel.photo_profile) : `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedPersonel.full_name || 'PERS')}&background=e2e8f0&color=334155`" 
+                      class="w-full h-full object-cover cursor-pointer hover:scale-105 transition"
+                      @click="previewImage(selectedPersonel.photo_profile, 'Pasfoto Resmi - ' + selectedPersonel.full_name)"
+                      alt="Pasfoto Resmi"
+                      title="Klik untuk perbesar pasfoto"
+                    />
+                  </div>
+                  <div class="flex-1 min-w-0 space-y-2 text-xs">
+                    <div>
+                      <span class="text-[10px] font-bold uppercase text-slate-400">Pangkat & Matra</span>
+                      <p class="font-bold text-slate-800 text-xs">{{ selectedPersonel.pangkat || '-' }} (KC) - TNI {{ selectedPersonel.matra }}</p>
+                    </div>
+                    <div v-if="selectedPersonel.skep_file" class="flex items-center justify-between bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200">
+                      <span class="text-[11px] font-semibold text-slate-700">Berkas SKEP</span>
+                      <a :href="getDocumentUrl(selectedPersonel.skep_file)" target="_blank" class="text-blue-600 hover:underline font-bold text-[11px] flex items-center gap-1">
+                        Buka
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                      </a>
+                    </div>
+                    <div v-if="selectedPersonel.is_asn && selectedPersonel.asn_sk" class="flex items-center justify-between bg-blue-50 px-2.5 py-1.5 rounded-lg border border-blue-200">
+                      <span class="text-[11px] font-semibold text-blue-800">Berkas SK ASN</span>
+                      <a :href="route('personel.document.download', { path: selectedPersonel.asn_sk })" target="_blank" class="text-blue-700 hover:underline font-bold text-[11px] flex items-center gap-1">
+                        Unduh
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                      </a>
+                    </div>
+                    <div class="text-[11px] text-slate-500">
+                      Sumber Rekrutmen: <strong class="text-slate-700">{{ selectedPersonel.sumber_rekrutmen || 'Reguler' }}</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- KOLOM KANAN: LEMBAR ADMINISTRASI DOMISILI & IDENTITAS POKOK LENGKAP -->
+            <div class="lg:col-span-7 space-y-4">
+              <div class="bg-white border border-[#E2E8F0] rounded-2xl p-5 shadow-xs space-y-4">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                   <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
-                    Lembar Administrasi Domisili & Wilayah Penugasan
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                    Lembar Administrasi Domisili & Identitas Pokok
                   </h4>
-                  <span class="text-xs font-semibold text-slate-400">Data Pokok Personel</span>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded" :class="selectedPersonel.status_keaktifan === 'AKTIF' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600'">
+                    {{ selectedPersonel.status_keaktifan || 'AKTIF' }}
+                  </span>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-y-4 gap-x-6 text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-3.5 gap-x-4 text-xs">
                   <div>
                     <p class="text-slate-400 font-medium">Nomor Induk Komcad (NIKC)</p>
                     <p class="font-mono font-bold text-[#2563EB] text-sm mt-0.5">{{ selectedPersonel.nikc || '-' }}</p>
@@ -472,7 +441,7 @@
 
                   <div>
                     <p class="text-slate-400 font-medium">Email Akun Sistem</p>
-                    <p class="font-semibold text-slate-700 mt-0.5">{{ selectedPersonel.user?.email || '-' }}</p>
+                    <p class="font-semibold text-slate-700 mt-0.5 truncate">{{ selectedPersonel.user?.email || '-' }}</p>
                   </div>
 
                   <div>
@@ -480,8 +449,13 @@
                     <p class="font-semibold text-slate-700 mt-0.5">{{ selectedPersonel.postal_code || selectedPersonel.zip_code || '-' }}</p>
                   </div>
 
-                  <div class="sm:col-span-2 md:col-span-3 lg:col-span-3">
-                    <p class="text-slate-400 font-medium">Alamat Rumah Tinggal Lengkap</p>
+                  <div>
+                    <p class="text-slate-400 font-medium">Status Profil</p>
+                    <p class="font-semibold text-slate-700 mt-0.5">{{ selectedPersonel.status_profile || 'Lengkap' }}</p>
+                  </div>
+
+                  <div class="sm:col-span-2 pt-2 border-t border-slate-100">
+                    <p class="text-slate-400 font-medium">Alamat Lengkap Rumah Tinggal</p>
                     <p class="font-semibold text-slate-800 mt-0.5 leading-relaxed">
                       {{ selectedPersonel.address || '-' }}
                       <span v-if="selectedPersonel.village">, Kel. {{ selectedPersonel.village }}</span>
@@ -491,14 +465,27 @@
                     </p>
                   </div>
 
-                  <div v-if="selectedPersonel.catatan_pembinaan" class="col-span-full p-3 bg-amber-50/70 border border-amber-200/70 rounded-xl">
+                  <!-- Bagian ASN jika berlaku -->
+                  <div v-if="selectedPersonel.is_asn" class="sm:col-span-2 p-3 bg-blue-50/80 border border-blue-200 rounded-xl space-y-1.5">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[10px] font-extrabold uppercase text-blue-900">Aparatur Sipil Negara (ASN)</span>
+                      <span class="text-[10px] font-bold text-blue-700">{{ selectedPersonel.asn_jenis || 'PNS' }}</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-[11px] text-slate-700">
+                      <p>NIP: <strong>{{ selectedPersonel.asn_nip || '-' }}</strong></p>
+                      <p>TMT: <strong>{{ selectedPersonel.asn_tmt || '-' }}</strong></p>
+                    </div>
+                  </div>
+
+                  <div v-if="selectedPersonel.catatan_pembinaan" class="sm:col-span-2 p-3 bg-amber-50/70 border border-amber-200/70 rounded-xl">
                     <p class="text-amber-800 font-bold text-[11px]">Catatan Pembinaan Personel:</p>
                     <p class="text-slate-700 text-xs italic mt-0.5 leading-relaxed">{{ selectedPersonel.catatan_pembinaan }}</p>
                   </div>
                 </div>
               </div>
-
             </div>
+
+          </div>
 
             <!-- TAB 2: SINYALMEN FISIK -->
             <div v-if="currentTab === 'sinyalmen'">
@@ -735,20 +722,23 @@
     </div>
 
     <!-- Modal Lightbox Pratinjau Gambar Resolusi Penuh -->
-    <div v-if="lightboxOpen" class="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md" @click.self="lightboxOpen = false">
-      <div class="relative max-w-4xl max-h-[90vh] flex flex-col items-center">
+    <div v-if="lightboxOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md" @click.self="lightboxOpen = false">
+      <div class="relative max-w-4xl max-h-[90vh] flex flex-col items-center" @click.stop>
         <div class="w-full flex items-center justify-between text-white pb-3">
           <span class="text-xs font-bold tracking-wide">{{ lightboxTitle || 'Pratinjau Dokumen' }}</span>
-          <button @click="lightboxOpen = false" class="p-1 rounded-xl hover:bg-white/20 text-white transition cursor-pointer">
+          <button type="button" @click.stop="lightboxOpen = false" class="p-1.5 rounded-xl hover:bg-white/20 text-white transition cursor-pointer">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
           </button>
         </div>
-        <img :src="lightboxSrc" class="max-w-full max-h-[75vh] object-contain rounded-2xl shadow-2xl border border-white/20 bg-slate-900" />
+        <div class="bg-white/5 border border-white/10 rounded-2xl p-2 shadow-2xl flex items-center justify-center overflow-hidden max-h-[75vh]">
+          <img :src="lightboxSrc" class="max-w-full max-h-[72vh] object-contain rounded-xl" />
+        </div>
         <div class="mt-4 flex items-center gap-3">
-          <a :href="lightboxSrc" target="_blank" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition shadow-md">
+          <a :href="lightboxSrc" target="_blank" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition shadow-md flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
             Buka File Ukuran Penuh
           </a>
-          <button @click="lightboxOpen = false" class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white text-xs font-bold rounded-xl transition cursor-pointer">
+          <button type="button" @click.stop="lightboxOpen = false" class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white text-xs font-bold rounded-xl transition cursor-pointer">
             Tutup Pratinjau
           </button>
         </div>
@@ -781,6 +771,12 @@ const selectedItemResponses = ref([]);
 const lightboxOpen = ref(false);
 const lightboxSrc = ref('');
 const lightboxTitle = ref('');
+
+const handleBackdropClick = () => {
+  if (!lightboxOpen.value) {
+    slideOpen.value = false;
+  }
+};
 
 const previewImage = (path, title) => {
   if (!path) return;
@@ -875,6 +871,7 @@ const view360Profil = (personel) => {
   selectedPersonel.value = personel;
   selectedItemResponses.value = personel.broadcast_responses || [];
   currentTab.value = 'profile';
+  lightboxOpen.value = false;
   slideOpen.value = true;
 };
 
