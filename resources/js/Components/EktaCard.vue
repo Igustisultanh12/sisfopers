@@ -43,7 +43,11 @@
     </div>
 
     <!-- Container Utama Kartu Digital (Standar CR80 Aspect Ratio 85.6 x 54) -->
-    <div id="printable-ekta" class="w-full max-w-[560px] aspect-[85.6/54] relative rounded-2xl shadow-xl overflow-hidden border border-emerald-900/30 select-none text-slate-900 bg-[#94BA74]" style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;">
+    <div
+      id="printable-ekta"
+      class="w-full max-w-[560px] aspect-[85.6/54] relative rounded-2xl shadow-xl overflow-hidden border border-emerald-900/30 select-none text-slate-900 bg-[#94BA74]"
+      :style="{ fontFamily: cardFontFamily }"
+    >
       
       <!-- Watermark Background Pola Teks "KOMCAD" Miring & Berulang -->
       <div class="absolute inset-0 overflow-hidden pointer-events-none opacity-20 flex flex-wrap content-start justify-center gap-x-3 gap-y-2 select-none -rotate-6 scale-110">
@@ -95,61 +99,61 @@
         <div class="w-[74%] flex flex-col justify-between h-full pl-0.5">
           <!-- Header Judul & Nomor KTA -->
           <div class="text-center">
-            <h2 class="text-[12px] sm:text-[13px] font-bold tracking-wide uppercase text-[#142C0A] border-b border-[#142C0A] pb-0.5 inline-block">
+            <h2 class="text-[12px] sm:text-[13px] font-semibold tracking-wide uppercase text-[#142C0A] border-b border-[#142C0A] pb-0.5 inline-block">
               KARTU TANDA ANGGOTA KOMCAD
             </h2>
-            <p class="text-[11px] font-bold font-mono tracking-tight text-[#142C0A] mt-0.5">
+            <p class="text-[11px] font-normal tracking-tight text-[#142C0A] mt-0.5">
               {{ displayNomorKta }}
             </p>
           </div>
 
-          <!-- Rincian Data Personel (Arial 11 Dengan Titik-Titik Panduan Khas KTA Militer) -->
-          <div class="space-y-[2px] text-[11px] text-[#142C0A] my-auto">
+          <!-- Rincian Data Personel (Bebas Blok Sesuai Fisik Asli) -->
+          <div class="space-y-[2px] text-[#142C0A] my-auto" :style="{ fontSize: cardFontSize }">
             <!-- Nama -->
             <div class="flex items-baseline">
-              <span class="w-[84px] shrink-0 font-bold">Nama</span>
+              <span class="w-[84px] shrink-0 font-normal">Nama</span>
               <span class="mr-1.5">:</span>
-              <span class="truncate font-bold text-slate-950">{{ personel?.full_name || '-' }}</span>
+              <span class="font-normal text-[#142C0A] whitespace-nowrap">{{ personel?.full_name || '-' }}</span>
               <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
             </div>
 
             <!-- Pangkat -->
             <div class="flex items-baseline">
-              <span class="w-[84px] shrink-0 font-bold">Pangkat</span>
+              <span class="w-[84px] shrink-0 font-normal">Pangkat</span>
               <span class="mr-1.5">:</span>
-              <span class="font-normal">{{ displayPangkat }}</span>
+              <span class="font-normal text-[#142C0A]">{{ displayPangkat }}</span>
               <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
             </div>
 
             <!-- NIKC -->
             <div class="flex items-baseline">
-              <span class="w-[84px] shrink-0 font-bold">NIKC</span>
+              <span class="w-[84px] shrink-0 font-normal">NIKC</span>
               <span class="mr-1.5">:</span>
-              <span class="font-normal font-mono tracking-tight">{{ personel?.nikc || personel?.user?.username || '-' }}</span>
+              <span class="font-normal text-[#142C0A] tracking-tight">{{ personel?.nikc || personel?.user?.username || '-' }}</span>
               <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
             </div>
 
             <!-- Jabatan -->
             <div class="flex items-baseline">
-              <span class="w-[84px] shrink-0 font-bold">Jabatan</span>
+              <span class="w-[84px] shrink-0 font-normal">Jabatan</span>
               <span class="mr-1.5">:</span>
-              <span class="font-normal">{{ displayJabatan }}</span>
+              <span class="font-normal text-[#142C0A]">{{ displayJabatan }}</span>
               <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
             </div>
 
             <!-- Kesatuan/Matra -->
             <div class="flex items-baseline">
-              <span class="w-[84px] shrink-0 font-bold">Kesatuan/Matra</span>
+              <span class="w-[84px] shrink-0 font-normal">Kesatuan/Matra</span>
               <span class="mr-1.5">:</span>
-              <span class="font-normal">{{ displayMatra }}</span>
+              <span class="font-normal text-[#142C0A]">{{ displayMatra }}</span>
               <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
             </div>
 
             <!-- Berlaku s/d -->
             <div class="flex items-baseline">
-              <span class="w-[84px] shrink-0 font-bold">Berlaku s/d</span>
+              <span class="w-[84px] shrink-0 font-normal">Berlaku s/d</span>
               <span class="mr-1.5">:</span>
-              <span class="font-normal">{{ displayBerlaku }}</span>
+              <span class="font-normal text-[#142C0A]">{{ displayBerlaku }}</span>
               <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
             </div>
           </div>
@@ -158,8 +162,8 @@
           <div class="flex items-end justify-end gap-3 pt-0.5">
             <!-- Sisi Pejabat Pengesah (Dirjen Pothan) -->
             <div class="text-center relative leading-tight text-[#142C0A] min-w-[155px]">
-              <p class="text-[9.5px] font-bold uppercase tracking-tight">{{ signerTitleLine1 }}</p>
-              <p class="text-[9.5px] font-bold uppercase tracking-tight">{{ signerTitleLine2 }}</p>
+              <p class="text-[9.5px] font-normal uppercase tracking-tight">{{ signerTitleLine1 }}</p>
+              <p class="text-[9.5px] font-normal uppercase tracking-tight">{{ signerTitleLine2 }}</p>
 
               <!-- Ruang Tanda Tangan & Cap Stempel Basah -->
               <div class="h-9 relative flex items-center justify-center my-0.5">
@@ -186,8 +190,8 @@
               </div>
 
               <!-- Nama & Pangkat Pejabat -->
-              <p class="text-[10px] font-bold underline uppercase text-[#142C0A] tracking-tight">{{ signerName }}</p>
-              <p class="text-[8.5px] font-bold text-[#142C0A] tracking-tight">{{ signerRank }}</p>
+              <p class="text-[10px] font-normal underline uppercase text-[#142C0A] tracking-tight">{{ signerName }}</p>
+              <p class="text-[8.5px] font-normal text-[#142C0A] tracking-tight">{{ signerRank }}</p>
             </div>
 
             <!-- Sisi Pojok Kanan: QR Code Verifikasi Publik -->
@@ -212,75 +216,77 @@
         <!-- Sisi Kiri: SINYALEMEN PEMEGANG -->
         <div class="w-[58%] flex flex-col justify-between h-full pr-1">
           <div>
-            <h3 class="text-[12px] sm:text-[13px] font-bold tracking-wide uppercase text-[#142C0A] border-b border-[#142C0A] pb-0.5 inline-block mb-1.5">
+            <h3 class="text-[12px] sm:text-[13px] font-semibold tracking-wide uppercase text-[#142C0A] border-b border-[#142C0A] pb-0.5 inline-block mb-1.5">
               SINYALEMEN
             </h3>
 
-            <!-- Tabel Data Sinyalemen Fisik (Arial 11) -->
-            <div class="space-y-[2px] text-[11px] text-[#142C0A]">
+            <!-- Tabel Data Sinyalemen Fisik (Bebas Blok Sesuai Fisik Asli) -->
+            <div class="space-y-[2px] text-[#142C0A]" :style="{ fontSize: cardFontSize }">
               <div class="flex items-baseline">
-                <span class="w-[105px] shrink-0 font-bold">Tinggi/berat Badan</span>
+                <span class="w-[105px] shrink-0 font-normal">Tinggi/berat Badan</span>
                 <span class="mr-1.5">:</span>
-                <span class="font-normal">{{ sinyalmenData.tinggi_berat }}</span>
+                <span class="font-normal text-[#142C0A]">{{ sinyalmenData.tinggi_berat }}</span>
                 <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
               </div>
 
               <div class="flex items-baseline">
-                <span class="w-[105px] shrink-0 font-bold">Rambut</span>
+                <span class="w-[105px] shrink-0 font-normal">Rambut</span>
                 <span class="mr-1.5">:</span>
-                <span class="font-normal">{{ sinyalmenData.rambut }}</span>
+                <span class="font-normal text-[#142C0A]">{{ sinyalmenData.rambut }}</span>
                 <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
               </div>
 
               <div class="flex items-baseline">
-                <span class="w-[105px] shrink-0 font-bold">Mata</span>
+                <span class="w-[105px] shrink-0 font-normal">Mata</span>
                 <span class="mr-1.5">:</span>
-                <span class="font-normal">{{ sinyalmenData.mata }}</span>
+                <span class="font-normal text-[#142C0A]">{{ sinyalmenData.mata }}</span>
                 <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
               </div>
 
               <div class="flex items-baseline">
-                <span class="w-[105px] shrink-0 font-bold">Darah</span>
+                <span class="w-[105px] shrink-0 font-normal">Darah</span>
                 <span class="mr-1.5">:</span>
-                <span class="font-normal">{{ sinyalmenData.golongan_darah }}</span>
+                <span class="font-normal text-[#142C0A]">{{ sinyalmenData.golongan_darah }}</span>
                 <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
               </div>
 
               <div class="flex items-baseline">
-                <span class="w-[105px] shrink-0 font-bold">Tempat Lahir</span>
+                <span class="w-[105px] shrink-0 font-normal">Tempat Lahir</span>
                 <span class="mr-1.5">:</span>
-                <span class="font-normal">{{ sinyalmenData.tempat_lahir }}</span>
+                <span class="font-normal text-[#142C0A]">{{ sinyalmenData.tempat_lahir }}</span>
                 <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
               </div>
 
               <div class="flex items-baseline">
-                <span class="w-[105px] shrink-0 font-bold">Tgl Lahir</span>
+                <span class="w-[105px] shrink-0 font-normal">Tgl Lahir</span>
                 <span class="mr-1.5">:</span>
-                <span class="font-normal">{{ sinyalmenData.tanggal_lahir }}</span>
+                <span class="font-normal text-[#142C0A]">{{ sinyalmenData.tanggal_lahir }}</span>
                 <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
               </div>
 
               <div class="flex items-baseline">
-                <span class="w-[105px] shrink-0 font-bold">Agama</span>
+                <span class="w-[105px] shrink-0 font-normal">Agama</span>
                 <span class="mr-1.5">:</span>
-                <span class="font-normal">{{ sinyalmenData.agama }}</span>
+                <span class="font-normal text-[#142C0A]">{{ sinyalmenData.agama }}</span>
                 <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
               </div>
 
               <!-- Alamat Rumah: Otomatis Turun Ke Bawah Jika Panjang Tanpa Terpotong -->
-              <div class="flex flex-col mt-0.5">
+              <div class="flex flex-col">
                 <div class="flex items-baseline">
-                  <span class="w-[105px] shrink-0 font-bold">Alamat Rumah</span>
+                  <span class="w-[105px] shrink-0 font-normal">Alamat Rumah</span>
                   <span class="mr-1.5">:</span>
-                  <span class="font-normal whitespace-pre-wrap">{{ addressLines[0] || '-' }}</span>
+                  <span class="font-normal text-[#142C0A] whitespace-pre-wrap">{{ addressLines[0] || '-' }}</span>
                   <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
                 </div>
                 <div
                   v-for="(line, idx) in addressLines.slice(1)"
                   :key="idx"
-                  class="flex items-baseline pl-[112px]"
+                  class="flex items-baseline"
                 >
-                  <span class="font-normal whitespace-pre-wrap">{{ line }}</span>
+                  <span class="w-[105px] shrink-0"></span>
+                  <span class="mr-1.5">:</span>
+                  <span class="font-normal text-[#142C0A] whitespace-pre-wrap">{{ line }}</span>
                   <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
                 </div>
               </div>
@@ -295,7 +301,7 @@
         <div class="w-[40%] flex flex-col justify-between h-full pl-1">
           <!-- Bagian Atas: Tanda Kehormatan -->
           <div class="h-[45%]">
-            <h3 class="text-[11px] font-bold tracking-wide uppercase text-[#142C0A] border-b border-[#142C0A] pb-0.5 inline-block mb-1.5">
+            <h3 class="text-[11px] font-semibold tracking-wide uppercase text-[#142C0A] border-b border-[#142C0A] pb-0.5 inline-block mb-1.5">
               TANDA KEHORMATAN
             </h3>
             <div class="space-y-1 text-[11px] font-normal text-[#142C0A]">
@@ -313,7 +319,7 @@
 
           <!-- Bagian Bawah: Tanda Tangan Pemegang -->
           <div class="h-[50%] flex flex-col justify-between">
-            <h3 class="text-[11px] font-bold tracking-wide uppercase text-[#142C0A] border-b border-[#142C0A] pb-0.5 inline-block">
+            <h3 class="text-[11px] font-semibold tracking-wide uppercase text-[#142C0A] border-b border-[#142C0A] pb-0.5 inline-block">
               TANDA TANGAN PEMEGANG
             </h3>
 
@@ -517,11 +523,28 @@ const sinyalmenData = computed(() => {
     agama: ek?.agama || sin?.religion || 'Islam',
   };
 });
+
+// Pengaturan Tipografi & Ukuran Font Dinamis dari Konfigurasi Admin
+const cardFontFamily = computed(() => {
+  const f = props.settings?.font_family;
+  if (!f) return "Arial, 'Helvetica Neue', Helvetica, sans-serif";
+  if (f === 'Times New Roman') return "'Times New Roman', Times, serif";
+  if (f === 'Courier New') return "'Courier New', Courier, monospace";
+  return `${f}, Arial, sans-serif`;
+});
+
+const cardFontSize = computed(() => {
+  return props.settings?.font_size || '11px';
+});
 </script>
 
 <style scoped>
-#printable-ekta, #printable-ekta * {
-  font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif !important;
+#printable-ekta {
+  font-family: v-bind('cardFontFamily') !important;
+}
+
+#printable-ekta * {
+  font-family: inherit !important;
 }
 
 @media print {

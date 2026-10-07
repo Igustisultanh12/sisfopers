@@ -34,7 +34,7 @@
             :class="activeTab === 'settings' ? 'bg-white text-slate-900 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900 font-medium'"
             class="px-4 py-2 text-xs rounded-lg transition"
           >
-            Pengaturan Logo & Pejabat
+            Pengaturan Logo, Format & Pejabat
           </button>
         </div>
       </div>
@@ -217,10 +217,10 @@
       <div v-show="activeTab === 'settings'" class="bg-white border border-[#E2E8F0] rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
         <div>
           <h2 class="text-base font-extrabold text-slate-800">
-            Pengaturan Aset Visual & Pejabat Penandatangan E-KTA
+            Pengaturan Aset Visual, Format Font & Pejabat Penandatangan E-KTA
           </h2>
           <p class="text-xs text-slate-500 mt-1">
-            Atur dan unggah logo Komcad, tanda tangan digital, dan cap dinas yang akan tercetak otomatis pada setiap kartu digital.
+            Atur logo Komcad, tanda tangan digital, cap dinas, jenis font dan ukuran teks yang akan tercetak otomatis pada kartu digital.
           </p>
         </div>
 
@@ -276,6 +276,39 @@
             </div>
           </div>
 
+          <!-- Pengaturan Tipografi & Ukuran Teks Kartu E-KTA -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-200">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Jenis Font (Font Family)</label>
+              <select
+                v-model="settingsForm.ekta_font_family"
+                class="w-full px-3.5 py-2.5 border border-[#E2E8F0] rounded-xl text-xs outline-none focus:border-[#2563EB] bg-white cursor-pointer font-medium text-slate-800"
+              >
+                <option value="Arial">Arial (Standar Militer)</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Tahoma">Tahoma</option>
+                <option value="Verdana">Verdana</option>
+                <option value="Segoe UI">Segoe UI</option>
+                <option value="Courier New">Courier New</option>
+              </select>
+              <p class="text-[10px] text-slate-400 mt-1">Jenis rupa huruf yang diterapkan pada seluruh kartu E-KTA.</p>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Ukuran Font Dasar (Font Size)</label>
+              <select
+                v-model="settingsForm.ekta_font_size"
+                class="w-full px-3.5 py-2.5 border border-[#E2E8F0] rounded-xl text-xs outline-none focus:border-[#2563EB] bg-white cursor-pointer font-medium text-slate-800"
+              >
+                <option value="9px">9px (Sangat Kecil)</option>
+                <option value="10px">10px (Kecil)</option>
+                <option value="11px">11px (Standar KTA Militer - Default)</option>
+                <option value="12px">12px (Sedang)</option>
+                <option value="13px">13px (Besar)</option>
+              </select>
+              <p class="text-[10px] text-slate-400 mt-1">Ukuran font dasar untuk teks data personel pada kartu E-KTA.</p>
+            </div>
+          </div>
+
           <!-- Rincian Identitas Pejabat Penandatangan -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-slate-200">
             <div>
@@ -317,6 +350,25 @@
             </button>
           </div>
         </form>
+
+        <!-- Pratinjau Format Kartu Langsung -->
+        <div class="pt-6 border-t border-slate-200">
+          <div class="mb-4">
+            <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">
+              Pratinjau Format Kartu (Pratinjau Seketika)
+            </h3>
+            <p class="text-[11px] text-slate-400 mt-0.5">
+              Perubahan jenis font ({{ settingsForm.ekta_font_family }}) dan ukuran font ({{ settingsForm.ekta_font_size }}) langsung terlihat di bawah ini sebelum disimpan.
+            </p>
+          </div>
+          <div class="flex justify-center p-4 sm:p-6 bg-slate-50 rounded-2xl border border-slate-200 overflow-x-auto">
+            <EktaCard
+              :personel="previewPersonel"
+              :ekta="previewEkta"
+              :settings="previewSettings"
+            />
+          </div>
+        </div>
       </div>
     </div>
 
@@ -797,7 +849,7 @@ const setFilterStatus = (st) => {
   }, { preserveState: true, preserveScroll: true });
 };
 
-// Form Pengaturan Logo & Pejabat
+// Form Pengaturan Logo, Format & Pejabat
 const settingsForm = useForm({
   ekta_logo_komcad: null,
   ekta_signature: null,
@@ -805,6 +857,8 @@ const settingsForm = useForm({
   ekta_signer_name: props.ektaSettings?.signer_name || 'Sri Yanto, S.T.',
   ekta_signer_rank: props.ektaSettings?.signer_rank || 'Laksamana Muda TNI',
   ekta_signer_title: props.ektaSettings?.signer_title || 'Direktur Jenderal Potensi Pertahanan',
+  ekta_font_family: props.ektaSettings?.font_family || 'Arial',
+  ekta_font_size: props.ektaSettings?.font_size || '11px',
   logoPreview: null,
   signaturePreview: null,
   stampPreview: null,
@@ -842,6 +896,56 @@ const submitSettings = () => {
     }
   });
 };
+
+// Data Komputasi Pratinjau Seketika Tab Pengaturan
+const previewPersonel = computed(() => {
+  return props.personels?.data?.[0] || {
+    full_name: 'I Gusti Sultan Hajjarul Aswat, A.Md.Kom.',
+    nikc: '12000018012200216',
+    pangkat: 'Letnan Dua',
+    matra: 'AL',
+    angkatan: '2025',
+    dob: '2002-12-10',
+    pob: 'Jember',
+    address: 'Jl. Argopuro No. 77 Kec. Mayang Kab. Jember',
+    sinyalmen: {
+      tinggi_badan: 161,
+      berat_badan: 45,
+      rambut: 'Bergelombang',
+      mata: 'Coklat',
+      golongan_darah: 'O',
+      religion: 'Hindu',
+    }
+  };
+});
+
+const previewEkta = computed(() => ({
+  nomor_kta: 'No.3043/KTA KC/2025',
+  pangkat: previewPersonel.value.pangkat || 'Letnan Dua',
+  jabatan: 'Perwira Komcad',
+  kesatuan_matra: 'Matra Laut',
+  berlaku_sampai: 'Selama Menjadi Anggota Komcad',
+  tinggi_berat: '161/45',
+  rambut: 'Bergelombang',
+  mata: 'Coklat',
+  golongan_darah: 'O',
+  tempat_lahir: 'Jember',
+  tanggal_lahir: '10 Desember 2002',
+  agama: 'Hindu',
+  alamat: 'Jl. Argopuro No. 77 Kec. Mayang Kab. Jember',
+  status: 'TERBIT',
+}));
+
+const previewSettings = computed(() => ({
+  logo_komcad: settingsForm.logoPreview || props.ektaSettings?.logo_komcad,
+  signature: settingsForm.signaturePreview || props.ektaSettings?.signature,
+  stamp: settingsForm.stampPreview || props.ektaSettings?.stamp,
+  signer_name: settingsForm.ekta_signer_name,
+  signer_rank: settingsForm.ekta_signer_rank,
+  signer_title: settingsForm.ekta_signer_title,
+  font_family: settingsForm.ekta_font_family,
+  font_size: settingsForm.ekta_font_size,
+}));
 
 // Modal Alur Penerbitan E-KTA
 const selectedPersonel = ref(null);

@@ -64,6 +64,8 @@ class EktaAdminController extends Controller
             'ekta_signer_name',
             'ekta_signer_rank',
             'ekta_signer_title',
+            'ekta_font_family',
+            'ekta_font_size',
             'logo_tni',
         ])->pluck('value', 'key')->toArray();
 
@@ -74,6 +76,8 @@ class EktaAdminController extends Controller
             'signer_name'  => $settings['ekta_signer_name'] ?? 'Sri Yanto, S.T.',
             'signer_rank'  => $settings['ekta_signer_rank'] ?? 'Laksamana Muda TNI',
             'signer_title' => $settings['ekta_signer_title'] ?? 'Direktur Jenderal Potensi Pertahanan',
+            'font_family'  => $settings['ekta_font_family'] ?? 'Arial',
+            'font_size'    => $settings['ekta_font_size'] ?? '11px',
             'logo_tni'     => $settings['logo_tni'] ?? null,
         ];
 
@@ -106,6 +110,8 @@ class EktaAdminController extends Controller
             'ekta_signer_name',
             'ekta_signer_rank',
             'ekta_signer_title',
+            'ekta_font_family',
+            'ekta_font_size',
         ])->pluck('value', 'key')->toArray();
 
         $ektaSettings = [
@@ -115,6 +121,8 @@ class EktaAdminController extends Controller
             'signer_name'  => $settings['ekta_signer_name'] ?? 'Sri Yanto, S.T.',
             'signer_rank'  => $settings['ekta_signer_rank'] ?? 'Laksamana Muda TNI',
             'signer_title' => $settings['ekta_signer_title'] ?? 'Direktur Jenderal Potensi Pertahanan',
+            'font_family'  => $settings['ekta_font_family'] ?? 'Arial',
+            'font_size'    => $settings['ekta_font_size'] ?? '11px',
         ];
 
         return Inertia::render('Admin/Ekta/Show', [
@@ -338,6 +346,8 @@ class EktaAdminController extends Controller
             'ekta_signer_name'  => 'nullable|string|max:150',
             'ekta_signer_rank'  => 'nullable|string|max:150',
             'ekta_signer_title' => 'nullable|string|max:200',
+            'ekta_font_family'  => 'nullable|string|max:100',
+            'ekta_font_size'    => 'nullable|string|max:20',
         ]);
 
         if ($request->hasFile('ekta_logo_komcad')) {
@@ -367,6 +377,14 @@ class EktaAdminController extends Controller
             Setting::updateOrCreate(['key' => 'ekta_signer_title'], ['value' => $request->ekta_signer_title]);
         }
 
-        return redirect()->back()->with('success', 'Pengaturan aset logo, tanda tangan, dan pejabat E-KTA berhasil disimpan.');
+        if ($request->filled('ekta_font_family')) {
+            Setting::updateOrCreate(['key' => 'ekta_font_family'], ['value' => $request->ekta_font_family]);
+        }
+
+        if ($request->filled('ekta_font_size')) {
+            Setting::updateOrCreate(['key' => 'ekta_font_size'], ['value' => $request->ekta_font_size]);
+        }
+
+        return redirect()->back()->with('success', 'Pengaturan aset logo, format font, dan pejabat E-KTA berhasil disimpan.');
     }
 }
