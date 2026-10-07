@@ -13,13 +13,24 @@
     >
       <div></div>
       
-      <!-- Live Preview Logo Tri Matra & Lambang Komcad -->
+      <!-- Live Preview Logo Tri Matra & Lambang TNI (Persis Sesuai Login.vue) -->
       <div class="my-auto max-w-lg space-y-8 flex flex-col items-center text-center mx-auto">
-        <!-- Logo Komcad / TNI Utama -->
-        <div class="flex justify-center">
-          <div class="w-32 h-32 rounded-3xl bg-white/90 p-4 shadow-2xl border border-white/20 flex items-center justify-center">
-            <KomcadEmblem class="w-full h-full" />
-          </div>
+        <!-- Logo TNI Utama -->
+        <div v-if="settings?.logo_tni" class="flex justify-center animate-float-slow">
+          <img :src="settings.logo_tni" class="h-32 lg:h-40 object-contain drop-shadow-[0_10px_25px_rgba(0,0,0,0.6)]" alt="Logo Mabes TNI" />
+        </div>
+        
+        <!-- Logo Tiga Matra Sejajar -->
+        <div v-if="settings?.logo_ad || settings?.logo_al || settings?.logo_au" class="flex items-center justify-center gap-6 flex-wrap animate-float-slow delay-200">
+          <img v-if="settings?.logo_ad" :src="settings.logo_ad" class="h-16 object-contain drop-shadow-md transition hover:scale-110" alt="Logo TNI AD" />
+          <img v-if="settings?.logo_al" :src="settings.logo_al" class="h-16 object-contain drop-shadow-md transition hover:scale-110" alt="Logo TNI AL" />
+          <img v-if="settings?.logo_au" :src="settings.logo_au" class="h-16 object-contain drop-shadow-md transition hover:scale-110" alt="Logo TNI AU" />
+        </div>
+
+        <!-- Fallback jika belum diatur logo TNI/Matra -->
+        <div v-if="!settings?.logo_tni && !settings?.logo_ad && !settings?.logo_al && !settings?.logo_au" class="flex justify-center animate-float-slow">
+          <img v-if="settings?.ekta_logo_komcad" :src="settings.ekta_logo_komcad" class="h-32 lg:h-40 object-contain drop-shadow-[0_10px_25px_rgba(0,0,0,0.6)]" alt="Logo Komcad" />
+          <KomcadEmblem v-else class="h-32 w-32 drop-shadow-[0_10px_25px_rgba(0,0,0,0.6)]" />
         </div>
         
         <div>
@@ -48,10 +59,19 @@
           ? 'bg-slate-900/80 backdrop-blur-md border border-white/10 text-white' 
           : 'bg-white border border-[#E2E8F0] shadow-slate-200/50 text-[#334155]'"
       >
-        <!-- Header logo di mobile -->
-        <div class="lg:hidden flex items-center justify-center gap-3 mb-2">
-          <div class="w-16 h-16 rounded-2xl bg-white p-2 shadow-md border border-slate-200 flex items-center justify-center">
-            <KomcadEmblem class="w-full h-full" />
+        <!-- Header logo di mobile (Persis Sesuai Login.vue) -->
+        <div class="lg:hidden flex flex-col items-center justify-center gap-2 mb-4">
+          <div v-if="settings?.logo_tni" class="flex justify-center">
+            <img :src="settings.logo_tni" class="h-14 object-contain drop-shadow-md" alt="Logo TNI" />
+          </div>
+          <div v-if="settings?.logo_ad || settings?.logo_al || settings?.logo_au" class="flex items-center justify-center gap-3">
+            <img v-if="settings?.logo_ad" :src="settings.logo_ad" class="h-8 object-contain drop-shadow-xs" alt="Logo TNI AD" />
+            <img v-if="settings?.logo_al" :src="settings.logo_al" class="h-8 object-contain drop-shadow-xs" alt="Logo TNI AL" />
+            <img v-if="settings?.logo_au" :src="settings.logo_au" class="h-8 object-contain drop-shadow-xs" alt="Logo TNI AU" />
+          </div>
+          <div v-if="!settings?.logo_tni && !settings?.logo_ad && !settings?.logo_al && !settings?.logo_au" class="flex justify-center">
+            <img v-if="settings?.ekta_logo_komcad" :src="settings.ekta_logo_komcad" class="h-12 object-contain" alt="Logo Komcad" />
+            <KomcadEmblem v-else class="w-12 h-12" />
           </div>
         </div>
 
@@ -178,3 +198,31 @@ defineProps({
   settings: Object,
 });
 </script>
+
+<style scoped>
+.animate-float-slow {
+  animation: float-logo 5s ease-in-out infinite;
+}
+
+.animate-float-card {
+  animation: float-card 6s ease-in-out infinite;
+}
+
+@keyframes float-logo {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes float-card {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+</style>

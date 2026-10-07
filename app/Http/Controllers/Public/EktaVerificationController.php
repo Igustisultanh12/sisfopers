@@ -65,6 +65,9 @@ class EktaVerificationController extends Controller
         $settings = Setting::whereIn('key', [
             'app_name',
             'logo_tni',
+            'logo_ad',
+            'logo_al',
+            'logo_au',
             'ekta_logo_komcad',
             'ekta_signer_name',
             'ekta_signer_rank',
