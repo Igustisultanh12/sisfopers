@@ -482,177 +482,185 @@
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs max-h-[380px] overflow-y-auto pr-1">
-            <!-- Nomor Urut KTA -->
+            <!-- Nomor Urut / Format KTA (Hanya Tampil) -->
             <div class="sm:col-span-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
               <label class="block font-bold text-slate-700 mb-1">
-                Nomor KTA (Awal: Kosong / Dapat Diisi Nomor Urut)
+                Format Nomor KTA
               </label>
               <div class="flex items-center gap-2">
-                <span class="font-mono font-bold text-slate-500 text-sm">No.</span>
-                <input
-                  v-model="confirmationForm.nomor_urut"
-                  type="text"
-                  placeholder="....."
-                  class="w-28 px-3 py-1.5 border border-[#E2E8F0] bg-white rounded-lg text-xs font-mono font-bold outline-none focus:border-[#2563EB]"
-                />
-                <span class="font-mono font-bold text-slate-700 text-sm">
-                  /KTA KC/{{ confirmationForm.tahun_lulus }}
+                <span class="font-mono font-extrabold text-slate-800 text-sm">
+                  No. {{ confirmationForm.nomor_urut ? confirmationForm.nomor_urut : '.....' }}/KTA KC/{{ confirmationForm.tahun_lulus }}
                 </span>
               </div>
-              <p class="text-[10px] text-slate-400 mt-1">
-                Biarkan nomor urut kosong jika ingin menerbitkan dengan format awal: <code>[No...../KTA KC/{{ confirmationForm.tahun_lulus }}]</code>
+              <p class="text-[10px] text-slate-500 mt-1">
+                Format resmi penomoran awal: <code>[No...../KTA KC/{{ confirmationForm.tahun_lulus }}]</code>
               </p>
             </div>
 
-            <!-- Nama Lengkap -->
+            <!-- Nama Lengkap (Hanya Tampil) -->
             <div>
               <label class="block font-bold text-slate-700 mb-1">Nama Lengkap</label>
               <input
-                v-model="confirmationForm.full_name"
+                :value="confirmationForm.full_name"
                 type="text"
-                class="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-xs bg-slate-50"
+                class="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-xs bg-slate-50 font-semibold text-slate-800 cursor-default"
                 readonly
               />
             </div>
 
-            <!-- NIKC -->
+            <!-- NIKC (Hanya Tampil) -->
             <div>
               <label class="block font-bold text-slate-700 mb-1">NIKC Personel</label>
               <input
-                v-model="confirmationForm.nikc"
+                :value="confirmationForm.nikc"
                 type="text"
-                class="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-xs bg-slate-50 font-mono"
+                class="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-xs bg-slate-50 font-mono font-semibold text-slate-800 cursor-default"
                 readonly
               />
             </div>
 
-            <!-- Pangkat -->
+            <!-- Pangkat (Hanya Tampil) -->
             <div>
               <label class="block font-bold text-slate-700 mb-1">Pangkat</label>
               <input
-                v-model="confirmationForm.pangkat"
+                :value="confirmationForm.pangkat"
                 type="text"
-                class="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-xs outline-none focus:border-[#2563EB]"
+                class="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-xs bg-slate-50 font-semibold text-slate-800 cursor-default"
+                readonly
               />
             </div>
 
-            <!-- Jabatan -->
+            <!-- Jabatan (Hanya Tampil) -->
             <div>
               <label class="block font-bold text-slate-700 mb-1">Jabatan</label>
               <input
-                v-model="confirmationForm.jabatan"
+                :value="confirmationForm.jabatan"
                 type="text"
-                class="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-xs outline-none focus:border-[#2563EB]"
+                class="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-xs bg-slate-50 font-semibold text-slate-800 cursor-default"
+                readonly
               />
             </div>
 
-            <!-- Kesatuan/Matra -->
+            <!-- Kesatuan/Matra (Hanya Tampil) -->
             <div>
               <label class="block font-bold text-slate-700 mb-1">Kesatuan/Matra</label>
-              <select
-                v-model="confirmationForm.kesatuan_matra"
-                class="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-xs outline-none focus:border-[#2563EB]"
-              >
-                <option value="Matra Darat">Matra Darat</option>
-                <option value="Matra Laut">Matra Laut</option>
-                <option value="Matra Udara">Matra Udara</option>
-              </select>
+              <input
+                :value="confirmationForm.kesatuan_matra"
+                type="text"
+                class="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-xs bg-slate-50 font-semibold text-slate-800 cursor-default"
+                readonly
+              />
             </div>
 
-            <!-- Berlaku s/d -->
+            <!-- Berlaku s/d (Hanya Tampil) -->
             <div>
               <label class="block font-bold text-slate-700 mb-1">Masa Berlaku</label>
               <input
-                v-model="confirmationForm.berlaku_sampai"
+                :value="confirmationForm.berlaku_sampai"
                 type="text"
-                class="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-xs outline-none focus:border-[#2563EB]"
+                class="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-xs bg-slate-50 font-semibold text-slate-800 cursor-default"
+                readonly
               />
             </div>
 
-            <!-- Sinyalemen: Tinggi/Berat Badan -->
+            <!-- Sinyalemen: Tinggi/Berat Badan (Hanya Tampil) -->
             <div>
               <label class="block font-bold text-slate-700 mb-1">Tinggi / Berat Badan</label>
               <input
-                v-model="confirmationForm.tinggi_berat"
+                :value="confirmationForm.tinggi_berat"
                 type="text"
-                placeholder="Contoh: 161/45"
-                class="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-xs outline-none focus:border-[#2563EB]"
+                class="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-xs bg-slate-50 font-semibold text-slate-800 cursor-default"
+                readonly
               />
             </div>
 
-            <!-- Sinyalemen: Rambut -->
+            <!-- Sinyalemen: Rambut (Hanya Tampil) -->
             <div>
               <label class="block font-bold text-slate-700 mb-1">Bentuk Rambut</label>
               <input
-                v-model="confirmationForm.rambut"
+                :value="confirmationForm.rambut"
                 type="text"
-                placeholder="Contoh: Bergelombang"
-                class="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-xs outline-none focus:border-[#2563EB]"
+                class="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-xs bg-slate-50 font-semibold text-slate-800 cursor-default"
+                readonly
               />
             </div>
 
-            <!-- Sinyalemen: Mata -->
+            <!-- Sinyalemen: Mata (Hanya Tampil) -->
             <div>
               <label class="block font-bold text-slate-700 mb-1">Warna Mata</label>
               <input
-                v-model="confirmationForm.mata"
+                :value="confirmationForm.mata"
                 type="text"
-                placeholder="Contoh: Coklat"
-                class="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-xs outline-none focus:border-[#2563EB]"
+                class="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-xs bg-slate-50 font-semibold text-slate-800 cursor-default"
+                readonly
               />
             </div>
 
-            <!-- Sinyalemen: Golongan Darah -->
+            <!-- Sinyalemen: Golongan Darah (Hanya Tampil) -->
             <div>
               <label class="block font-bold text-slate-700 mb-1">Golongan Darah</label>
-              <select
-                v-model="confirmationForm.golongan_darah"
-                class="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-xs outline-none focus:border-[#2563EB]"
-              >
-                <option value="O">O</option>
-                <option value="A">A</option>
-                <option value="B">B</option>
-                <option value="AB">AB</option>
-              </select>
+              <input
+                :value="confirmationForm.golongan_darah"
+                type="text"
+                class="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-xs bg-slate-50 font-semibold text-slate-800 cursor-default"
+                readonly
+              />
             </div>
 
-            <!-- Sinyalemen: Tempat Lahir -->
+            <!-- Sinyalemen: Tempat Lahir (Hanya Tampil) -->
             <div>
               <label class="block font-bold text-slate-700 mb-1">Tempat Lahir</label>
               <input
-                v-model="confirmationForm.tempat_lahir"
+                :value="confirmationForm.tempat_lahir"
                 type="text"
-                class="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-xs outline-none focus:border-[#2563EB]"
+                class="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-xs bg-slate-50 font-semibold text-slate-800 cursor-default"
+                readonly
               />
             </div>
 
-            <!-- Sinyalemen: Tanggal Lahir -->
+            <!-- Sinyalemen: Tanggal Lahir (Hanya Tampil) -->
             <div>
               <label class="block font-bold text-slate-700 mb-1">Tanggal Lahir</label>
               <input
-                v-model="confirmationForm.tanggal_lahir"
+                :value="confirmationForm.tanggal_lahir"
                 type="text"
-                class="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-xs outline-none focus:border-[#2563EB]"
+                class="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-xs bg-slate-50 font-semibold text-slate-800 cursor-default"
+                readonly
               />
             </div>
 
-            <!-- Sinyalemen: Agama -->
+            <!-- Sinyalemen: Agama (DAPAT DIUBAH / DIEDIT) -->
             <div>
-              <label class="block font-bold text-slate-700 mb-1">Agama</label>
-              <input
+              <div class="flex items-center justify-between mb-1">
+                <label class="block font-bold text-slate-700">Agama</label>
+                <span class="text-[10px] font-bold text-[#2563EB] bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
+                  Dapat Diubah
+                </span>
+              </div>
+              <select
                 v-model="confirmationForm.agama"
-                type="text"
-                class="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-xs outline-none focus:border-[#2563EB]"
-              />
+                class="w-full px-3 py-2 border-2 border-blue-400 bg-white rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#2563EB] shadow-xs cursor-pointer"
+              >
+                <option v-if="confirmationForm.agama && !['Islam', 'Kristen', 'Kristen Protestan', 'Katolik', 'Hindu', 'Buddha', 'Konghucu'].includes(confirmationForm.agama)" :value="confirmationForm.agama">
+                  {{ confirmationForm.agama }}
+                </option>
+                <option value="Islam">Islam</option>
+                <option value="Kristen Protestan">Kristen Protestan</option>
+                <option value="Katolik">Katolik</option>
+                <option value="Hindu">Hindu</option>
+                <option value="Buddha">Buddha</option>
+                <option value="Konghucu">Konghucu</option>
+              </select>
             </div>
 
-            <!-- Sinyalemen: Alamat Rumah -->
+            <!-- Sinyalemen: Alamat Rumah (Hanya Tampil) -->
             <div class="sm:col-span-2">
               <label class="block font-bold text-slate-700 mb-1">Alamat Rumah Lengkap</label>
               <textarea
-                v-model="confirmationForm.alamat"
+                :value="confirmationForm.alamat"
                 rows="2"
-                class="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-xs outline-none focus:border-[#2563EB]"
+                class="w-full px-3 py-2 border border-[#E2E8F0] rounded-xl text-xs bg-slate-50 font-medium text-slate-800 cursor-default resize-none"
+                readonly
               ></textarea>
             </div>
           </div>
@@ -900,7 +908,7 @@ const openEktaModal = (pers) => {
     }
   }
   confirmationForm.tanggal_lahir = tgl;
-  confirmationForm.agama = pers.ekta?.agama || 'Islam';
+  confirmationForm.agama = pers.ekta?.agama || sin?.religion || 'Islam';
   confirmationForm.alamat = pers.ekta?.alamat || pers.address || '-';
 };
 

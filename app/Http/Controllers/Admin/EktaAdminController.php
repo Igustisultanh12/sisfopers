@@ -301,6 +301,11 @@ class EktaAdminController extends Controller
             ]
         );
 
+        // Sinkronisasi pembaruan agama ke data sinyalmen personel jika ada perubahan
+        if ($request->filled('agama') && $personel->sinyalmen) {
+            $personel->sinyalmen->update(['religion' => $request->agama]);
+        }
+
         // Catat Audit Trail
         AuditLog::record(
             'CREATE',
