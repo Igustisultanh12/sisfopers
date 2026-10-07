@@ -63,8 +63,8 @@
             class="p-5 rounded-2xl text-center space-y-2 border shadow-xs"
             :class="settings?.login_background ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-200' : 'bg-emerald-50 border-emerald-200 text-emerald-900'"
           >
-            <div class="w-12 h-12 bg-emerald-600 text-white rounded-full flex items-center justify-center mx-auto text-xl font-black shadow-md shadow-emerald-600/30">
-              ✓
+            <div class="w-12 h-12 bg-emerald-600 text-white rounded-full flex items-center justify-center mx-auto shadow-md shadow-emerald-600/30">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
             </div>
             <h3 class="text-base font-black tracking-tight uppercase">E-KTA RESMI TERVERIFIKASI & SAH</h3>
             <p class="text-xs leading-relaxed opacity-90">
@@ -148,8 +148,8 @@
 
         <!-- KONDISI 2: DOKUMEN TIDAK DITEMUKAN / TIDAK VALID -->
         <div v-else class="text-center py-8 space-y-4">
-          <div class="w-14 h-14 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto text-2xl font-black border border-rose-200">
-            ✕
+          <div class="w-14 h-14 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto border border-rose-200">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
           </div>
           <h3 class="text-lg font-black text-rose-600 uppercase">DOKUMEN TIDAK VALID ATAU BELUM TERDAFTAR</h3>
           <p class="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">

@@ -126,7 +126,7 @@ Route::middleware(['auth:web,pju'])->group(function () {
         }
 
         $cleanPath = ltrim($path, '/');
-        $cleanPath = preg_replace('/^(app\/private\/|app\/public\/|app\/|private\/|storage\/|public\/)+/', '', $cleanPath);
+        $cleanPath = preg_replace('/^(app\/private\/|app\/public\/|app\/|private\/|storage\/|public\/|\/storage\/|\/admin\/|admin\/)+/', '', $cleanPath);
         $filename = basename($cleanPath);
 
         $candidates = [
@@ -139,9 +139,22 @@ Route::middleware(['auth:web,pju'])->group(function () {
             storage_path('app/private/personel/documents/' . $filename),
             storage_path('app/public/personel/documents/' . $filename),
             storage_path('app/personel/documents/' . $filename),
+            storage_path('app/private/ekta/' . $filename),
+            storage_path('app/public/ekta/' . $filename),
+            storage_path('app/public/settings/' . $filename),
             public_path('storage/' . $cleanPath),
             public_path('storage/personel/photos/' . $filename),
             public_path('storage/personel/documents/' . $filename),
+            public_path('storage/ekta/' . $filename),
+            public_path('storage/settings/' . $filename),
+            '/www/wwwroot/sisfoperskc.my.id/storage/app/private/personel/photos/' . $filename,
+            '/www/wwwroot/sisfoperskc.my.id/storage/app/public/personel/photos/' . $filename,
+            '/www/wwwroot/sisfoperskc.my.id/storage/app/private/' . $cleanPath,
+            '/www/wwwroot/sisfoperskc.my.id/storage/app/public/' . $cleanPath,
+            '/www/wwwroot/sisfoperskc.my.id/storage/app/private/ekta/' . $filename,
+            '/www/wwwroot/sisfoperskc.my.id/storage/app/public/ekta/' . $filename,
+            '/www/wwwroot/sisfoperskc.my.id/storage/app/public/settings/' . $filename,
+            '/www/wwwroot/sisfoperskc.my.id/public/storage/' . $cleanPath,
             '/www/wwwroot/sisfopers.site/storage/app/private/' . $cleanPath,
             '/www/wwwroot/sisfopers.site/storage/app/public/' . $cleanPath,
             '/www/wwwroot/sisfopers.site/storage/app/' . $cleanPath,
@@ -149,6 +162,10 @@ Route::middleware(['auth:web,pju'])->group(function () {
             '/www/wwwroot/sisfopers.site/storage/app/public/personel/photos/' . $filename,
             '/www/wwwroot/sisfopers.site/storage/app/private/personel/documents/' . $filename,
             '/www/wwwroot/sisfopers.site/storage/app/public/personel/documents/' . $filename,
+            '/www/wwwroot/sisfopers.site/storage/app/private/ekta/' . $filename,
+            '/www/wwwroot/sisfopers.site/storage/app/public/ekta/' . $filename,
+            '/www/wwwroot/sisfopers.site/storage/app/public/settings/' . $filename,
+            '/www/wwwroot/sisfopers.site/public/storage/' . $cleanPath,
         ];
 
         foreach ($candidates as $candidate) {
@@ -177,7 +194,7 @@ Route::middleware(['auth:web,pju'])->group(function () {
     // Rute Unduhan & Display Berkas Privat Aman (Guaranteed Image Streamer & SVG Fallback)
     Route::get('/documents/private/{path}', function ($path) {
         $cleanPath = ltrim($path, '/');
-        $cleanPath = preg_replace('/^(app\/private\/|app\/public\/|app\/|private\/|storage\/|public\/)+/', '', $cleanPath);
+        $cleanPath = preg_replace('/^(app\/private\/|app\/public\/|app\/|private\/|storage\/|public\/|\/storage\/|\/admin\/|admin\/)+/', '', $cleanPath);
         $filename = basename($cleanPath);
 
         $candidates = [
@@ -190,9 +207,22 @@ Route::middleware(['auth:web,pju'])->group(function () {
             storage_path('app/private/personel/documents/' . $filename),
             storage_path('app/public/personel/documents/' . $filename),
             storage_path('app/personel/documents/' . $filename),
+            storage_path('app/private/ekta/' . $filename),
+            storage_path('app/public/ekta/' . $filename),
+            storage_path('app/public/settings/' . $filename),
             public_path('storage/' . $cleanPath),
             public_path('storage/personel/photos/' . $filename),
             public_path('storage/personel/documents/' . $filename),
+            public_path('storage/ekta/' . $filename),
+            public_path('storage/settings/' . $filename),
+            '/www/wwwroot/sisfoperskc.my.id/storage/app/private/personel/photos/' . $filename,
+            '/www/wwwroot/sisfoperskc.my.id/storage/app/public/personel/photos/' . $filename,
+            '/www/wwwroot/sisfoperskc.my.id/storage/app/private/' . $cleanPath,
+            '/www/wwwroot/sisfoperskc.my.id/storage/app/public/' . $cleanPath,
+            '/www/wwwroot/sisfoperskc.my.id/storage/app/private/ekta/' . $filename,
+            '/www/wwwroot/sisfoperskc.my.id/storage/app/public/ekta/' . $filename,
+            '/www/wwwroot/sisfoperskc.my.id/storage/app/public/settings/' . $filename,
+            '/www/wwwroot/sisfoperskc.my.id/public/storage/' . $cleanPath,
             '/www/wwwroot/sisfopers.site/storage/app/private/' . $cleanPath,
             '/www/wwwroot/sisfopers.site/storage/app/public/' . $cleanPath,
             '/www/wwwroot/sisfopers.site/storage/app/' . $cleanPath,
@@ -200,6 +230,10 @@ Route::middleware(['auth:web,pju'])->group(function () {
             '/www/wwwroot/sisfopers.site/storage/app/public/personel/photos/' . $filename,
             '/www/wwwroot/sisfopers.site/storage/app/private/personel/documents/' . $filename,
             '/www/wwwroot/sisfopers.site/storage/app/public/personel/documents/' . $filename,
+            '/www/wwwroot/sisfopers.site/storage/app/private/ekta/' . $filename,
+            '/www/wwwroot/sisfopers.site/storage/app/public/ekta/' . $filename,
+            '/www/wwwroot/sisfopers.site/storage/app/public/settings/' . $filename,
+            '/www/wwwroot/sisfopers.site/public/storage/' . $cleanPath,
         ];
 
         foreach ($candidates as $candidate) {

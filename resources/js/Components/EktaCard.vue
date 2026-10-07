@@ -55,7 +55,7 @@
       <!-- Watermark Lambang Komcad Besar di Latar Belakang Tengah -->
       <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-30 scale-125 z-0">
         <KomcadEmblem v-if="!settings?.logo_komcad" class="w-64 h-64" />
-        <img v-else :src="settings.logo_komcad" class="w-64 h-64 object-contain" alt="Watermark" />
+        <img v-else :src="getAssetUrl(settings.logo_komcad)" class="w-64 h-64 object-contain" alt="Watermark" />
       </div>
 
       <!-- ================= SISI DEPAN (FRONT SIDE) ================= -->
@@ -65,7 +65,7 @@
         <div class="w-[25%] flex flex-col justify-between shrink-0 h-full">
           <!-- Kotak Logo Komcad Atas -->
           <div class="w-full aspect-square bg-white rounded-lg p-1.5 shadow-xs border border-emerald-900/30 flex items-center justify-center">
-            <img v-if="settings?.logo_komcad" :src="settings.logo_komcad" class="w-full h-full object-contain" alt="Logo Komcad" />
+            <img v-if="settings?.logo_komcad" :src="getAssetUrl(settings.logo_komcad)" class="w-full h-full object-contain" alt="Logo Komcad" />
             <KomcadEmblem v-else class="w-full h-full" />
           </div>
 
@@ -76,7 +76,8 @@
           >
             <img
               v-if="personel?.photo_profile"
-              :src="personel.photo_profile"
+              :src="getPhotoUrl(personel.photo_profile, personel?.full_name)"
+              @error="$event.target.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(personel?.full_name || 'PERS') + '&background=e2e8f0&color=334155'"
               class="w-full h-full object-cover object-top"
               alt="Foto Personel"
             />
@@ -164,11 +165,11 @@
               <div class="h-9 sm:h-10 relative flex items-center justify-center my-0.5">
                 <!-- Stempel Dinas Komcad / Kemhan Bulat Ungu/Merah -->
                 <div class="absolute -left-2 top-0 w-11 h-11 sm:w-12 sm:h-12 pointer-events-none opacity-85 rotate-[-12deg]">
-                  <img v-if="settings?.stamp" :src="settings.stamp" class="w-full h-full object-contain" alt="Stempel Dinas" />
+                  <img v-if="settings?.stamp" :src="getAssetUrl(settings.stamp)" class="w-full h-full object-contain" alt="Stempel Dinas" />
                   <div v-else class="w-full h-full rounded-full border-2 border-purple-800/80 p-0.5 flex items-center justify-center text-center">
                     <div class="w-full h-full rounded-full border border-purple-800/60 flex flex-col items-center justify-center text-[5px] font-extrabold text-purple-900 leading-[6px]">
                       <span>KEMHAN RI</span>
-                      <span class="text-[4px]">★ KOMCAD ★</span>
+                      <span class="text-[4px]">* KOMCAD *</span>
                       <span>DITJEN</span>
                     </div>
                   </div>
@@ -176,7 +177,7 @@
 
                 <!-- Tanda Tangan Pejabat -->
                 <div class="relative z-10 h-full flex items-center justify-center">
-                  <img v-if="settings?.signature" :src="settings.signature" class="h-8 sm:h-9 object-contain" alt="Tanda Tangan" />
+                  <img v-if="settings?.signature" :src="getAssetUrl(settings.signature)" class="h-8 sm:h-9 object-contain" alt="Tanda Tangan" />
                   <!-- Fallback signature visual SVG -->
                   <svg v-else class="h-8 w-24 text-blue-900/90" viewBox="0 0 100 40" fill="none" stroke="currentColor" stroke-width="1.8">
                     <path d="M10 25 C20 10, 30 35, 40 15 C50 5, 55 25, 70 20 C80 18, 85 28, 95 22" stroke-linecap="round"/>
@@ -337,6 +338,27 @@ const props = defineProps({
   ekta: Object,
   settings: Object,
 });
+
+// Helper URL Stream Privat Berkas & Pasfoto (Aman dari 404 Nginx aaPanel)
+const getPhotoUrl = (path, name = 'PERS') => {
+  if (!path) {
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'PERS')}&background=e2e8f0&color=334155`;
+  }
+  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:') || path.startsWith('blob:')) {
+    return path;
+  }
+  const clean = path.replace(/^(app\/private\/|app\/public\/|app\/|private\/|storage\/|public\/|\/storage\/|\/admin\/|admin\/)+/, '');
+  return `/documents/private-stream?path=${encodeURIComponent(clean)}`;
+};
+
+const getAssetUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:') || path.startsWith('blob:')) {
+    return path;
+  }
+  const clean = path.replace(/^(app\/private\/|app\/public\/|app\/|private\/|storage\/|public\/|\/storage\/|\/admin\/|admin\/)+/, '');
+  return `/documents/private-stream?path=${encodeURIComponent(clean)}`;
+};
 
 const currentSide = ref('front');
 

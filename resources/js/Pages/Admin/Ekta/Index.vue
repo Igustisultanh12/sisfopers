@@ -132,7 +132,8 @@
               <div class="w-13 h-16 rounded-xl overflow-hidden shrink-0 border border-slate-200 bg-slate-100 flex items-center justify-center">
                 <img
                   v-if="pers.photo_profile"
-                  :src="pers.photo_profile"
+                  :src="getPhotoUrl(pers.photo_profile, pers.full_name)"
+                  @error="$event.target.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(pers.full_name || 'PERS') + '&background=e2e8f0&color=334155'"
                   class="w-full h-full object-cover object-top"
                   alt="Foto"
                 />
@@ -164,9 +165,10 @@
                 <div class="mt-2">
                   <span
                     v-if="pers.ekta && pers.ekta.status === 'TERBIT'"
-                    class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200"
+                    class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200"
                   >
-                    ✓ E-KTA Terbit ({{ pers.ekta.nomor_kta }})
+                    <svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                    E-KTA Terbit ({{ pers.ekta.nomor_kta }})
                   </span>
                   <span
                     v-else
@@ -229,7 +231,7 @@
             <div class="border border-slate-200 rounded-2xl p-5 space-y-3 bg-slate-50/50">
               <label class="block text-xs font-bold text-slate-700 uppercase">Logo Komcad (Kotak Kiri & Watermark)</label>
               <div class="w-24 h-24 bg-white rounded-xl border border-slate-200 mx-auto flex items-center justify-center p-2 shadow-xs">
-                <img v-if="settingsForm.logoPreview || ektaSettings.logo_komcad" :src="settingsForm.logoPreview || ektaSettings.logo_komcad" class="max-h-full max-w-full object-contain" />
+                <img v-if="settingsForm.logoPreview || ektaSettings.logo_komcad" :src="settingsForm.logoPreview || getAssetUrl(ektaSettings.logo_komcad)" class="max-h-full max-w-full object-contain" />
                 <KomcadEmblem v-else class="w-16 h-16" />
               </div>
               <input
@@ -245,7 +247,7 @@
             <div class="border border-slate-200 rounded-2xl p-5 space-y-3 bg-slate-50/50">
               <label class="block text-xs font-bold text-slate-700 uppercase">Tanda Tangan Pejabat (Dirjen Pothan)</label>
               <div class="w-32 h-24 bg-white rounded-xl border border-slate-200 mx-auto flex items-center justify-center p-2 shadow-xs">
-                <img v-if="settingsForm.signaturePreview || ektaSettings.signature" :src="settingsForm.signaturePreview || ektaSettings.signature" class="max-h-full max-w-full object-contain" />
+                <img v-if="settingsForm.signaturePreview || ektaSettings.signature" :src="settingsForm.signaturePreview || getAssetUrl(ektaSettings.signature)" class="max-h-full max-w-full object-contain" />
                 <span v-else class="text-[10px] text-slate-400 italic">Default Tanda Tangan</span>
               </div>
               <input
@@ -261,7 +263,7 @@
             <div class="border border-slate-200 rounded-2xl p-5 space-y-3 bg-slate-50/50">
               <label class="block text-xs font-bold text-slate-700 uppercase">Stempel Dinas Kemhan / Komcad</label>
               <div class="w-24 h-24 bg-white rounded-full border border-slate-200 mx-auto flex items-center justify-center p-2 shadow-xs">
-                <img v-if="settingsForm.stampPreview || ektaSettings.stamp" :src="settingsForm.stampPreview || ektaSettings.stamp" class="max-h-full max-w-full object-contain" />
+                <img v-if="settingsForm.stampPreview || ektaSettings.stamp" :src="settingsForm.stampPreview || getAssetUrl(ektaSettings.stamp)" class="max-h-full max-w-full object-contain" />
                 <span v-else class="text-[9px] text-purple-900 font-bold text-center">Cap Resmi Default</span>
               </div>
               <input
@@ -697,22 +699,34 @@
           <!-- Progress Bar & Tahapan Militer Berurutan -->
           <div class="max-w-md mx-auto space-y-2.5 text-left text-xs">
             <div class="flex items-center gap-2.5" :class="genProgress >= 25 ? 'text-emerald-600 font-bold' : 'text-slate-400'">
-              <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] border shrink-0" :class="genProgress >= 25 ? 'bg-emerald-50 border-emerald-300' : 'border-slate-300'">✓</span>
+              <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] border shrink-0" :class="genProgress >= 25 ? 'bg-emerald-50 border-emerald-300' : 'border-slate-300'">
+                <svg v-if="genProgress >= 25" class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                <span v-else>1</span>
+              </span>
               <span>1. Memverifikasi keabsahan profil & data sinyalemen personel...</span>
             </div>
 
             <div class="flex items-center gap-2.5" :class="genProgress >= 50 ? 'text-emerald-600 font-bold' : 'text-slate-400'">
-              <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] border shrink-0" :class="genProgress >= 50 ? 'bg-emerald-50 border-emerald-300' : 'border-slate-300'">✓</span>
+              <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] border shrink-0" :class="genProgress >= 50 ? 'bg-emerald-50 border-emerald-300' : 'border-slate-300'">
+                <svg v-if="genProgress >= 50" class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                <span v-else>2</span>
+              </span>
               <span>2. Menghasilkan tanda tangan digital & QR Code otentikasi publik...</span>
             </div>
 
             <div class="flex items-center gap-2.5" :class="genProgress >= 75 ? 'text-emerald-600 font-bold' : 'text-slate-400'">
-              <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] border shrink-0" :class="genProgress >= 75 ? 'bg-emerald-50 border-emerald-300' : 'border-slate-300'">✓</span>
+              <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] border shrink-0" :class="genProgress >= 75 ? 'bg-emerald-50 border-emerald-300' : 'border-slate-300'">
+                <svg v-if="genProgress >= 75" class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                <span v-else>3</span>
+              </span>
               <span>3. Menyusun tata letak kriptografi E-KTA tampak depan dan belakang...</span>
             </div>
 
             <div class="flex items-center gap-2.5" :class="genProgress >= 100 ? 'text-emerald-600 font-bold' : 'text-slate-400'">
-              <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] border shrink-0" :class="genProgress >= 100 ? 'bg-emerald-50 border-emerald-300' : 'border-slate-300'">✓</span>
+              <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] border shrink-0" :class="genProgress >= 100 ? 'bg-emerald-50 border-emerald-300' : 'border-slate-300'">
+                <svg v-if="genProgress >= 100" class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                <span v-else>4</span>
+              </span>
               <span>4. Menerbitkan dan mengunci E-KTA secara resmi ke basis data negara...</span>
             </div>
           </div>
@@ -736,6 +750,27 @@ const props = defineProps({
   stats: Object,
   ektaSettings: Object,
 });
+
+// Helper URL Stream Privat Berkas & Pasfoto (Aman dari 404 Nginx aaPanel)
+const getPhotoUrl = (path, name = 'PERS') => {
+  if (!path) {
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'PERS')}&background=e2e8f0&color=334155`;
+  }
+  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:') || path.startsWith('blob:')) {
+    return path;
+  }
+  const clean = path.replace(/^(app\/private\/|app\/public\/|app\/|private\/|storage\/|public\/|\/storage\/|\/admin\/|admin\/)+/, '');
+  return `/documents/private-stream?path=${encodeURIComponent(clean)}`;
+};
+
+const getAssetUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:') || path.startsWith('blob:')) {
+    return path;
+  }
+  const clean = path.replace(/^(app\/private\/|app\/public\/|app\/|private\/|storage\/|public\/|\/storage\/|\/admin\/|admin\/)+/, '');
+  return `/documents/private-stream?path=${encodeURIComponent(clean)}`;
+};
 
 const activeTab = ref('list');
 const searchQuery = ref(props.filters?.search || '');
