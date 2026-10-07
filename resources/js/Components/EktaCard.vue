@@ -43,7 +43,7 @@
     </div>
 
     <!-- Container Utama Kartu Digital (Standar CR80 Aspect Ratio 85.6 x 54) -->
-    <div id="printable-ekta" class="w-full max-w-[560px] aspect-[85.6/54] relative rounded-2xl shadow-xl overflow-hidden border border-emerald-900/30 select-none font-sans text-slate-900 bg-[#94BA74]">
+    <div id="printable-ekta" class="w-full max-w-[560px] aspect-[85.6/54] relative rounded-2xl shadow-xl overflow-hidden border border-emerald-900/30 select-none text-slate-900 bg-[#94BA74]" style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;">
       
       <!-- Watermark Background Pola Teks "KOMCAD" Miring & Berulang -->
       <div class="absolute inset-0 overflow-hidden pointer-events-none opacity-20 flex flex-wrap content-start justify-center gap-x-3 gap-y-2 select-none -rotate-6 scale-110">
@@ -59,19 +59,19 @@
       </div>
 
       <!-- ================= SISI DEPAN (FRONT SIDE) ================= -->
-      <div v-show="currentSide === 'front'" class="relative z-10 w-full h-full flex p-3.5 sm:p-4 gap-3">
+      <div v-show="currentSide === 'front'" class="relative z-10 w-full h-full flex p-3 sm:p-3.5 gap-2.5">
         
-        <!-- Kolom Kiri: Logo Komcad & Pasfoto Personel -->
-        <div class="w-[25%] flex flex-col justify-between shrink-0 h-full">
-          <!-- Kotak Logo Komcad Atas -->
-          <div class="w-full aspect-square bg-white rounded-lg p-1.5 shadow-xs border border-emerald-900/30 flex items-center justify-center">
-            <img v-if="settings?.logo_komcad" :src="getAssetUrl(settings.logo_komcad)" class="w-full h-full object-contain" alt="Logo Komcad" />
+        <!-- Kolom Kiri: Frame Tunggal Menyatu (Logo Komcad di Atas & Pasfoto di Bawah Sesuai Gambar Fisik Asli) -->
+        <div class="w-[23%] flex flex-col shrink-0 h-full border border-[#142C0A] overflow-hidden bg-white shadow-xs">
+          <!-- Kotak Logo Komcad Atas (Menyatu) -->
+          <div class="h-[46%] w-full bg-white p-1 border-b border-[#142C0A] flex items-center justify-center overflow-hidden">
+            <img v-if="settings?.logo_komcad" :src="getAssetUrl(settings.logo_komcad)" class="max-w-full max-h-full object-contain" alt="Logo Komcad" />
             <KomcadEmblem v-else class="w-full h-full" />
           </div>
 
-          <!-- Kotak Pasfoto Personel Bawah Berlatar Matra -->
+          <!-- Kotak Pasfoto Personel Bawah (Menyatu Langsung Menempel di Bawah Logo) -->
           <div
-            class="w-full aspect-[3/4] rounded-lg overflow-hidden shadow-xs border border-emerald-900/30 relative flex items-center justify-center"
+            class="h-[54%] w-full relative flex items-center justify-center overflow-hidden"
             :class="matraBgClass"
           >
             <img
@@ -82,89 +82,89 @@
               alt="Foto Personel"
             />
             <div v-else class="flex flex-col items-center justify-center text-white/80 p-1 text-center">
-              <svg class="w-8 h-8 opacity-70" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-              <span class="text-[8px] font-bold mt-0.5 uppercase tracking-tighter">FOTO PERS</span>
+              <svg class="w-7 h-7 opacity-70" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+              <span class="text-[7.5px] font-bold mt-0.5 uppercase tracking-tighter">FOTO PERS</span>
             </div>
           </div>
         </div>
 
-        <!-- Garis Pemisah Vertikal Kiri -->
-        <div class="w-[1.5px] bg-[#244616]/40 h-full shrink-0"></div>
+        <!-- Garis Pemisah Vertikal Kiri Menuju Area Data -->
+        <div class="w-[1.2px] bg-[#142C0A] h-full shrink-0 mx-0.5"></div>
 
         <!-- Kolom Kanan: Rincian KTA, Data, Pejabat & QR Code -->
-        <div class="w-[73%] flex flex-col justify-between h-full pl-0.5">
+        <div class="w-[74%] flex flex-col justify-between h-full pl-0.5">
           <!-- Header Judul & Nomor KTA -->
           <div class="text-center">
-            <h2 class="text-[13px] sm:text-[14.5px] font-extrabold tracking-wide uppercase text-[#142C0A] border-b-[1.5px] border-[#142C0A] pb-0.5 inline-block">
+            <h2 class="text-[12px] sm:text-[13px] font-bold tracking-wide uppercase text-[#142C0A] border-b border-[#142C0A] pb-0.5 inline-block">
               KARTU TANDA ANGGOTA KOMCAD
             </h2>
-            <p class="text-[10px] sm:text-[11px] font-extrabold font-mono tracking-tight text-[#142C0A] mt-0.5">
+            <p class="text-[11px] font-bold font-mono tracking-tight text-[#142C0A] mt-0.5">
               {{ displayNomorKta }}
             </p>
           </div>
 
-          <!-- Rincian Data Personel (Dengan Titik-Titik Panduan Khas KTA Militer) -->
-          <div class="space-y-[3px] text-[10px] sm:text-[11px] font-bold text-[#142C0A] my-auto">
+          <!-- Rincian Data Personel (Arial 11 Dengan Titik-Titik Panduan Khas KTA Militer) -->
+          <div class="space-y-[2px] text-[11px] text-[#142C0A] my-auto">
             <!-- Nama -->
             <div class="flex items-baseline">
-              <span class="w-24 shrink-0 font-extrabold">Nama</span>
+              <span class="w-[84px] shrink-0 font-bold">Nama</span>
               <span class="mr-1.5">:</span>
-              <span class="truncate font-black text-slate-950">{{ personel?.full_name || '-' }}</span>
+              <span class="truncate font-bold text-slate-950">{{ personel?.full_name || '-' }}</span>
               <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
             </div>
 
             <!-- Pangkat -->
             <div class="flex items-baseline">
-              <span class="w-24 shrink-0 font-extrabold">Pangkat</span>
+              <span class="w-[84px] shrink-0 font-bold">Pangkat</span>
               <span class="mr-1.5">:</span>
-              <span>{{ displayPangkat }}</span>
+              <span class="font-normal">{{ displayPangkat }}</span>
               <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
             </div>
 
             <!-- NIKC -->
             <div class="flex items-baseline">
-              <span class="w-24 shrink-0 font-extrabold">NIKC</span>
+              <span class="w-[84px] shrink-0 font-bold">NIKC</span>
               <span class="mr-1.5">:</span>
-              <span class="font-mono font-black tracking-tight">{{ personel?.nikc || personel?.user?.username || '-' }}</span>
+              <span class="font-normal font-mono tracking-tight">{{ personel?.nikc || personel?.user?.username || '-' }}</span>
               <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
             </div>
 
             <!-- Jabatan -->
             <div class="flex items-baseline">
-              <span class="w-24 shrink-0 font-extrabold">Jabatan</span>
+              <span class="w-[84px] shrink-0 font-bold">Jabatan</span>
               <span class="mr-1.5">:</span>
-              <span>{{ displayJabatan }}</span>
+              <span class="font-normal">{{ displayJabatan }}</span>
               <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
             </div>
 
             <!-- Kesatuan/Matra -->
             <div class="flex items-baseline">
-              <span class="w-24 shrink-0 font-extrabold">Kesatuan/Matra</span>
+              <span class="w-[84px] shrink-0 font-bold">Kesatuan/Matra</span>
               <span class="mr-1.5">:</span>
-              <span>{{ displayMatra }}</span>
+              <span class="font-normal">{{ displayMatra }}</span>
               <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
             </div>
 
             <!-- Berlaku s/d -->
             <div class="flex items-baseline">
-              <span class="w-24 shrink-0 font-extrabold">Berlaku s/d</span>
+              <span class="w-[84px] shrink-0 font-bold">Berlaku s/d</span>
               <span class="mr-1.5">:</span>
-              <span class="text-[9.5px] sm:text-[10px]">{{ displayBerlaku }}</span>
+              <span class="font-normal">{{ displayBerlaku }}</span>
               <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
             </div>
           </div>
 
-          <!-- Bagian Bawah: Penandatangan Pejabat & QR Code -->
-          <div class="flex items-end justify-between pt-1">
+          <!-- Bagian Bawah: Penandatangan Pejabat & QR Code (Disamakan dengan Gambar Fisik Asli) -->
+          <div class="flex items-end justify-end gap-3 pt-0.5">
             <!-- Sisi Pejabat Pengesah (Dirjen Pothan) -->
-            <div class="text-center relative min-w-[150px] leading-tight text-[#142C0A]">
-              <p class="text-[8.5px] sm:text-[9.5px] font-extrabold uppercase">{{ signerTitleLine1 }}</p>
-              <p class="text-[8.5px] sm:text-[9.5px] font-extrabold uppercase">{{ signerTitleLine2 }}</p>
+            <div class="text-center relative leading-tight text-[#142C0A] min-w-[155px]">
+              <p class="text-[9.5px] font-bold uppercase tracking-tight">{{ signerTitleLine1 }}</p>
+              <p class="text-[9.5px] font-bold uppercase tracking-tight">{{ signerTitleLine2 }}</p>
 
               <!-- Ruang Tanda Tangan & Cap Stempel Basah -->
-              <div class="h-9 sm:h-10 relative flex items-center justify-center my-0.5">
-                <!-- Stempel Dinas Komcad / Kemhan Bulat Ungu/Merah -->
-                <div class="absolute -left-2 top-0 w-11 h-11 sm:w-12 sm:h-12 pointer-events-none opacity-85 rotate-[-12deg]">
+              <div class="h-9 relative flex items-center justify-center my-0.5">
+                <!-- Stempel Dinas Komcad / Kemhan Bulat Ungu/Merah di Sisi Kiri Tanda Tangan -->
+                <div class="absolute -left-3 -top-1 w-12 h-12 pointer-events-none opacity-85 rotate-[-12deg] z-20">
                   <img v-if="settings?.stamp" :src="getAssetUrl(settings.stamp)" class="w-full h-full object-contain" alt="Stempel Dinas" />
                   <div v-else class="w-full h-full rounded-full border-2 border-purple-800/80 p-0.5 flex items-center justify-center text-center">
                     <div class="w-full h-full rounded-full border border-purple-800/60 flex flex-col items-center justify-center text-[5px] font-extrabold text-purple-900 leading-[6px]">
@@ -175,11 +175,10 @@
                   </div>
                 </div>
 
-                <!-- Tanda Tangan Pejabat -->
-                <div class="relative z-10 h-full flex items-center justify-center">
-                  <img v-if="settings?.signature" :src="getAssetUrl(settings.signature)" class="h-8 sm:h-9 object-contain" alt="Tanda Tangan" />
-                  <!-- Fallback signature visual SVG -->
-                  <svg v-else class="h-8 w-24 text-blue-900/90" viewBox="0 0 100 40" fill="none" stroke="currentColor" stroke-width="1.8">
+                <!-- Tanda Tangan Pejabat di Sebelah Cap -->
+                <div class="relative z-10 h-full flex items-center justify-center pl-4">
+                  <img v-if="settings?.signature" :src="getAssetUrl(settings.signature)" class="h-8 max-w-[110px] object-contain" alt="Tanda Tangan" />
+                  <svg v-else class="h-7 w-24 text-blue-900/90" viewBox="0 0 100 40" fill="none" stroke="currentColor" stroke-width="1.8">
                     <path d="M10 25 C20 10, 30 35, 40 15 C50 5, 55 25, 70 20 C80 18, 85 28, 95 22" stroke-linecap="round"/>
                     <path d="M35 22 L65 24" stroke-width="1.2"/>
                   </svg>
@@ -187,16 +186,16 @@
               </div>
 
               <!-- Nama & Pangkat Pejabat -->
-              <p class="text-[9.5px] sm:text-[10px] font-black underline uppercase text-[#142C0A]">{{ signerName }}</p>
-              <p class="text-[8px] sm:text-[8.5px] font-bold text-[#142C0A]">{{ signerRank }}</p>
+              <p class="text-[10px] font-bold underline uppercase text-[#142C0A] tracking-tight">{{ signerName }}</p>
+              <p class="text-[8.5px] font-bold text-[#142C0A] tracking-tight">{{ signerRank }}</p>
             </div>
 
             <!-- Sisi Pojok Kanan: QR Code Verifikasi Publik -->
-            <div class="flex flex-col items-center">
+            <div class="shrink-0 flex items-center justify-center pb-0.5">
               <a
                 :href="verificationUrl"
                 target="_blank"
-                class="bg-white p-1 rounded-md border border-emerald-900/40 shadow-xs block hover:opacity-90 transition"
+                class="bg-white p-1 rounded border border-[#142C0A] shadow-xs block hover:opacity-90 transition"
                 title="Pindai / Buka Verifikasi Keaslian E-KTA"
               >
                 <img :src="qrCodeUrl" class="w-13 h-13 sm:w-14 sm:h-14 object-contain" alt="QR Verifikasi" />
@@ -208,75 +207,80 @@
       </div>
 
       <!-- ================= SISI BELAKANG (BACK SIDE) ================= -->
-      <div v-show="currentSide === 'back'" class="relative z-10 w-full h-full flex p-3.5 sm:p-4 gap-3">
+      <div v-show="currentSide === 'back'" class="relative z-10 w-full h-full flex p-3 sm:p-3.5 gap-2.5 text-[#142C0A]">
         
         <!-- Sisi Kiri: SINYALEMEN PEMEGANG -->
         <div class="w-[58%] flex flex-col justify-between h-full pr-1">
           <div>
-            <h3 class="text-[12px] sm:text-[13px] font-black tracking-wide uppercase text-[#142C0A] border-b-[1.5px] border-[#142C0A] pb-0.5 inline-block mb-1.5">
+            <h3 class="text-[12px] sm:text-[13px] font-bold tracking-wide uppercase text-[#142C0A] border-b border-[#142C0A] pb-0.5 inline-block mb-1.5">
               SINYALEMEN
             </h3>
 
-            <!-- Tabel Data Sinyalemen Fisik -->
-            <div class="space-y-[3.5px] text-[9.5px] sm:text-[10.5px] font-bold text-[#142C0A]">
+            <!-- Tabel Data Sinyalemen Fisik (Arial 11) -->
+            <div class="space-y-[2px] text-[11px] text-[#142C0A]">
               <div class="flex items-baseline">
-                <span class="w-28 shrink-0 font-extrabold">Tinggi/berat Badan</span>
+                <span class="w-[105px] shrink-0 font-bold">Tinggi/berat Badan</span>
                 <span class="mr-1.5">:</span>
-                <span>{{ sinyalmenData.tinggi_berat }}</span>
+                <span class="font-normal">{{ sinyalmenData.tinggi_berat }}</span>
                 <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
               </div>
 
               <div class="flex items-baseline">
-                <span class="w-28 shrink-0 font-extrabold">Rambut</span>
+                <span class="w-[105px] shrink-0 font-bold">Rambut</span>
                 <span class="mr-1.5">:</span>
-                <span>{{ sinyalmenData.rambut }}</span>
+                <span class="font-normal">{{ sinyalmenData.rambut }}</span>
                 <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
               </div>
 
               <div class="flex items-baseline">
-                <span class="w-28 shrink-0 font-extrabold">Mata</span>
+                <span class="w-[105px] shrink-0 font-bold">Mata</span>
                 <span class="mr-1.5">:</span>
-                <span>{{ sinyalmenData.mata }}</span>
+                <span class="font-normal">{{ sinyalmenData.mata }}</span>
                 <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
               </div>
 
               <div class="flex items-baseline">
-                <span class="w-28 shrink-0 font-extrabold">Darah</span>
+                <span class="w-[105px] shrink-0 font-bold">Darah</span>
                 <span class="mr-1.5">:</span>
-                <span>{{ sinyalmenData.golongan_darah }}</span>
+                <span class="font-normal">{{ sinyalmenData.golongan_darah }}</span>
                 <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
               </div>
 
               <div class="flex items-baseline">
-                <span class="w-28 shrink-0 font-extrabold">Tempat Lahir</span>
+                <span class="w-[105px] shrink-0 font-bold">Tempat Lahir</span>
                 <span class="mr-1.5">:</span>
-                <span>{{ sinyalmenData.tempat_lahir }}</span>
+                <span class="font-normal">{{ sinyalmenData.tempat_lahir }}</span>
                 <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
               </div>
 
               <div class="flex items-baseline">
-                <span class="w-28 shrink-0 font-extrabold">Tgl Lahir</span>
+                <span class="w-[105px] shrink-0 font-bold">Tgl Lahir</span>
                 <span class="mr-1.5">:</span>
-                <span>{{ sinyalmenData.tanggal_lahir }}</span>
+                <span class="font-normal">{{ sinyalmenData.tanggal_lahir }}</span>
                 <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
               </div>
 
               <div class="flex items-baseline">
-                <span class="w-28 shrink-0 font-extrabold">Agama</span>
+                <span class="w-[105px] shrink-0 font-bold">Agama</span>
                 <span class="mr-1.5">:</span>
-                <span>{{ sinyalmenData.agama }}</span>
+                <span class="font-normal">{{ sinyalmenData.agama }}</span>
                 <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
               </div>
 
+              <!-- Alamat Rumah: Otomatis Turun Ke Bawah Jika Panjang Tanpa Terpotong -->
               <div class="flex flex-col mt-0.5">
                 <div class="flex items-baseline">
-                  <span class="w-28 shrink-0 font-extrabold">Alamat Rumah</span>
+                  <span class="w-[105px] shrink-0 font-bold">Alamat Rumah</span>
                   <span class="mr-1.5">:</span>
-                  <span class="truncate">{{ sinyalmenData.alamat_line1 }}</span>
+                  <span class="font-normal whitespace-pre-wrap">{{ addressLines[0] || '-' }}</span>
                   <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
                 </div>
-                <div v-if="sinyalmenData.alamat_line2" class="flex items-baseline pl-[118px]">
-                  <span class="truncate">{{ sinyalmenData.alamat_line2 }}</span>
+                <div
+                  v-for="(line, idx) in addressLines.slice(1)"
+                  :key="idx"
+                  class="flex items-baseline pl-[112px]"
+                >
+                  <span class="font-normal whitespace-pre-wrap">{{ line }}</span>
                   <span class="flex-1 border-b border-dotted border-[#244616]/60 ml-1 mb-0.5"></span>
                 </div>
               </div>
@@ -285,16 +289,16 @@
         </div>
 
         <!-- Garis Pemisah Vertikal Hitam / Hijau Tua Tengah -->
-        <div class="w-[1.5px] bg-[#244616]/50 h-full shrink-0"></div>
+        <div class="w-[1.2px] bg-[#142C0A] h-full shrink-0 mx-0.5"></div>
 
         <!-- Sisi Kanan: TANDA KEHORMATAN & TANDA TANGAN PEMEGANG -->
         <div class="w-[40%] flex flex-col justify-between h-full pl-1">
           <!-- Bagian Atas: Tanda Kehormatan -->
           <div class="h-[45%]">
-            <h3 class="text-[11px] sm:text-[12px] font-black tracking-wide uppercase text-[#142C0A] border-b-[1.5px] border-[#142C0A] pb-0.5 inline-block mb-1.5">
+            <h3 class="text-[11px] font-bold tracking-wide uppercase text-[#142C0A] border-b border-[#142C0A] pb-0.5 inline-block mb-1.5">
               TANDA KEHORMATAN
             </h3>
-            <div class="space-y-1 text-[9px] font-bold text-[#142C0A]">
+            <div class="space-y-1 text-[11px] font-normal text-[#142C0A]">
               <p v-if="ekta?.tanda_kehormatan" class="leading-tight">{{ ekta.tanda_kehormatan }}</p>
               <template v-else>
                 <div class="border-b border-dotted border-[#244616]/60 w-full h-3"></div>
@@ -305,11 +309,11 @@
           </div>
 
           <!-- Garis Pemisah Horizontal -->
-          <div class="w-full h-[1.5px] bg-[#244616]/50 my-1"></div>
+          <div class="w-full h-[1px] bg-[#142C0A] my-1"></div>
 
           <!-- Bagian Bawah: Tanda Tangan Pemegang -->
           <div class="h-[50%] flex flex-col justify-between">
-            <h3 class="text-[11px] sm:text-[12px] font-black tracking-wide uppercase text-[#142C0A] border-b-[1.5px] border-[#142C0A] pb-0.5 inline-block">
+            <h3 class="text-[11px] font-bold tracking-wide uppercase text-[#142C0A] border-b border-[#142C0A] pb-0.5 inline-block">
               TANDA TANGAN PEMEGANG
             </h3>
 
@@ -455,22 +459,39 @@ const qrCodeUrl = computed(() => {
   return `https://api.qrserver.com/v1/create-qr-code/?size=160x160&margin=0&data=${encodeURIComponent(verificationUrl.value)}`;
 });
 
+// Alamat Rumah Otomatis Turun Ke Bawah Jika Panjang Tanpa Terpotong
+const addressLines = computed(() => {
+  const rawAddress = props.ekta?.alamat || props.personel?.address || '-';
+  if (!rawAddress || rawAddress === '-') return ['-'];
+
+  const words = rawAddress.trim().split(/\s+/);
+  const lines = [];
+  let current = '';
+
+  for (const word of words) {
+    // Batas karakter baris 1 adalah 24 karakter karena berdampingan dengan label "Alamat Rumah :"
+    // Baris berikutnya memuat sekitar 28 karakter
+    const limit = lines.length === 0 ? 24 : 28;
+    const test = current ? `${current} ${word}` : word;
+
+    if (test.length <= limit) {
+      current = test;
+    } else {
+      if (current) lines.push(current);
+      current = word;
+    }
+  }
+  if (current) {
+    lines.push(current);
+  }
+
+  return lines.length > 0 ? lines : [rawAddress];
+});
+
 // Data Sinyalemen Belakang
 const sinyalmenData = computed(() => {
   const sin = props.personel?.sinyalmen;
   const ek = props.ekta;
-
-  // Alamat dipecah jadi 2 baris jika panjang
-  const fullAddress = ek?.alamat || props.personel?.address || 'Jl. Mabes Komcad RI';
-  let addr1 = fullAddress;
-  let addr2 = '';
-  if (fullAddress.length > 32) {
-    const splitIndex = fullAddress.lastIndexOf(' ', 32);
-    if (splitIndex !== -1) {
-      addr1 = fullAddress.substring(0, splitIndex);
-      addr2 = fullAddress.substring(splitIndex + 1);
-    }
-  }
 
   // Tanggal Lahir
   let tglLahir = ek?.tanggal_lahir || '-';
@@ -493,14 +514,16 @@ const sinyalmenData = computed(() => {
     golongan_darah: ek?.golongan_darah || sin?.golongan_darah || 'O',
     tempat_lahir: ek?.tempat_lahir || props.personel?.pob || '-',
     tanggal_lahir: tglLahir,
-    agama: ek?.agama || 'Islam',
-    alamat_line1: addr1,
-    alamat_line2: addr2,
+    agama: ek?.agama || sin?.religion || 'Islam',
   };
 });
 </script>
 
 <style scoped>
+#printable-ekta, #printable-ekta * {
+  font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif !important;
+}
+
 @media print {
   body * {
     visibility: hidden;
