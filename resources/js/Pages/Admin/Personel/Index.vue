@@ -719,7 +719,6 @@
 
         </div>
       </div>
-    </div>
 
     <!-- Modal Lightbox Pratinjau Gambar Resolusi Penuh -->
     <div v-if="lightboxOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md" @click.self="lightboxOpen = false">
