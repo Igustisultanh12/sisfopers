@@ -52,6 +52,7 @@ Route::get('/', function () {
 
 // PORTAL VERIFIKASI DOKUMEN PUBLIK (Bisa di-scan via HP tanpa login)
 Route::get('/verify-doc/{verify_code}', [\App\Http\Controllers\Public\DocumentVerificationController::class, 'show'])->name('public.verify-doc');
+Route::get('/verifikasi/ekta/{code}', [\App\Http\Controllers\Public\EktaVerificationController::class, 'show'])->name('ekta.verify.public');
 
 // Rute Pengecekan NIKC & Pengajuan SKEP Publik (Digunakan Saat Form Registrasi)
 Route::match(['get', 'post'], '/skep/check', [SkepPublicController::class, 'checkNikc'])->name('skep.check');
@@ -320,6 +321,14 @@ Route::middleware(['auth', 'role:admin,kordinator_matra,kordinator_angkatan'])->
     // Verifikasi Pendidikan — Halaman khusus admin untuk verifikasi semua riwayat pendidikan
     Route::get('/verifikasi-pendidikan', [EducationController::class, 'adminVerifList'])->name('education.verif-list');
 
+    // Modul E-KTA (Kartu Tanda Anggota Elektronik Komcad)
+    Route::get('/ekta', [\App\Http\Controllers\Admin\EktaAdminController::class, 'index'])->name('ekta.index');
+    Route::get('/ekta/{id}', [\App\Http\Controllers\Admin\EktaAdminController::class, 'show'])->name('ekta.show');
+    Route::post('/ekta/request-otp', [\App\Http\Controllers\Admin\EktaAdminController::class, 'requestOtp'])->name('ekta.request-otp');
+    Route::post('/ekta/verify-otp', [\App\Http\Controllers\Admin\EktaAdminController::class, 'verifyOtp'])->name('ekta.verify-otp');
+    Route::post('/ekta/{id}/publish', [\App\Http\Controllers\Admin\EktaAdminController::class, 'publish'])->name('ekta.publish');
+    Route::post('/ekta/settings', [\App\Http\Controllers\Admin\EktaAdminController::class, 'updateSettings'])->name('ekta.settings');
+
     // Broadcast Kegiatan, Latihan, & Mobilisasi Komponen Cadangan
     Route::get('/broadcast', [BroadcastController::class, 'index'])->name('broadcast.index');
     Route::get('/broadcast/create', [BroadcastController::class, 'create'])->name('broadcast.create');
@@ -514,6 +523,9 @@ Route::middleware(['auth', 'role:personel,admin,kordinator_angkatan,kordinator_m
         Route::get('/vicon', [\App\Http\Controllers\Vicon\ViconController::class, 'personelIndex'])->name('vicon.index');
         Route::post('/vicon/join', [\App\Http\Controllers\Vicon\ViconController::class, 'personelJoin'])->name('vicon.join');
         Route::get('/vicon/{uuid}', [\App\Http\Controllers\Vicon\ViconController::class, 'personelRoom'])->name('vicon.room');
+
+        // Modul E-KTA Anggota (Tahap Pengembangan)
+        Route::get('/ekta', [\App\Http\Controllers\Personel\EktaPersonelController::class, 'index'])->name('ekta.index');
     });
 });
 

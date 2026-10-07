@@ -54,6 +54,11 @@
                 <svg class="w-5 h-5 opacity-80 group-hover:opacity-100" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
                 Verifikasi Pendidikan
               </Link>
+
+              <Link :href="route('admin.ekta.index')" :class="route().current('admin.ekta.*') ? 'bg-[#2563EB]/5 text-[#2563EB] font-bold shadow-sm shadow-blue-500/[0.02]' : 'text-[#64748B] hover:text-slate-800 font-medium'" class="group flex items-center gap-4 px-5 py-3.5 rounded-2xl text-[14px] transition duration-150">
+                <svg class="w-5 h-5 opacity-80 group-hover:opacity-100" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/></svg>
+                E-KTA Personel
+              </Link>
             </div>
 
             <!-- Group 3: OTORISASI & KEGIATAN -->
@@ -234,6 +239,16 @@
               <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
               Vicon Dinas
             </Link>
+
+            <button
+              @click.prevent="showEktaDevModal = true"
+              type="button"
+              class="w-full flex items-center gap-4 px-5 py-3.5 rounded-2xl text-[14px] transition duration-150 text-[#64748B] hover:text-slate-800 font-medium cursor-pointer text-left"
+            >
+              <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/></svg>
+              <span>E-KTA Anggota</span>
+              <span class="ml-auto text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">Tahap Pengembangan</span>
+            </button>
           </template>
 
           <template v-else-if="authProps?.user?.role?.name === 'kordinator_angkatan' || authProps?.user?.role?.name === 'kordinator_matra'">
@@ -406,6 +421,11 @@
                   <svg class="w-5 h-5 opacity-80 group-hover:opacity-100" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
                   Verifikasi Pendidikan
                 </Link>
+
+                <Link :href="route('admin.ekta.index')" @click="isSidebarOpen = false" :class="route().current('admin.ekta.*') ? 'bg-[#2563EB]/5 text-[#2563EB] font-bold shadow-sm shadow-blue-500/[0.02]' : 'text-[#64748B] hover:text-slate-800 font-medium'" class="group flex items-center gap-4 px-5 py-3.5 rounded-2xl text-[14px] transition duration-150">
+                  <svg class="w-5 h-5 opacity-80 group-hover:opacity-100" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/></svg>
+                  E-KTA Personel
+                </Link>
               </div>
 
               <!-- Group 3: OTORISASI & KEGIATAN -->
@@ -542,6 +562,16 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                 Vicon Dinas
               </Link>
+
+              <button
+                @click.prevent="isSidebarOpen = false; showEktaDevModal = true"
+                type="button"
+                class="w-full flex items-center gap-4 px-5 py-3.5 rounded-2xl text-[14px] transition duration-150 text-[#64748B] hover:text-slate-800 font-medium cursor-pointer text-left"
+              >
+                <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/></svg>
+                <span>E-KTA Anggota</span>
+                <span class="ml-auto text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">Tahap Pengembangan</span>
+              </button>
             </template>
 
             <template v-else-if="authProps?.user?.role?.name === 'pju'">
@@ -811,6 +841,34 @@
       </button>
     </div>
   </div>
+
+  <!-- Modal Peringatan E-KTA Dalam Pengembangan untuk Personel -->
+  <div
+    v-if="showEktaDevModal"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in"
+  >
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100 text-center space-y-5 animate-scale-up relative">
+      <div class="w-16 h-16 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mx-auto border border-amber-200/60">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      </div>
+      <div>
+        <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">Tahap Pengembangan</span>
+        <h3 class="text-lg font-black text-slate-800 mt-2">Mohon Maaf fitur ini dalam tahap pengembangan</h3>
+        <p class="text-xs text-slate-500 mt-2 leading-relaxed">
+          Layanan penerbitan dan unduhan Kartu Tanda Anggota Elektronik (E-KTA) Komponen Cadangan saat ini sedang dalam proses finalisasi integrasi digital oleh Administrator Mabes Komcad RI.
+        </p>
+      </div>
+      <div class="pt-2">
+        <button
+          @click="showEktaDevModal = false"
+          type="button"
+          class="w-full py-3 px-4 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-500/20 transition cursor-pointer"
+        >
+          Saya Mengerti
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
@@ -820,6 +878,7 @@ import { playNotificationSound } from '@/Utils/sound';
 const page = usePage();
 const dropdownOpen = ref(false);
 const isSidebarOpen = ref(false);
+const showEktaDevModal = ref(false);
 
 let notificationInterval = null;
 

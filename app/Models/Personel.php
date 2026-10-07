@@ -134,6 +134,11 @@ class Personel extends Model
         return $this->hasOne(Sinyalmen::class, 'personel_id');
     }
 
+    public function ekta(): HasOne
+    {
+        return $this->hasOne(Ekta::class, 'personel_id');
+    }
+
     public function broadcastResponses(): HasMany
     {
         return $this->hasMany(BroadcastResponse::class, 'personel_id');
