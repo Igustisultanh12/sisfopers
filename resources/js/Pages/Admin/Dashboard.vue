@@ -57,13 +57,25 @@
 
     <!-- Tabel Aktivitas Audit Trail Pilihan Terbaru -->
     <div class="bg-white border border-[#E2E8F0] rounded-2xl shadow-sm overflow-hidden">
-      <div class="p-6 border-b border-[#E2E8F0]">
-        <h4 class="text-sm font-bold text-slate-800 uppercase tracking-wide">Aktivitas Sistem Terakhir (Audit Trail)</h4>
+      <div class="p-6 border-b border-[#E2E8F0] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h4 class="text-sm font-bold text-slate-800 uppercase tracking-wide">Aktivitas Sistem Terakhir (Audit Trail)</h4>
+          <p class="text-xs text-slate-400 mt-0.5">Rekam jejak forensik operasional data dan verifikasi sistem terkini</p>
+        </div>
+        <Link
+          :href="route('admin.monitoring.activity')"
+          class="text-xs font-semibold text-[#2563EB] hover:text-blue-700 hover:underline inline-flex items-center gap-1 w-fit"
+        >
+          Lihat Seluruh Log
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
-            <tr class="bg-slate-50 text-slate-400 font-semibold text-[11px] border-b border-[#E2E8F0] uppercase tracking-wider">
+            <tr class="bg-slate-50 text-slate-400 font-semibold text-[11px] border-b border-[#E2E8F0] uppercase tracking-wider whitespace-nowrap">
               <th class="p-4">Operator</th>
               <th class="p-4">Aksi Operasi</th>
               <th class="p-4">Alamat IP</th>
@@ -72,10 +84,47 @@
           </thead>
           <tbody class="divide-y divide-[#E2E8F0] text-xs text-slate-600">
             <tr v-for="act in recentActivities" :key="act.id" class="hover:bg-slate-50/40 transition">
-              <td class="p-4 font-semibold text-slate-800">{{ act.username }}</td>
-              <td class="p-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">{{ act.action }}</span></td>
-              <td class="p-4 text-slate-500 font-mono">{{ act.ip_address }}</td>
-              <td class="p-4 text-slate-400">{{ new Date(act.created_at).toLocaleString('id-ID') }} WIB</td>
+              <td class="p-4 whitespace-nowrap">
+                <div class="flex flex-col">
+                  <!-- Nama Operator / Personel -->
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-slate-800 text-xs">
+                      {{ act.full_name || act.user?.personel?.full_name || act.user?.username || act.username }}
+                    </span>
+                    <span
+                      v-if="act.pangkat || act.user?.personel?.pangkat"
+                      class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200"
+                    >
+                      {{ act.pangkat || act.user?.personel?.pangkat }}
+                    </span>
+                  </div>
+                  <!-- NRP/NIKC & Role -->
+                  <div class="text-[11px] text-slate-500 font-mono mt-0.5 flex items-center gap-1.5">
+                    <span class="text-slate-400 font-sans font-medium text-[10px]">NRP/NIKC:</span>
+                    <span class="font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                      {{ act.nikc || act.user?.personel?.nikc || act.username || '-' }}
+                    </span>
+                    <span
+                      v-if="act.role_name || act.user?.role?.name"
+                      class="text-[10px] font-sans font-semibold text-blue-600 uppercase"
+                    >
+                      • {{ act.role_name || act.user?.role?.name?.replace('_', ' ') }}
+                    </span>
+                  </div>
+                </div>
+              </td>
+              <td class="p-4 whitespace-nowrap">
+                <span :class="badgeClass(act.action)" class="px-2.5 py-1 rounded-lg text-[10px] font-bold border inline-block">
+                  {{ act.action }}
+                </span>
+              </td>
+              <td class="p-4 text-slate-500 font-mono whitespace-nowrap">{{ act.ip_address || '-' }}</td>
+              <td class="p-4 text-slate-400 whitespace-nowrap">{{ formatDateTime(act.created_at) }}</td>
+            </tr>
+            <tr v-if="!recentActivities || recentActivities.length === 0">
+              <td colspan="4" class="p-8 text-center text-slate-400 italic">
+                Belum ada catatan aktivitas sistem yang terekam.
+              </td>
             </tr>
           </tbody>
         </table>
@@ -86,6 +135,7 @@
 
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
 const props = defineProps({
@@ -102,4 +152,41 @@ const cardItems = computed(() => ({
 }));
 
 const formatKey = (key) => key;
+
+const formatDateTime = (dateStr) => {
+  if (!dateStr) return '-';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  return d.toLocaleString('id-ID', {
+    day: 'numeric',
+    month: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  }) + ' WIB';
+};
+
+const badgeClass = (action) => {
+  const act = (action || '').toUpperCase();
+  if (act.includes('CREATE')) {
+    return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+  }
+  if (act.includes('UPDATE')) {
+    return 'bg-blue-50 text-blue-700 border-blue-200';
+  }
+  if (act.includes('DELETE')) {
+    return 'bg-rose-50 text-rose-700 border-rose-200';
+  }
+  if (act.includes('LOGIN') || act.includes('LOGOUT')) {
+    return 'bg-amber-50 text-amber-700 border-amber-200';
+  }
+  if (act.includes('VERIFY') || act.includes('APPROVE')) {
+    return 'bg-purple-50 text-purple-700 border-purple-200';
+  }
+  if (act.includes('REJECT')) {
+    return 'bg-red-50 text-red-700 border-red-200';
+  }
+  return 'bg-slate-100 text-slate-700 border-slate-200';
+};
 </script>

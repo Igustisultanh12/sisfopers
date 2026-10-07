@@ -7,6 +7,7 @@ use App\Models\Personel;
 use App\Models\Broadcast;
 use App\Models\BroadcastResponse;
 use App\Models\LoginLog;
+use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -41,12 +42,48 @@ class DashboardAdminController extends Controller
             ->get();
 
         // 4. Log Aktivitas & Verifikasi Terbaru
-        $recentActivities = DB::table('audit_logs')
-            ->join('users', 'audit_logs.user_id', '=', 'users.id')
-            ->select('audit_logs.*', 'users.username')
-            ->orderBy('audit_logs.created_at', 'DESC')
+        $recentActivities = AuditLog::with(['user.personel', 'user.role'])
+            ->latest()
             ->limit(5)
-            ->get();
+            ->get()
+            ->map(function ($log) {
+                $user = $log->user;
+                $personel = $user?->personel;
+
+                // Fallback pencarian personel jika foreign key belum terisi langsung
+                if (!$personel && $user && $user->username) {
+                    $personel = Personel::where('nikc', $user->username)
+                        ->orWhere('nik', $user->username)
+                        ->first();
+                }
+
+                $fullName = $personel?->full_name 
+                    ?? ($user?->role?->name === 'SUPER_ADMIN' ? 'Super Administrator' : ($user?->username ?? 'Sistem Otomatis'));
+
+                $nikc = $personel?->nikc ?? ($user?->username ?? '-');
+                $pangkat = $personel?->pangkat ?? null;
+                $roleName = $user?->role?->name ? str_replace('_', ' ', $user->role->name) : null;
+
+                return [
+                    'id' => $log->id,
+                    'action' => $log->action,
+                    'model_type' => $log->model_type,
+                    'model_id' => $log->model_id,
+                    'ip_address' => $log->ip_address,
+                    'created_at' => $log->created_at,
+                    'username' => $user?->username ?? '-',
+                    'full_name' => $fullName,
+                    'nikc' => $nikc,
+                    'pangkat' => $pangkat,
+                    'role_name' => $roleName,
+                    'user' => $user ? [
+                        'id' => $user->id,
+                        'username' => $user->username,
+                        'role' => $user->role,
+                        'personel' => $personel,
+                    ] : null,
+                ];
+            });
 
         return Inertia::render('Admin/Dashboard', [
             'stats' => $stats,
