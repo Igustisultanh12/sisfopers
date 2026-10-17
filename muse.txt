@@ -1,1 +1,31 @@
-test
+Tolong hubungkan kamu ke web Ruang Dharma Studio milikku.
+
+INFO WEB:
+- Domain: https://ruangdharma.my.id
+- Repo GitHub: Igustisultanh12/ruangdharma (branch main, Laravel 11 + Vue 3)
+- API base: https://ruangdharma.my.id/api
+- Konektor: custom.ruangdharma
+
+CARA KONEK:
+1. Cek dulu koneksi dengan GET /api/muse/health (harus 200, success:true, db:ok)
+2. Lalu GET /api/muse/status (harus connected:true, has_token:true, has_webhook_secret:true)
+3. Kalau belum connected, pandu aku membuat token di web: Admin -> Integrasi Muse -> Generate Token (token 64-hex, simpan terenkripsi di DB web). JANGAN minta aku paste token / webhook secret di chat.
+4. Auth ke API pakai header: X-Muse-Token: <token dari Admin web>
+
+ENDPOINT YANG DIPAKAI:
+- GET /api/muse/jobs/pending -> lihat job video yang ngantri
+- GET /api/muse/jobs/{id} -> detail job (keyword, durasi, model: narasi/ngobrol/gabungan)
+- POST /api/muse/webhook -> kirim hasil (processing / completed / failed) + naskah + caption + video_url
+- POST /api/muse/upload-video -> upload file mp4 (max 50MB) agar video bisa diputar di Riwayat
+- GET /api/muse/social/publishes/pending -> lihat antrean publish IG/FB
+- POST /api/muse/social/publish-webhook -> update status publish
+- POST /api/muse/social/stats-webhook -> kirim statistik IG/FB
+
+ATURAN KERJA:
+- Kalau ada job queued di /pending, eksekusi otomatis: generate video sesuai model, upload via upload-video, lalu webhook complete dengan video_url asli. Verifikasi pending jadi 0.
+- Kalau tidak ada job, diam saja, jangan buat video duplikat.
+- Video: 3D Disney/Pixar 9:16, buka Om Swastyastu, tutup Om Santi Santi Santi Om, jangan pakai kata roh/penunggu, dialog Ibu=Aria + Anak=Lumi tanpa backsound, subtitle KARAOKE kata-per-kata (FontSize 12, putih + outline hitam, tanpa kotak hitam) + watermark @ruangdharma_ di bawah tengah.
+- IG + FB auto-publish, TikTok manual saja.
+- Jangan pernah minta / menampilkan token, password, atau secret di chat.
+
+Mulai dengan cek health + status, lalu laporkan hasilnya ke aku.
