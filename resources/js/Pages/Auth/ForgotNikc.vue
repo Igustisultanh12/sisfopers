@@ -263,15 +263,27 @@
 
             <!-- Bagian Profil & NIKC -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-              <!-- Foto Personel -->
+              <!-- Foto Personel dengan Proteksi Keamanan Dokumen -->
               <div class="flex flex-col items-center text-center">
-                <div class="relative w-32 h-40 rounded-xl overflow-hidden border-2 shadow-lg bg-slate-800" :class="settings?.login_background ? 'border-white/20' : 'border-blue-500/40'">
+                <div 
+                  class="relative w-32 h-40 rounded-xl overflow-hidden border-2 shadow-lg bg-slate-800 select-none" 
+                  :class="settings?.login_background ? 'border-white/20' : 'border-blue-500/40'"
+                  @contextmenu.prevent
+                >
                   <img 
-                    :src="activeResult.photo_url || defaultAvatar" 
+                    :src="displayPhotoUrl" 
                     alt="Foto Profil" 
-                    class="w-full h-full object-cover"
+                    class="w-full h-full object-cover pointer-events-none select-none"
+                    draggable="false"
+                    @contextmenu.prevent
                     @error="handleImageError"
                   />
+                  <!-- Watermark Tipis Keamanan Dokumen -->
+                  <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20 rotate-[-30deg]">
+                    <span class="text-[8px] font-black uppercase tracking-widest text-white whitespace-nowrap">
+                      SISFOPERS KC RESMI
+                    </span>
+                  </div>
                   <div class="absolute bottom-0 inset-x-0 bg-slate-950/80 backdrop-blur py-1 px-2 text-[10px] font-bold text-center text-white">
                     {{ activeResult.pangkat || 'Prajurit Komcad' }}
                   </div>
@@ -455,8 +467,41 @@ const defaultAvatar = computed(() => {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=1E293B&color=F8FAFC&size=200`;
 });
 
+const displayPhotoUrl = ref(defaultAvatar.value);
+
+watch(
+  [() => activeResult.value?.photo_url, defaultAvatar],
+  ([newUrl, avatar]) => {
+    if (!newUrl) {
+      displayPhotoUrl.value = avatar;
+      return;
+    }
+    // Jika berupa Base64, konversi ke Blob URL lokal privat sesi dokumen (mencegah link disalin ke tab lain/incognito)
+    if (newUrl.startsWith('data:')) {
+      try {
+        const parts = newUrl.split(';base64,');
+        const contentType = parts[0].split(':')[1];
+        const raw = window.atob(parts[1]);
+        const uInt8Array = new Uint8Array(raw.length);
+        for (let i = 0; i < raw.length; ++i) {
+          uInt8Array[i] = raw.charCodeAt(i);
+        }
+        const blob = new Blob([uInt8Array], { type: contentType });
+        displayPhotoUrl.value = URL.createObjectURL(blob);
+      } catch (e) {
+        displayPhotoUrl.value = newUrl;
+      }
+    } else {
+      displayPhotoUrl.value = newUrl;
+    }
+  },
+  { immediate: true }
+);
+
 const handleImageError = (event) => {
-  event.target.src = defaultAvatar.value;
+  if (event.target.src !== defaultAvatar.value) {
+    event.target.src = defaultAvatar.value;
+  }
 };
 
 const submitSearch = () => {
