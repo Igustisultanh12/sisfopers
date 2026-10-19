@@ -196,8 +196,15 @@ class ForgotNikcController extends Controller
 
         $photoUrl = null;
         if ($personel->photo_profile) {
-            $cleanPath = preg_replace('/^(app\/private\/|app\/public\/|app\/|private\/|storage\/|public\/|\/storage\/|\/admin\/|admin\/)+/', '', $personel->photo_profile);
-            $photoUrl = '/documents/private-stream?path=' . urlencode($cleanPath);
+            $rawPhoto = trim($personel->photo_profile);
+            if (str_starts_with($rawPhoto, 'http://') || str_starts_with($rawPhoto, 'https://') || str_starts_with($rawPhoto, 'data:')) {
+                $photoUrl = $rawPhoto;
+            } else {
+                $cleanPath = str_replace('\\', '/', $rawPhoto);
+                $cleanPath = ltrim($cleanPath, '/');
+                $cleanPath = preg_replace('/^(app\/private\/|app\/public\/|app\/|private\/|storage\/|public\/|\/storage\/|\/admin\/|admin\/)+/', '', $cleanPath);
+                $photoUrl = '/documents/private-stream?path=' . urlencode($cleanPath);
+            }
         }
 
         return Inertia::render('Auth/ForgotNikc', [

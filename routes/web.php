@@ -98,6 +98,173 @@ Route::get('/maintenance', function () {
     ]);
 })->name('maintenance');
 
+// Rute Unduhan & Display Berkas Privat Aman via Query String (Memotong Intersepsi Static Regex Nginx aaPanel)
+Route::get('/documents/private-stream', function (\Illuminate\Http\Request $request) {
+    $path = $request->query('path', '');
+    if (!$path) {
+        $path = $request->query('file', '');
+    }
+    if (!$path) {
+        abort(404);
+    }
+
+    $cleanPath = ltrim($path, '/');
+    $cleanPath = preg_replace('/^(app\/private\/|app\/public\/|app\/|private\/|storage\/|public\/|\/storage\/|\/admin\/|admin\/)+/', '', $cleanPath);
+    $filename = basename($cleanPath);
+
+    $candidates = [
+        storage_path('app/private/' . $cleanPath),
+        storage_path('app/public/' . $cleanPath),
+        storage_path('app/' . $cleanPath),
+        storage_path('app/private/personel/photos/' . $filename),
+        storage_path('app/public/personel/photos/' . $filename),
+        storage_path('app/personel/photos/' . $filename),
+        storage_path('app/private/personel/documents/' . $filename),
+        storage_path('app/public/personel/documents/' . $filename),
+        storage_path('app/personel/documents/' . $filename),
+        storage_path('app/private/ekta/' . $filename),
+        storage_path('app/public/ekta/' . $filename),
+        storage_path('app/public/settings/' . $filename),
+        public_path('storage/' . $cleanPath),
+        public_path('storage/personel/photos/' . $filename),
+        public_path('storage/personel/documents/' . $filename),
+        public_path('storage/ekta/' . $filename),
+        public_path('storage/settings/' . $filename),
+        '/www/wwwroot/sisfoperskc.my.id/storage/app/private/personel/photos/' . $filename,
+        '/www/wwwroot/sisfoperskc.my.id/storage/app/public/personel/photos/' . $filename,
+        '/www/wwwroot/sisfoperskc.my.id/storage/app/private/' . $cleanPath,
+        '/www/wwwroot/sisfoperskc.my.id/storage/app/public/' . $cleanPath,
+        '/www/wwwroot/sisfoperskc.my.id/storage/app/private/ekta/' . $filename,
+        '/www/wwwroot/sisfoperskc.my.id/storage/app/public/ekta/' . $filename,
+        '/www/wwwroot/sisfoperskc.my.id/storage/app/public/settings/' . $filename,
+        '/www/wwwroot/sisfoperskc.my.id/public/storage/' . $cleanPath,
+        '/www/wwwroot/sisfopers.site/storage/app/private/' . $cleanPath,
+        '/www/wwwroot/sisfopers.site/storage/app/public/' . $cleanPath,
+        '/www/wwwroot/sisfopers.site/storage/app/' . $cleanPath,
+        '/www/wwwroot/sisfopers.site/storage/app/private/personel/photos/' . $filename,
+        '/www/wwwroot/sisfopers.site/storage/app/public/personel/photos/' . $filename,
+        '/www/wwwroot/sisfopers.site/storage/app/private/personel/documents/' . $filename,
+        '/www/wwwroot/sisfopers.site/storage/app/public/personel/documents/' . $filename,
+        '/www/wwwroot/sisfopers.site/storage/app/private/ekta/' . $filename,
+        '/www/wwwroot/sisfopers.site/storage/app/public/ekta/' . $filename,
+        '/www/wwwroot/sisfopers.site/storage/app/public/settings/' . $filename,
+        '/www/wwwroot/sisfopers.site/public/storage/' . $cleanPath,
+    ];
+
+    foreach (['private', 'public', 'local'] as $diskName) {
+        try {
+            if (Storage::disk($diskName)->exists($cleanPath)) {
+                $candidates[] = Storage::disk($diskName)->path($cleanPath);
+            }
+            if (Storage::disk($diskName)->exists('personel/photos/' . $filename)) {
+                $candidates[] = Storage::disk($diskName)->path('personel/photos/' . $filename);
+            }
+        } catch (\Throwable $e) {}
+    }
+
+    foreach ($candidates as $candidate) {
+        if (file_exists($candidate) && is_file($candidate) && is_readable($candidate)) {
+            $ext = strtolower(pathinfo($candidate, PATHINFO_EXTENSION));
+            $mimeTypes = [
+                'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png',
+                'webp' => 'image/webp', 'gif' => 'image/gif', 'svg' => 'image/svg+xml',
+                'pdf' => 'application/pdf'
+            ];
+            $mime = $mimeTypes[$ext] ?? (@mime_content_type($candidate) ?: 'image/jpeg');
+            return response()->file($candidate, ['Content-Type' => $mime]);
+        }
+    }
+
+    $isDocument = str_contains($path, 'documents') || str_contains($path, 'ktp') || str_contains($path, 'skep');
+    if ($isDocument) {
+        $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="250" viewBox="0 0 400 250" fill="none"><rect width="400" height="250" rx="12" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="2"/><path d="M160 100H240M160 130H240M160 160H210" stroke="#94A3B8" stroke-width="4" stroke-linecap="round"/><text x="200" y="200" text-anchor="middle" fill="#64748B" font-family="sans-serif" font-size="14" font-weight="bold">Lampiran Berkas (Tidak Ada File)</text></svg>';
+        return response($svg, 200)->header('Content-Type', 'image/svg+xml');
+    }
+
+    $avatarSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="250" viewBox="0 0 200 250" fill="none"><rect width="200" height="250" fill="#F1F5F9"/><circle cx="100" cy="90" r="45" fill="#94A3B8"/><path d="M30 220C30 170 60 150 100 150C140 150 170 170 170 220V250H30V220Z" fill="#94A3B8"/><text x="100" y="235" text-anchor="middle" fill="#475569" font-family="sans-serif" font-size="12" font-weight="bold">NO PHOTO</text></svg>';
+    return response($avatarSvg, 200)->header('Content-Type', 'image/svg+xml');
+})->name('personel.document.stream');
+
+// Rute Unduhan & Display Berkas Privat Aman (Guaranteed Image Streamer & SVG Fallback)
+Route::get('/documents/private/{path}', function ($path) {
+    $cleanPath = ltrim($path, '/');
+    $cleanPath = preg_replace('/^(app\/private\/|app\/public\/|app\/|private\/|storage\/|public\/|\/storage\/|\/admin\/|admin\/)+/', '', $cleanPath);
+    $filename = basename($cleanPath);
+
+    $candidates = [
+        storage_path('app/private/' . $cleanPath),
+        storage_path('app/public/' . $cleanPath),
+        storage_path('app/' . $cleanPath),
+        storage_path('app/private/personel/photos/' . $filename),
+        storage_path('app/public/personel/photos/' . $filename),
+        storage_path('app/personel/photos/' . $filename),
+        storage_path('app/private/personel/documents/' . $filename),
+        storage_path('app/public/personel/documents/' . $filename),
+        storage_path('app/personel/documents/' . $filename),
+        storage_path('app/private/ekta/' . $filename),
+        storage_path('app/public/ekta/' . $filename),
+        storage_path('app/public/settings/' . $filename),
+        public_path('storage/' . $cleanPath),
+        public_path('storage/personel/photos/' . $filename),
+        public_path('storage/personel/documents/' . $filename),
+        public_path('storage/ekta/' . $filename),
+        public_path('storage/settings/' . $filename),
+        '/www/wwwroot/sisfoperskc.my.id/storage/app/private/personel/photos/' . $filename,
+        '/www/wwwroot/sisfoperskc.my.id/storage/app/public/personel/photos/' . $filename,
+        '/www/wwwroot/sisfoperskc.my.id/storage/app/private/' . $cleanPath,
+        '/www/wwwroot/sisfoperskc.my.id/storage/app/public/' . $cleanPath,
+        '/www/wwwroot/sisfoperskc.my.id/storage/app/private/ekta/' . $filename,
+        '/www/wwwroot/sisfoperskc.my.id/storage/app/public/ekta/' . $filename,
+        '/www/wwwroot/sisfoperskc.my.id/storage/app/public/settings/' . $filename,
+        '/www/wwwroot/sisfoperskc.my.id/public/storage/' . $cleanPath,
+        '/www/wwwroot/sisfopers.site/storage/app/private/' . $cleanPath,
+        '/www/wwwroot/sisfopers.site/storage/app/public/' . $cleanPath,
+        '/www/wwwroot/sisfopers.site/storage/app/' . $cleanPath,
+        '/www/wwwroot/sisfopers.site/storage/app/private/personel/photos/' . $filename,
+        '/www/wwwroot/sisfopers.site/storage/app/public/personel/photos/' . $filename,
+        '/www/wwwroot/sisfopers.site/storage/app/private/personel/documents/' . $filename,
+        '/www/wwwroot/sisfopers.site/storage/app/public/personel/documents/' . $filename,
+        '/www/wwwroot/sisfopers.site/storage/app/private/ekta/' . $filename,
+        '/www/wwwroot/sisfopers.site/storage/app/public/ekta/' . $filename,
+        '/www/wwwroot/sisfopers.site/storage/app/public/settings/' . $filename,
+        '/www/wwwroot/sisfopers.site/public/storage/' . $cleanPath,
+    ];
+
+    foreach (['private', 'public', 'local'] as $diskName) {
+        try {
+            if (Storage::disk($diskName)->exists($cleanPath)) {
+                $candidates[] = Storage::disk($diskName)->path($cleanPath);
+            }
+            if (Storage::disk($diskName)->exists('personel/photos/' . $filename)) {
+                $candidates[] = Storage::disk($diskName)->path('personel/photos/' . $filename);
+            }
+        } catch (\Throwable $e) {}
+    }
+
+    foreach ($candidates as $candidate) {
+        if (file_exists($candidate) && is_file($candidate) && is_readable($candidate)) {
+            $ext = strtolower(pathinfo($candidate, PATHINFO_EXTENSION));
+            $mimeTypes = [
+                'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png',
+                'webp' => 'image/webp', 'gif' => 'image/gif', 'svg' => 'image/svg+xml',
+                'pdf' => 'application/pdf'
+            ];
+            $mime = $mimeTypes[$ext] ?? (@mime_content_type($candidate) ?: 'image/jpeg');
+            return response()->file($candidate, ['Content-Type' => $mime]);
+        }
+    }
+
+    // Fallback jika file fisik belum ada: Hasilkan SVG Placeholder Cantik agar img tidak pecah!
+    $isDocument = str_contains($path, 'documents') || str_contains($path, 'ktp') || str_contains($path, 'skep');
+    if ($isDocument) {
+        $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="250" viewBox="0 0 400 250" fill="none"><rect width="400" height="250" rx="12" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="2"/><path d="M160 100H240M160 130H240M160 160H210" stroke="#94A3B8" stroke-width="4" stroke-linecap="round"/><text x="200" y="200" text-anchor="middle" fill="#64748B" font-family="sans-serif" font-size="14" font-weight="bold">Lampiran Berkas (Tidak Ada File)</text></svg>';
+        return response($svg, 200)->header('Content-Type', 'image/svg+xml');
+    }
+
+    $avatarSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="250" viewBox="0 0 200 250" fill="none"><rect width="200" height="250" fill="#F1F5F9"/><circle cx="100" cy="90" r="45" fill="#94A3B8"/><path d="M30 220C30 170 60 150 100 150C140 150 170 170 170 220V250H30V220Z" fill="#94A3B8"/><text x="100" y="235" text-anchor="middle" fill="#475569" font-family="sans-serif" font-size="12" font-weight="bold">NO PHOTO</text></svg>';
+    return response($avatarSvg, 200)->header('Content-Type', 'image/svg+xml');
+})->where('path', '.*')->name('personel.document.download');
+
 Route::middleware(['auth:web,pju'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
@@ -116,151 +283,6 @@ Route::middleware(['auth:web,pju'])->group(function () {
     Route::match(['get', 'post'], '/notifications/{id}/read', [NotificationController::class, 'read'])->name('notifications.read');
     Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
     Route::post('/notifications/readAll', [NotificationController::class, 'readAll'])->name('notifications.readAll');
-
-    // Rute Unduhan & Display Berkas Privat Aman via Query String (Memotong Intersepsi Static Regex Nginx aaPanel)
-    Route::get('/documents/private-stream', function (\Illuminate\Http\Request $request) {
-        $path = $request->query('path', '');
-        if (!$path) {
-            $path = $request->query('file', '');
-        }
-        if (!$path) {
-            abort(404);
-        }
-
-        $cleanPath = ltrim($path, '/');
-        $cleanPath = preg_replace('/^(app\/private\/|app\/public\/|app\/|private\/|storage\/|public\/|\/storage\/|\/admin\/|admin\/)+/', '', $cleanPath);
-        $filename = basename($cleanPath);
-
-        $candidates = [
-            storage_path('app/private/' . $cleanPath),
-            storage_path('app/public/' . $cleanPath),
-            storage_path('app/' . $cleanPath),
-            storage_path('app/private/personel/photos/' . $filename),
-            storage_path('app/public/personel/photos/' . $filename),
-            storage_path('app/personel/photos/' . $filename),
-            storage_path('app/private/personel/documents/' . $filename),
-            storage_path('app/public/personel/documents/' . $filename),
-            storage_path('app/personel/documents/' . $filename),
-            storage_path('app/private/ekta/' . $filename),
-            storage_path('app/public/ekta/' . $filename),
-            storage_path('app/public/settings/' . $filename),
-            public_path('storage/' . $cleanPath),
-            public_path('storage/personel/photos/' . $filename),
-            public_path('storage/personel/documents/' . $filename),
-            public_path('storage/ekta/' . $filename),
-            public_path('storage/settings/' . $filename),
-            '/www/wwwroot/sisfoperskc.my.id/storage/app/private/personel/photos/' . $filename,
-            '/www/wwwroot/sisfoperskc.my.id/storage/app/public/personel/photos/' . $filename,
-            '/www/wwwroot/sisfoperskc.my.id/storage/app/private/' . $cleanPath,
-            '/www/wwwroot/sisfoperskc.my.id/storage/app/public/' . $cleanPath,
-            '/www/wwwroot/sisfoperskc.my.id/storage/app/private/ekta/' . $filename,
-            '/www/wwwroot/sisfoperskc.my.id/storage/app/public/ekta/' . $filename,
-            '/www/wwwroot/sisfoperskc.my.id/storage/app/public/settings/' . $filename,
-            '/www/wwwroot/sisfoperskc.my.id/public/storage/' . $cleanPath,
-            '/www/wwwroot/sisfopers.site/storage/app/private/' . $cleanPath,
-            '/www/wwwroot/sisfopers.site/storage/app/public/' . $cleanPath,
-            '/www/wwwroot/sisfopers.site/storage/app/' . $cleanPath,
-            '/www/wwwroot/sisfopers.site/storage/app/private/personel/photos/' . $filename,
-            '/www/wwwroot/sisfopers.site/storage/app/public/personel/photos/' . $filename,
-            '/www/wwwroot/sisfopers.site/storage/app/private/personel/documents/' . $filename,
-            '/www/wwwroot/sisfopers.site/storage/app/public/personel/documents/' . $filename,
-            '/www/wwwroot/sisfopers.site/storage/app/private/ekta/' . $filename,
-            '/www/wwwroot/sisfopers.site/storage/app/public/ekta/' . $filename,
-            '/www/wwwroot/sisfopers.site/storage/app/public/settings/' . $filename,
-            '/www/wwwroot/sisfopers.site/public/storage/' . $cleanPath,
-        ];
-
-        foreach ($candidates as $candidate) {
-            if (file_exists($candidate) && is_file($candidate) && is_readable($candidate)) {
-                $ext = strtolower(pathinfo($candidate, PATHINFO_EXTENSION));
-                $mimeTypes = [
-                    'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png',
-                    'webp' => 'image/webp', 'gif' => 'image/gif', 'svg' => 'image/svg+xml',
-                    'pdf' => 'application/pdf'
-                ];
-                $mime = $mimeTypes[$ext] ?? (@mime_content_type($candidate) ?: 'image/jpeg');
-                return response()->file($candidate, ['Content-Type' => $mime]);
-            }
-        }
-
-        $isDocument = str_contains($path, 'documents') || str_contains($path, 'ktp') || str_contains($path, 'skep');
-        if ($isDocument) {
-            $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="250" viewBox="0 0 400 250" fill="none"><rect width="400" height="250" rx="12" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="2"/><path d="M160 100H240M160 130H240M160 160H210" stroke="#94A3B8" stroke-width="4" stroke-linecap="round"/><text x="200" y="200" text-anchor="middle" fill="#64748B" font-family="sans-serif" font-size="14" font-weight="bold">Lampiran Berkas (Tidak Ada File)</text></svg>';
-            return response($svg, 200)->header('Content-Type', 'image/svg+xml');
-        }
-
-        $avatarSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="250" viewBox="0 0 200 250" fill="none"><rect width="200" height="250" fill="#F1F5F9"/><circle cx="100" cy="90" r="45" fill="#94A3B8"/><path d="M30 220C30 170 60 150 100 150C140 150 170 170 170 220V250H30V220Z" fill="#94A3B8"/><text x="100" y="235" text-anchor="middle" fill="#475569" font-family="sans-serif" font-size="12" font-weight="bold">NO PHOTO</text></svg>';
-        return response($avatarSvg, 200)->header('Content-Type', 'image/svg+xml');
-    })->name('personel.document.stream');
-
-    // Rute Unduhan & Display Berkas Privat Aman (Guaranteed Image Streamer & SVG Fallback)
-    Route::get('/documents/private/{path}', function ($path) {
-        $cleanPath = ltrim($path, '/');
-        $cleanPath = preg_replace('/^(app\/private\/|app\/public\/|app\/|private\/|storage\/|public\/|\/storage\/|\/admin\/|admin\/)+/', '', $cleanPath);
-        $filename = basename($cleanPath);
-
-        $candidates = [
-            storage_path('app/private/' . $cleanPath),
-            storage_path('app/public/' . $cleanPath),
-            storage_path('app/' . $cleanPath),
-            storage_path('app/private/personel/photos/' . $filename),
-            storage_path('app/public/personel/photos/' . $filename),
-            storage_path('app/personel/photos/' . $filename),
-            storage_path('app/private/personel/documents/' . $filename),
-            storage_path('app/public/personel/documents/' . $filename),
-            storage_path('app/personel/documents/' . $filename),
-            storage_path('app/private/ekta/' . $filename),
-            storage_path('app/public/ekta/' . $filename),
-            storage_path('app/public/settings/' . $filename),
-            public_path('storage/' . $cleanPath),
-            public_path('storage/personel/photos/' . $filename),
-            public_path('storage/personel/documents/' . $filename),
-            public_path('storage/ekta/' . $filename),
-            public_path('storage/settings/' . $filename),
-            '/www/wwwroot/sisfoperskc.my.id/storage/app/private/personel/photos/' . $filename,
-            '/www/wwwroot/sisfoperskc.my.id/storage/app/public/personel/photos/' . $filename,
-            '/www/wwwroot/sisfoperskc.my.id/storage/app/private/' . $cleanPath,
-            '/www/wwwroot/sisfoperskc.my.id/storage/app/public/' . $cleanPath,
-            '/www/wwwroot/sisfoperskc.my.id/storage/app/private/ekta/' . $filename,
-            '/www/wwwroot/sisfoperskc.my.id/storage/app/public/ekta/' . $filename,
-            '/www/wwwroot/sisfoperskc.my.id/storage/app/public/settings/' . $filename,
-            '/www/wwwroot/sisfoperskc.my.id/public/storage/' . $cleanPath,
-            '/www/wwwroot/sisfopers.site/storage/app/private/' . $cleanPath,
-            '/www/wwwroot/sisfopers.site/storage/app/public/' . $cleanPath,
-            '/www/wwwroot/sisfopers.site/storage/app/' . $cleanPath,
-            '/www/wwwroot/sisfopers.site/storage/app/private/personel/photos/' . $filename,
-            '/www/wwwroot/sisfopers.site/storage/app/public/personel/photos/' . $filename,
-            '/www/wwwroot/sisfopers.site/storage/app/private/personel/documents/' . $filename,
-            '/www/wwwroot/sisfopers.site/storage/app/public/personel/documents/' . $filename,
-            '/www/wwwroot/sisfopers.site/storage/app/private/ekta/' . $filename,
-            '/www/wwwroot/sisfopers.site/storage/app/public/ekta/' . $filename,
-            '/www/wwwroot/sisfopers.site/storage/app/public/settings/' . $filename,
-            '/www/wwwroot/sisfopers.site/public/storage/' . $cleanPath,
-        ];
-
-        foreach ($candidates as $candidate) {
-            if (file_exists($candidate) && is_file($candidate) && is_readable($candidate)) {
-                $ext = strtolower(pathinfo($candidate, PATHINFO_EXTENSION));
-                $mimeTypes = [
-                    'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png',
-                    'webp' => 'image/webp', 'gif' => 'image/gif', 'svg' => 'image/svg+xml',
-                    'pdf' => 'application/pdf'
-                ];
-                $mime = $mimeTypes[$ext] ?? (@mime_content_type($candidate) ?: 'image/jpeg');
-                return response()->file($candidate, ['Content-Type' => $mime]);
-            }
-        }
-
-        // Fallback jika file fisik belum ada: Hasilkan SVG Placeholder Cantik agar img tidak pecah!
-        $isDocument = str_contains($path, 'documents') || str_contains($path, 'ktp') || str_contains($path, 'skep');
-        if ($isDocument) {
-            $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="250" viewBox="0 0 400 250" fill="none"><rect width="400" height="250" rx="12" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="2"/><path d="M160 100H240M160 130H240M160 160H210" stroke="#94A3B8" stroke-width="4" stroke-linecap="round"/><text x="200" y="200" text-anchor="middle" fill="#64748B" font-family="sans-serif" font-size="14" font-weight="bold">Lampiran Berkas (Tidak Ada File)</text></svg>';
-            return response($svg, 200)->header('Content-Type', 'image/svg+xml');
-        }
-
-        $avatarSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="250" viewBox="0 0 200 250" fill="none"><rect width="200" height="250" fill="#F1F5F9"/><circle cx="100" cy="90" r="45" fill="#94A3B8"/><path d="M30 220C30 170 60 150 100 150C140 150 170 170 170 220V250H30V220Z" fill="#94A3B8"/><text x="100" y="235" text-anchor="middle" fill="#475569" font-family="sans-serif" font-size="12" font-weight="bold">NO PHOTO</text></svg>';
-        return response($avatarSvg, 200)->header('Content-Type', 'image/svg+xml');
-    })->where('path', '.*')->name('personel.document.download');
 });
 
 // Rute Servis Berkas Storage Fallback (Mendukung Seluruh Ekstensi Gambar & Dokumen: JPG, JPEG, PNG, WEBP, GIF, SVG, BMP, HEIC, AVIF, PDF)
