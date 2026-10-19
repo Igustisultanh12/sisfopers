@@ -108,6 +108,15 @@
               placeholder="••••••••" 
               required 
             />
+            <p v-if="errors?.password" class="text-xs text-[#EF4444] mt-1 font-medium">{{ errors.password }}</p>
+          </div>
+
+          <!-- Cloudflare Turnstile Widget -->
+          <div v-if="turnstileEnabled" class="pt-1">
+            <div ref="turnstileContainer" class="flex justify-center my-1 min-h-[65px]"></div>
+            <p v-if="errors?.turnstile || errors?.['cf-turnstile-response']" class="text-xs text-red-500 mt-1 font-medium text-center">
+              {{ errors?.turnstile || errors?.['cf-turnstile-response'] }}
+            </p>
           </div>
 
           <div class="flex items-center justify-between">
@@ -169,14 +178,99 @@
 
 <script setup>
 import { useForm, Link, usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
 
-defineProps({
+const props = defineProps({
   errors: Object
 });
 
 const page = usePage();
 const settings = computed(() => page.props.settings || {});
+
+const turnstileEnabled = computed(() => {
+  return (settings.value?.turnstile_enabled === '1' || settings.value?.turnstile_enabled === 1 || settings.value?.turnstile_enabled === true) && !!settings.value?.turnstile_site_key;
+});
+
+const turnstileContainer = ref(null);
+let widgetId = null;
+
+const renderTurnstile = () => {
+  if (!turnstileContainer.value || !window.turnstile || !settings.value?.turnstile_site_key) return;
+
+  if (widgetId !== null) {
+    try {
+      window.turnstile.reset(widgetId);
+      return;
+    } catch (e) {
+      // Abaikan jika widget belum siap direset
+    }
+  }
+
+  try {
+    widgetId = window.turnstile.render(turnstileContainer.value, {
+      sitekey: settings.value.turnstile_site_key,
+      theme: settings.value?.login_background ? 'dark' : 'light',
+      callback: (token) => {
+        form['cf-turnstile-response'] = token;
+      },
+      'expired-callback': () => {
+        form['cf-turnstile-response'] = '';
+      },
+      'error-callback': () => {
+        form['cf-turnstile-response'] = '';
+      }
+    });
+  } catch (err) {
+    console.error('Turnstile render error:', err);
+  }
+};
+
+const initTurnstile = () => {
+  if (typeof window === 'undefined') return;
+
+  if (window.turnstile) {
+    nextTick(() => {
+      renderTurnstile();
+    });
+    return;
+  }
+
+  const existingScript = document.getElementById('cf-turnstile-script');
+  if (!existingScript) {
+    const script = document.createElement('script');
+    script.id = 'cf-turnstile-script';
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      nextTick(() => {
+        renderTurnstile();
+      });
+    };
+    document.head.appendChild(script);
+  } else {
+    existingScript.addEventListener('load', () => {
+      nextTick(() => {
+        renderTurnstile();
+      });
+    });
+  }
+};
+
+onMounted(() => {
+  if (turnstileEnabled.value) {
+    initTurnstile();
+  }
+});
+
+onBeforeUnmount(() => {
+  if (widgetId !== null && typeof window !== 'undefined' && window.turnstile) {
+    try {
+      window.turnstile.remove(widgetId);
+      widgetId = null;
+    } catch (e) {}
+  }
+});
 
 const getInitialNikc = () => {
   if (typeof window !== 'undefined') {
@@ -189,12 +283,21 @@ const getInitialNikc = () => {
 const form = useForm({
   username: getInitialNikc(),
   password: '',
-  remember: false
+  remember: false,
+  'cf-turnstile-response': ''
 });
 
 const submit = () => {
   form.post(route('login'), {
-    onFinish: () => form.reset('password')
+    onFinish: () => {
+      form.reset('password');
+      if (widgetId !== null && typeof window !== 'undefined' && window.turnstile) {
+        try {
+          window.turnstile.reset(widgetId);
+          form['cf-turnstile-response'] = '';
+        } catch (e) {}
+      }
+    }
   });
 };
 </script>

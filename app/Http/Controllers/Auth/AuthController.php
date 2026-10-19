@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Models\Setting;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
@@ -29,6 +31,40 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
+        // 0. Verifikasi Cloudflare Turnstile jika diaktifkan dalam konfigurasi Admin
+        $turnstileEnabled = Setting::where('key', 'turnstile_enabled')->value('value') === '1';
+        $turnstileSiteKey = Setting::where('key', 'turnstile_site_key')->value('value');
+        $turnstileSecretKey = Setting::where('key', 'turnstile_secret_key')->value('value');
+
+        if ($turnstileEnabled && !empty($turnstileSiteKey) && !empty($turnstileSecretKey)) {
+            $turnstileToken = $request->input('cf-turnstile-response') ?: $request->input('turnstile_token');
+            if (empty($turnstileToken)) {
+                return back()->withErrors([
+                    'turnstile' => 'Verifikasi keamanan Cloudflare Turnstile wajib diselesaikan.',
+                ])->withInput($request->only('username'));
+            }
+
+            try {
+                $cfResponse = Http::asForm()->timeout(10)->post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
+                    'secret'   => $turnstileSecretKey,
+                    'response' => $turnstileToken,
+                    'remoteip' => $request->ip(),
+                ]);
+
+                $resJson = $cfResponse->json();
+                if (!$cfResponse->successful() || empty($resJson['success'])) {
+                    return back()->withErrors([
+                        'turnstile' => 'Verifikasi Cloudflare Turnstile tidak valid atau telah kedaluwarsa. Silakan ulangi verifikasi.',
+                    ])->withInput($request->only('username'));
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Turnstile verification error: ' . $e->getMessage());
+                return back()->withErrors([
+                    'turnstile' => 'Gagal menghubungi peladen verifikasi Cloudflare. Silakan coba kembali.',
+                ])->withInput($request->only('username'));
+            }
+        }
+
         $credentials = $request->validate([
             'username' => 'required|string',
             'password' => 'required|string',
@@ -293,7 +329,7 @@ $ktpPath = $request->file('ktp_document')->store('personel/documents', 'private'
                 $recipientUser->notify(new \App\Notifications\NewRegistrationNotification($personel));
 
                 if ($recipientUser->personel && $recipientUser->personel->phone_number) {
-                    $msgAdmin = "🔔 *PENDAFTARAN BARU PERLU DIVERIFIKASI*\n\n"
+                    $msgAdmin = "[PEMBERITAHUAN] *PENDAFTARAN BARU PERLU DIVERIFIKASI*\n\n"
                         . "Nama: {$personel->full_name}\n"
                         . "NIKC: " . ($personel->nikc ?? '-') . "\n"
                         . "Matra/Angkatan: {$personel->matra} / Angkatan {$personel->angkatan}\n\n"

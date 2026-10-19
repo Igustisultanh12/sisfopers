@@ -39,6 +39,9 @@ class SettingController extends Controller
             'metered_api_key' => 'nullable|string|max:200',
             'agora_app_id' => 'nullable|string|max:100',
             'agora_app_certificate' => 'nullable|string|max:100',
+            'turnstile_enabled' => 'nullable',
+            'turnstile_site_key' => 'nullable|string|max:200',
+            'turnstile_secret_key' => 'nullable|string|max:200',
         ]);
 
         foreach ($validated as $key => $value) {
@@ -76,6 +79,27 @@ class SettingController extends Controller
             ['value' => $isMaint ? '1' : '0']
         );
 
+        // Tentukan secara eksplisit konfigurasi Cloudflare Turnstile
+        $turnstileEnabled = $request->has('turnstile_enabled') && in_array((string)$request->input('turnstile_enabled'), ['1', 'true']);
+        Setting::updateOrCreate(
+            ['key' => 'turnstile_enabled'],
+            ['value' => $turnstileEnabled ? '1' : '0']
+        );
+
+        if ($request->has('turnstile_site_key')) {
+            Setting::updateOrCreate(
+                ['key' => 'turnstile_site_key'],
+                ['value' => trim((string)$request->input('turnstile_site_key', ''))]
+            );
+        }
+
+        if ($request->has('turnstile_secret_key')) {
+            Setting::updateOrCreate(
+                ['key' => 'turnstile_secret_key'],
+                ['value' => trim((string)$request->input('turnstile_secret_key', ''))]
+            );
+        }
+
         return redirect()->route('admin.setting.index')->with('success', 'Konfigurasi parameter sistem berhasil disinkronisasi.');
     }
 
@@ -112,7 +136,7 @@ class SettingController extends Controller
         ]);
 
         $phone = $request->phone;
-        $message = "📢 *SISFOPERSKC: UJI COBA GATEWAY*\n\nHalo, ini adalah pesan uji coba pengiriman dari panel Pengaturan Sistem SISFOPERSKC Anda. Koneksi WhatsApp Gateway berhasil dikonfigurasi dengan aman!";
+        $message = "[PEMBERITAHUAN] *SISFOPERSKC: UJI COBA GATEWAY*\n\nHalo, ini adalah pesan uji coba pengiriman dari panel Pengaturan Sistem SISFOPERSKC Anda. Koneksi WhatsApp Gateway berhasil dikonfigurasi dengan aman!";
 
         $success = \App\Services\WhatsappService::sendMessage($phone, $message);
 

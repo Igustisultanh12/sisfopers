@@ -94,8 +94,19 @@ class HandleInertiaRequests extends Middleware
                 'message' => $request->session()->get('message'),
             ],
 
-            // PARAMETER GLOBAL SETTING
-            'settings' => \App\Models\Setting::all()->pluck('value', 'key')->toArray(),
+            // PARAMETER GLOBAL SETTING (Kunci rahasia hanya dibagikan ke sesi Admin)
+            'settings' => function () use ($user) {
+                $settings = \App\Models\Setting::all()->pluck('value', 'key')->toArray();
+                $isAdmin = $user && method_exists($user, 'hasRole') && $user->hasRole('admin');
+                if (!$isAdmin) {
+                    unset($settings['turnstile_secret_key']);
+                    unset($settings['wa_api_key']);
+                    unset($settings['coturn_secret']);
+                    unset($settings['metered_api_key']);
+                    unset($settings['agora_app_certificate']);
+                }
+                return $settings;
+            },
         ];
     }
 }

@@ -58,6 +58,56 @@
                 <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
               </label>
             </div>
+
+            <!-- Cloudflare Turnstile CAPTCHA Protection -->
+            <div class="md:col-span-2 bg-gradient-to-r from-orange-50/70 to-slate-50 border border-orange-200/80 rounded-2xl p-5 space-y-4">
+              <div class="flex items-center justify-between">
+                <div class="space-y-0.5">
+                  <div class="flex items-center gap-2">
+                    <span class="inline-block w-2.5 h-2.5 rounded-full bg-orange-500"></span>
+                    <label class="block text-xs font-bold text-slate-800 uppercase tracking-wide">
+                      Verifikasi Keamanan Cloudflare Turnstile (Anti-Bot)
+                    </label>
+                  </div>
+                  <p class="text-[11px] text-slate-500 leading-relaxed">
+                    Jika aktif, setiap pengguna yang melakukan login wajib menyelesaikan verifikasi interaktif Cloudflare Turnstile di bawah kata sandi sebelum dapat masuk ke sistem.
+                  </p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer select-none shrink-0 ml-4">
+                  <input type="checkbox" v-model="form.turnstile_enabled" true-value="1" false-value="0" class="sr-only peer" />
+                  <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                </label>
+              </div>
+
+              <!-- Input Keys Turnstile -->
+              <div v-if="form.turnstile_enabled === '1' || form.turnstile_enabled === 1" class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-orange-200/60">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5">
+                    Cloudflare Turnstile Site Key <span class="text-red-500">*</span>
+                  </label>
+                  <input 
+                    type="text" 
+                    v-model="form.turnstile_site_key" 
+                    placeholder="Contoh: 0x4AAAAAAAx..." 
+                    class="w-full px-3.5 py-2 bg-white border border-[#E2E8F0] rounded-xl text-xs font-mono outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500" 
+                  />
+                  <p class="text-[10px] text-slate-400 mt-1">Kunci publik Turnstile dari dashboard Cloudflare.</p>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5">
+                    Cloudflare Turnstile Secret Key <span class="text-red-500">*</span>
+                  </label>
+                  <input 
+                    type="password" 
+                    v-model="form.turnstile_secret_key" 
+                    placeholder="Contoh: 0x4AAAAAAAx..." 
+                    class="w-full px-3.5 py-2 bg-white border border-[#E2E8F0] rounded-xl text-xs font-mono outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500" 
+                  />
+                  <p class="text-[10px] text-slate-400 mt-1">Kunci rahasia untuk validasi backend ke Cloudflare.</p>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Section Pengaturan Video Conference & Relay TURN -->
@@ -225,7 +275,9 @@
               </button>
               
               <button type="button" @click="promptTestSend" class="py-2 px-4 border border-[#E2E8F0] hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl transition flex items-center gap-2 cursor-pointer">
-                <span>💬</span>
+                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
                 Test Kirim WA
               </button>
             </div>
@@ -331,6 +383,9 @@ const form = useForm({
   wa_api_key: '',
   disable_whatsapp_otp: props.settings.disable_whatsapp_otp || '0',
   under_maintenance: props.settings.under_maintenance || '0',
+  turnstile_enabled: props.settings.turnstile_enabled || '0',
+  turnstile_site_key: props.settings.turnstile_site_key || '',
+  turnstile_secret_key: props.settings.turnstile_secret_key || '',
   coturn_host: props.settings.coturn_host || '',
   coturn_port: props.settings.coturn_port || '3478',
   coturn_secret: props.settings.coturn_secret || 'sisfoperskc2026secret',
