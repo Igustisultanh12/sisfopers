@@ -112,9 +112,34 @@
           </div>
 
           <!-- Cloudflare Turnstile Widget -->
-          <div v-if="turnstileEnabled" class="pt-1">
-            <div ref="turnstileContainer" class="flex justify-center my-1 min-h-[65px]"></div>
-            <p v-if="errors?.turnstile || errors?.['cf-turnstile-response']" class="text-xs text-red-500 mt-1 font-medium text-center">
+          <div v-if="turnstileEnabled" class="space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="block text-xs font-semibold uppercase tracking-wider" :class="settings?.login_background ? 'text-slate-300' : 'text-slate-600'">
+                Verifikasi Keamanan
+              </label>
+              <span 
+                class="text-[10px] tracking-wide font-medium px-2 py-0.5 rounded-full inline-flex items-center gap-1"
+                :class="settings?.login_background 
+                  ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30' 
+                  : 'bg-blue-50 text-[#2563EB] border border-blue-100'"
+              >
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                Anti-Bot
+              </span>
+            </div>
+
+            <div 
+              class="w-full rounded-lg border p-1.5 transition duration-150 flex items-center justify-center overflow-hidden"
+              :class="settings?.login_background 
+                ? 'bg-white/10 border-white/10' 
+                : 'bg-white border-[#E2E8F0]'"
+            >
+              <div ref="turnstileContainer" class="w-full min-h-[65px] flex justify-center items-center"></div>
+            </div>
+
+            <p v-if="errors?.turnstile || errors?.['cf-turnstile-response']" class="text-xs text-[#EF4444] mt-1 font-medium">
               {{ errors?.turnstile || errors?.['cf-turnstile-response'] }}
             </p>
           </div>
@@ -210,6 +235,7 @@ const renderTurnstile = () => {
     widgetId = window.turnstile.render(turnstileContainer.value, {
       sitekey: settings.value.turnstile_site_key,
       theme: settings.value?.login_background ? 'dark' : 'light',
+      size: 'flexible',
       callback: (token) => {
         form['cf-turnstile-response'] = token;
       },
