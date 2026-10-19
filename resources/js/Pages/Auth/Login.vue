@@ -131,11 +131,13 @@
               : 'bg-[#2563EB] hover:bg-[#1E40AF] shadow-blue-500/10'"
           >
             <span>Masuk Sistem</span>
-            <span v-if="settings?.login_background">➜</span>
+            <svg v-if="settings?.login_background" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
           </button>
         </form>
 
-        <div class="mt-6 text-center border-t pt-6" :class="settings?.login_background ? 'border-white/10' : 'border-[#E2E8F0]'">
+        <div class="mt-6 text-center border-t pt-6 space-y-3" :class="settings?.login_background ? 'border-white/10' : 'border-[#E2E8F0]'">
           <p class="text-xs" :class="settings?.login_background ? 'text-slate-300' : 'text-slate-500'">
             Belum memiliki akun Komponen Cadangan? 
             <Link 
@@ -146,6 +148,18 @@
               Daftar Sekarang
             </Link>
           </p>
+          <div class="pt-1">
+            <Link 
+              :href="route('nikc.forgot')" 
+              class="inline-flex items-center gap-1.5 text-xs font-semibold hover:underline transition"
+              :class="settings?.login_background ? 'text-orange-300 hover:text-orange-200' : 'text-[#2563EB] hover:text-blue-800'"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Lupa NIKC?
+            </Link>
+          </div>
         </div>
       </div>
     </div>
@@ -164,8 +178,16 @@ defineProps({
 const page = usePage();
 const settings = computed(() => page.props.settings || {});
 
+const getInitialNikc = () => {
+  if (typeof window !== 'undefined') {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('nikc') || '';
+  }
+  return '';
+};
+
 const form = useForm({
-  username: '',
+  username: getInitialNikc(),
   password: '',
   remember: false
 });

@@ -59,7 +59,9 @@ Route::match(['get', 'post'], '/skep/check', [SkepPublicController::class, 'chec
 Route::match(['get', 'post'], '/skep/request', [SkepPublicController::class, 'submitRequest'])->name('skep.request');
 
 // Rute Tautan Langsung (Direct Link) Formulir Terbuka / Rekrutmen Personel
-Route::get('/f/{uuid}', [\App\Http\Controllers\Form\CustomFormController::class, 'shareRedirect'])->name('form.share');
+// Rute Layanan Bantuan Lupa NIKC Personel
+Route::get('/lupa-nikc', [\App\Http\Controllers\Auth\ForgotNikcController::class, 'show'])->name('nikc.forgot');
+Route::post('/lupa-nikc', [\App\Http\Controllers\Auth\ForgotNikcController::class, 'check'])->name('nikc.check');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
