@@ -194,18 +194,7 @@ class ForgotNikcController extends Controller
         $verificationUrl = url('/verifikasi/ekta/' . $verifyCode);
         $qrCodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data=' . urlencode($verificationUrl);
 
-        $photoUrl = null;
-        if ($personel->photo_profile) {
-            $rawPhoto = trim($personel->photo_profile);
-            if (str_starts_with($rawPhoto, 'http://') || str_starts_with($rawPhoto, 'https://') || str_starts_with($rawPhoto, 'data:')) {
-                $photoUrl = $rawPhoto;
-            } else {
-                $cleanPath = str_replace('\\', '/', $rawPhoto);
-                $cleanPath = ltrim($cleanPath, '/');
-                $cleanPath = preg_replace('/^(app\/private\/|app\/public\/|app\/|private\/|storage\/|public\/|\/storage\/|\/admin\/|admin\/)+/', '', $cleanPath);
-                $photoUrl = '/documents/private-stream?path=' . urlencode($cleanPath);
-            }
-        }
+        $photoUrl = $this->resolvePhotoBase64($personel->photo_profile);
 
         return Inertia::render('Auth/ForgotNikc', [
             'settings' => $settings,
@@ -270,5 +259,80 @@ class ForgotNikcController extends Controller
         $stars1 = str_repeat('*', 5);
         $stars2 = str_repeat('*', max(6, $len - 7));
         return $first . $stars1 . $mid . $stars2;
+    }
+
+    /**
+     * Resolusi Pasfoto Personel secara Aman ke Base64 Data URI
+     * Foto dibaca langsung dari server disk dan dikonversi ke Base64 Data URI
+     * sehingga TIDAK MEMERLUKAN rute berkas terbuka (mencegah akses tanpa izin dari pihak luar).
+     */
+    private function resolvePhotoBase64(?string $photoProfile): ?string
+    {
+        if (!$photoProfile) {
+            return null;
+        }
+
+        $rawPhoto = trim($photoProfile);
+        if (str_starts_with($rawPhoto, 'http://') || str_starts_with($rawPhoto, 'https://') || str_starts_with($rawPhoto, 'data:')) {
+            return $rawPhoto;
+        }
+
+        $cleanPath = str_replace('\\', '/', $rawPhoto);
+        $cleanPath = ltrim($cleanPath, '/');
+        $cleanPath = preg_replace('/^(app\/private\/|app\/public\/|app\/|private\/|storage\/|public\/|\/storage\/|\/admin\/|admin\/)+/', '', $cleanPath);
+        $filename = basename($cleanPath);
+
+        $candidates = [
+            storage_path('app/private/' . $cleanPath),
+            storage_path('app/public/' . $cleanPath),
+            storage_path('app/' . $cleanPath),
+            storage_path('app/private/personel/photos/' . $filename),
+            storage_path('app/public/personel/photos/' . $filename),
+            storage_path('app/personel/photos/' . $filename),
+            public_path('storage/' . $cleanPath),
+            public_path('storage/personel/photos/' . $filename),
+            '/www/wwwroot/sisfoperskc.my.id/storage/app/private/personel/photos/' . $filename,
+            '/www/wwwroot/sisfoperskc.my.id/storage/app/public/personel/photos/' . $filename,
+            '/www/wwwroot/sisfoperskc.my.id/storage/app/private/' . $cleanPath,
+            '/www/wwwroot/sisfoperskc.my.id/storage/app/public/' . $cleanPath,
+            '/www/wwwroot/sisfoperskc.my.id/public/storage/' . $cleanPath,
+            '/www/wwwroot/sisfopers.site/storage/app/private/' . $cleanPath,
+            '/www/wwwroot/sisfopers.site/storage/app/public/' . $cleanPath,
+            '/www/wwwroot/sisfopers.site/storage/app/private/personel/photos/' . $filename,
+            '/www/wwwroot/sisfopers.site/storage/app/public/personel/photos/' . $filename,
+            '/www/wwwroot/sisfopers.site/public/storage/' . $cleanPath,
+        ];
+
+        foreach (['private', 'public', 'local'] as $diskName) {
+            try {
+                if (\Illuminate\Support\Facades\Storage::disk($diskName)->exists($cleanPath)) {
+                    $candidates[] = \Illuminate\Support\Facades\Storage::disk($diskName)->path($cleanPath);
+                }
+                if (\Illuminate\Support\Facades\Storage::disk($diskName)->exists('personel/photos/' . $filename)) {
+                    $candidates[] = \Illuminate\Support\Facades\Storage::disk($diskName)->path('personel/photos/' . $filename);
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        foreach ($candidates as $candidate) {
+            if (file_exists($candidate) && is_file($candidate) && is_readable($candidate)) {
+                $ext = strtolower(pathinfo($candidate, PATHINFO_EXTENSION));
+                $mimeTypes = [
+                    'jpg'  => 'image/jpeg',
+                    'jpeg' => 'image/jpeg',
+                    'png'  => 'image/png',
+                    'webp' => 'image/webp',
+                    'gif'  => 'image/gif',
+                    'svg'  => 'image/svg+xml',
+                ];
+                $mime = $mimeTypes[$ext] ?? (@mime_content_type($candidate) ?: 'image/jpeg');
+                $fileContent = @file_get_contents($candidate);
+                if ($fileContent !== false) {
+                    return 'data:' . $mime . ';base64,' . base64_encode($fileContent);
+                }
+            }
+        }
+
+        return null;
     }
 }
