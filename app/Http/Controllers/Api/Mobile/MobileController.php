@@ -47,6 +47,7 @@ class MobileController extends Controller
             'fcm_enabled' => FcmService::enabled(),
             'firebase' => FcmService::clientConfig(),
             'min_app_version' => (int) ($settings['mobile_min_version'] ?? 1),
+            'app_update' => \App\Support\AppRelease::publicPayload(),
             'server_time' => now()->toIso8601String(),
         ]);
     }
