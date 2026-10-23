@@ -94,6 +94,7 @@ Route::prefix('m/app')->name('mobile.')->middleware(MobileBridge::class)->group(
     Route::get('/update', [\App\Http\Controllers\Api\Mobile\AppUpdateController::class, 'latest'])->middleware('throttle:60,1')->name('update');
     Route::get('/update/download', [\App\Http\Controllers\Api\Mobile\AppUpdateController::class, 'download'])->middleware('throttle:30,1')->name('update.download');
     Route::post('/login', [MobileController::class, 'login'])->middleware('throttle:20,1')->name('login');
+    Route::post('/device-release/request', [MobileController::class, 'deviceReleaseRequest'])->middleware('throttle:5,10')->name('device-release.request');
     Route::get('/me', [MobileController::class, 'me'])->name('me');
     Route::post('/logout', [MobileController::class, 'logout'])->name('logout');
     Route::post('/device', [MobileController::class, 'registerDevice'])->name('device.register');

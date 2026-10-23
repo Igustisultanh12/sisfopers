@@ -10,6 +10,7 @@ use App\Models\Pju;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\FcmService;
+use App\Support\DeviceGuard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -58,15 +59,19 @@ class MobileController extends Controller
             'username' => 'required|string|max:150',
             'password' => 'required|string|max:255',
             'device_name' => 'nullable|string|max:120',
+            'device_id' => 'nullable|string|max:120',
+            'logout_web' => 'nullable',
         ]);
 
         $username = trim($request->input('username'));
         $password = (string) $request->input('password');
         $deviceName = Str::limit($request->input('device_name') ?: 'Android', 100, '');
+        // Aplikasi lama belum mengirim device_id: perlakukan sebagai perangkat tak dikenal
+        $deviceId = preg_replace('/[^A-Za-z0-9_\-]/', '', (string) $request->input('device_id')) ?: 'legacy-' . sha1($deviceName . $request->userAgent());
 
+        $actor = null;
         $user = User::where('username', $username)->first()
             ?? User::where('email', strtolower($username))->first();
-
         if ($user && Hash::check($password, $user->password)) {
             if (!$user->is_active) {
                 return response()->json([
@@ -75,10 +80,59 @@ class MobileController extends Controller
                     'message' => 'Akun Anda belum aktif. Silakan tunggu verifikasi Admin.',
                 ], 403);
             }
+            $actor = $user;
+        } else {
+            $pju = Pju::where('email', strtolower($username))->first()
+                ?? Pju::where('username', $username)->first();
+            if ($pju && Hash::check($password, $pju->password)) {
+                if (!$pju->is_active) {
+                    return response()->json([
+                        'success' => false,
+                        'code' => 'inactive',
+                        'message' => 'Akun PJU Anda dalam status non-aktif. Silakan hubungi Administrator.',
+                    ], 403);
+                }
+                $actor = $pju;
+            }
+        }
 
+        if (!$actor) {
+            return response()->json([
+                'success' => false,
+                'code' => 'invalid_credentials',
+                'message' => 'Kredensial login tidak cocok dengan data kami.',
+                'errors' => ['username' => ['Kredensial login tidak cocok dengan data kami.']],
+            ], 422);
+        }
+
+        // 1. Satu akun hanya untuk satu perangkat Android
+        $other = DeviceGuard::otherDevice($actor, $deviceId);
+        if ($other) {
+            return response()->json([
+                'success' => false,
+                'code' => 'device_conflict',
+                'message' => "Akun Anda sedang login di perangkat {$other['name']}. Silakan logout atau lepaskan perangkat tersebut terlebih dahulu, lalu login kembali.",
+                'device' => $other,
+                'email_hint' => DeviceGuard::maskEmail($actor->email ?? null),
+            ], 409);
+        }
+
+        // 2. Sesi web masih aktif → minta konfirmasi untuk mengakhirinya
+        if (DeviceGuard::webActive($actor)) {
+            if (!filter_var($request->input('logout_web', false), FILTER_VALIDATE_BOOLEAN)) {
+                return response()->json([
+                    'success' => false,
+                    'code' => 'web_session_active',
+                    'message' => 'Anda sedang aktif di sesi web. Apakah Anda ingin logout sesi web?',
+                ], 409);
+            }
+            DeviceGuard::logoutWeb($actor);
+        }
+
+        if ($actor instanceof User) {
             try {
                 LoginLog::create([
-                    'user_id' => $user->id,
+                    'user_id' => $actor->id,
                     'login_at' => now(),
                     'ip_address' => $request->ip(),
                     'browser' => 'Aplikasi Android',
@@ -88,45 +142,61 @@ class MobileController extends Controller
             } catch (\Throwable $e) {
                 report($e);
             }
-
-            $token = $user->createToken('android:' . $deviceName, ['*'])->plainTextToken;
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Login berhasil.',
-                'token' => $token,
-                'me' => $this->buildMe($user),
-            ]);
         }
 
-        $pju = Pju::where('email', strtolower($username))->first()
-            ?? Pju::where('username', $username)->first();
+        DeviceGuard::forgetSameDevice($actor, $deviceId);
+        $token = $actor->createToken(DeviceGuard::tokenName($deviceId, $deviceName), ['*'])->plainTextToken;
 
-        if ($pju && Hash::check($password, $pju->password)) {
-            if (!$pju->is_active) {
-                return response()->json([
-                    'success' => false,
-                    'code' => 'inactive',
-                    'message' => 'Akun PJU Anda dalam status non-aktif. Silakan hubungi Administrator.',
-                ], 403);
-            }
+        return response()->json([
+            'success' => true,
+            'message' => 'Login berhasil.',
+            'token' => $token,
+            'me' => $this->buildMe($actor),
+        ]);
+    }
 
-            $token = $pju->createToken('android:' . $deviceName, ['*'])->plainTextToken;
-
+    /**
+     * Kehilangan akses HP lama: kirim tautan pelepasan perangkat ke email akun.
+     */
+    public function deviceReleaseRequest(Request $request)
+    {
+        $request->validate(['username' => 'required|string|max:150']);
+        $actor = DeviceGuard::findActor($request->input('username'));
+        $email = $actor->email ?? null;
+        if (!$actor || !$email) {
             return response()->json([
-                'success' => true,
-                'message' => 'Login berhasil.',
-                'token' => $token,
-                'me' => $this->buildMe($pju),
-            ]);
+                'success' => false,
+                'code' => 'no_email',
+                'message' => 'Akun tidak ditemukan atau belum memiliki email terdaftar. Hubungi Administrator untuk melepaskan perangkat.',
+            ], 422);
+        }
+
+        $plain = Str::random(48);
+        \Illuminate\Support\Facades\Cache::put('device_release:' . hash('sha256', $plain), [
+            'type' => $actor instanceof Pju ? 'pju' : 'user',
+            'id' => $actor->getKey(),
+        ], now()->addMinutes(30));
+
+        try {
+            \Illuminate\Support\Facades\Mail::to($email)->send(new \App\Mail\SystemNotificationMail(
+                'Pelepasan Perangkat Aplikasi',
+                'Kami menerima permintaan untuk melepaskan perangkat (HP) lama dari akun SISFOPERS KC Anda. Tekan tombol di bawah, lalu masukkan NIKC, tanggal lahir, kata sandi, dan kode OTP yang dikirim ke email ini. Tautan berlaku 30 menit. Abaikan email ini bila Anda tidak memintanya.',
+                $actor,
+                url('/lepas-perangkat?token=' . $plain)
+            ));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Email pelepasan perangkat gagal: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'code' => 'mail_failed',
+                'message' => 'Email gagal dikirim. Silakan coba lagi atau hubungi Administrator.',
+            ], 500);
         }
 
         return response()->json([
-            'success' => false,
-            'code' => 'invalid_credentials',
-            'message' => 'Kredensial login tidak cocok dengan data kami.',
-            'errors' => ['username' => ['Kredensial login tidak cocok dengan data kami.']],
-        ], 422);
+            'success' => true,
+            'message' => 'Tautan pelepasan perangkat telah dikirim ke email ' . DeviceGuard::maskEmail($email) . '. Buka email tersebut untuk melanjutkan.',
+        ]);
     }
 
     public function me(Request $request)

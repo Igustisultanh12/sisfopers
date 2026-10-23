@@ -38,6 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             \App\Http\Middleware\DetectMobileDeviceMiddleware::class,
             \App\Http\Middleware\LogControllerActivity::class,
+            \App\Http\Middleware\TrackWebSession::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

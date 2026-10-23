@@ -50,6 +50,11 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+// PELEPASAN PERANGKAT APLIKASI (tautan dari email, tanpa login)
+Route::get('/lepas-perangkat', [\App\Http\Controllers\Auth\DeviceReleaseController::class, 'show'])->name('device-release.show');
+Route::post('/lepas-perangkat/verify', [\App\Http\Controllers\Auth\DeviceReleaseController::class, 'verify'])->middleware('throttle:10,1')->name('device-release.verify');
+Route::post('/lepas-perangkat/confirm', [\App\Http\Controllers\Auth\DeviceReleaseController::class, 'confirm'])->middleware('throttle:10,1')->name('device-release.confirm');
+
 // PORTAL VERIFIKASI DOKUMEN PUBLIK (Bisa di-scan via HP tanpa login)
 Route::get('/verify-doc/{verify_code}', [\App\Http\Controllers\Public\DocumentVerificationController::class, 'show'])->name('public.verify-doc');
 Route::get('/verifikasi/ekta/{code}', [\App\Http\Controllers\Public\EktaVerificationController::class, 'show'])->name('ekta.verify.public');
