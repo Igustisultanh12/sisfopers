@@ -50,6 +50,11 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+// PELEPASAN PERANGKAT APLIKASI (tautan dari email, tanpa login)
+Route::get('/lepas-perangkat', [\App\Http\Controllers\Auth\DeviceReleaseController::class, 'show'])->name('device-release.show');
+Route::post('/lepas-perangkat/verify', [\App\Http\Controllers\Auth\DeviceReleaseController::class, 'verify'])->middleware('throttle:10,1')->name('device-release.verify');
+Route::post('/lepas-perangkat/confirm', [\App\Http\Controllers\Auth\DeviceReleaseController::class, 'confirm'])->middleware('throttle:10,1')->name('device-release.confirm');
+
 // PORTAL VERIFIKASI DOKUMEN PUBLIK (Bisa di-scan via HP tanpa login)
 Route::get('/verify-doc/{verify_code}', [\App\Http\Controllers\Public\DocumentVerificationController::class, 'show'])->name('public.verify-doc');
 Route::get('/verifikasi/ekta/{code}', [\App\Http\Controllers\Public\EktaVerificationController::class, 'show'])->name('ekta.verify.public');
@@ -453,6 +458,13 @@ Route::middleware(['auth', 'role:admin,kordinator_matra,kordinator_angkatan'])->
     Route::get('/pengaturan/detect-ip', [SettingController::class, 'detectPublicIp'])->name('setting.detect-ip');
     Route::post('/pengaturan/wa-test', [SettingController::class, 'testWaConnection'])->name('setting.wa-test');
     Route::post('/pengaturan/wa-test-send', [SettingController::class, 'testSendWa'])->name('setting.wa-test-send');
+    Route::post('/pengaturan/fcm', [SettingController::class, 'updateFcm'])->name('setting.fcm');
+    Route::get('/pengaturan/fcm/status', [SettingController::class, 'fcmStatus'])->name('setting.fcm-status');
+    Route::post('/pengaturan/fcm/test', [SettingController::class, 'testFcm'])->name('setting.fcm-test');
+    Route::delete('/pengaturan/fcm', [SettingController::class, 'deleteFcm'])->name('setting.fcm-delete');
+    Route::get('/pengaturan/app-update', [\App\Http\Controllers\Api\Mobile\AppUpdateController::class, 'status'])->name('setting.app-update-status');
+    Route::post('/pengaturan/app-update', [\App\Http\Controllers\Api\Mobile\AppUpdateController::class, 'store'])->name('setting.app-update');
+    Route::delete('/pengaturan/app-update', [\App\Http\Controllers\Api\Mobile\AppUpdateController::class, 'destroy'])->name('setting.app-update-delete');
 
     // Mail Gateway — Pengaturan SMTP Email Server & Test Mail OTP
     Route::get('/mail-gateway', [\App\Http\Controllers\Admin\MailGatewayController::class, 'index'])->name('mail.index');

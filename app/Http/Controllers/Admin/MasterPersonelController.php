@@ -227,6 +227,7 @@ class MasterPersonelController extends Controller
             'nikc' => ['nullable', 'digits:17', 'numeric', new NikcFormatRule($request->input('province'), $request->input('dob'), $request->input('pangkat')), 'unique:personels,nikc'],
             'password' => 'required|string|min:8',
             'photo_profile' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+            'gender' => 'nullable|in:L,P',
             'role' => 'required|string|in:admin,personel,kordinator_angkatan,kordinator_matra'
         ]);
 
@@ -258,7 +259,8 @@ class MasterPersonelController extends Controller
                 'face_verified' => false,
                 'manual_otp' => $otpCode,
                 'manual_otp_expired_at' => $expiredAt,
-                'pob' => '-', 
+                'pob' => '-',
+                'gender' => $request->input('gender') ?: 'L',
                 'address' => '-', 'city' => '-', 'district' => '-', 'village' => '-', 'postal_code' => '-'
             ]));
 
