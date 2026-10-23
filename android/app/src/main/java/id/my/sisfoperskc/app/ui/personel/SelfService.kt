@@ -598,7 +598,7 @@ fun EktaCard(p: JsonObject, pangkatLabel: String, nomor: String? = null) {
         Modifier.fillMaxWidth().aspectRatio(1.586f).appear(0).clip(RoundedCornerShape(24.dp))
             .background(Brush.linearGradient(listOf(Color(0xFF0F2A6B), Color(0xFF1D4ED8), Color(0xFF0EA5E9)))),
     ) {
-        id.my.sisfoperskc.app.ui.auth.AnimatedBlobs()
+        id.my.sisfoperskc.app.ui.auth.AnimatedBlobs(Modifier.matchParentSize())
         Column(Modifier.fillMaxSize().padding(18.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 id.my.sisfoperskc.app.ui.components.AppLogo(30.dp)

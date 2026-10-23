@@ -234,7 +234,7 @@ fun AccountScreen() {
             val name = p?.str("full_name") ?: me?.fullName ?: user.str("username")
             // Profil
             Box(Modifier.fillMaxWidth().appear(0).clip(RoundedCornerShape(28.dp)).background(Sx.HeroGradient)) {
-                id.my.sisfoperskc.app.ui.auth.AnimatedBlobs()
+                id.my.sisfoperskc.app.ui.auth.AnimatedBlobs(Modifier.matchParentSize())
                 Column(Modifier.fillMaxWidth().padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Avatar(user.strOrNull("avatar") ?: p?.strOrNull("photo_profile"), name, 92.dp, ring = Color.White)
                     Spacer(Modifier.height(12.dp))

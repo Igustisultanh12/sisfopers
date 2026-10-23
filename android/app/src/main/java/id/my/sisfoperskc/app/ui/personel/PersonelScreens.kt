@@ -223,7 +223,7 @@ fun MyBroadcastDetailScreen(uuid: String) {
 @Composable
 fun BroadcastHeader(b: JsonObject) {
     Box(Modifier.fillMaxWidth().appear(0).clip(RoundedCornerShape(26.dp)).background(Sx.HeroGradient)) {
-        id.my.sisfoperskc.app.ui.auth.AnimatedBlobs()
+        id.my.sisfoperskc.app.ui.auth.AnimatedBlobs(Modifier.matchParentSize())
         Column(Modifier.padding(20.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Box(Modifier.clip(RoundedCornerShape(50)).background(Color.White.copy(0.2f)).padding(horizontal = 10.dp, vertical = 4.dp)) {

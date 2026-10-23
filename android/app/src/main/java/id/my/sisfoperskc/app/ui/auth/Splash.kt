@@ -140,7 +140,7 @@ fun SplashScreen() {
     }
 
     Box(Modifier.fillMaxSize().background(Sx.HeroGradient), contentAlignment = Alignment.Center) {
-        AnimatedBlobs()
+        AnimatedBlobs(Modifier.matchParentSize())
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.scale(logoScale.value)) {
                 Canvas(Modifier.size(150.dp).rotate(rot)) {
@@ -200,7 +200,7 @@ fun OnboardingScreen() {
         nav.navigate(Rt.LOGIN) { popUpTo(Rt.ONBOARD) { inclusive = true } }
     }
     Box(Modifier.fillMaxSize().background(Sx.Bg)) {
-        AnimatedBlobs(dark = false)
+        AnimatedBlobs(Modifier.matchParentSize(), dark = false)
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
             Row(Modifier.fillMaxWidth().padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
                 AppLogo(36.dp)
@@ -270,7 +270,7 @@ fun MaintenanceScreen() {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     Box(Modifier.fillMaxSize().background(Sx.Bg)) {
-        AnimatedBlobs(dark = false)
+        AnimatedBlobs(Modifier.matchParentSize(), dark = false)
         Column(Modifier.fillMaxSize().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Floating {
                 Box(Modifier.size(120.dp).clip(RoundedCornerShape(38.dp)).background(Brush.linearGradient(listOf(Sx.Amber, Color(0xFFF97316)))), contentAlignment = Alignment.Center) {
@@ -310,7 +310,7 @@ fun AuthHero(title: String, subtitle: String, onBack: (() -> Unit)? = null, cont
     Box(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(bottomStart = 36.dp, bottomEnd = 36.dp)).background(Sx.HeroGradient),
     ) {
-        AnimatedBlobs()
+        AnimatedBlobs(Modifier.matchParentSize())
         Column(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 24.dp, vertical = 20.dp)) {
             if (onBack != null) {
                 Box(Modifier.size(42.dp).clip(CircleShape).background(Color.White.copy(0.18f)).pressable(onBack), contentAlignment = Alignment.Center) {

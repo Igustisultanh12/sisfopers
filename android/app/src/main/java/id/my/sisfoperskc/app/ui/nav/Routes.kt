@@ -109,7 +109,9 @@ object Rt {
     /** Petakan URL web (dari notifikasi) ke rute aplikasi. */
     fun fromWebUrl(url: String?, me: Me?): String {
         if (url.isNullOrBlank() || me == null) return NOTIF
-        val p = url.substringBefore('?').lowercase()
+        val p = url.substringBefore('?').lowercase().let { u ->
+            if (u.contains("://")) "/" + u.substringAfter("://").substringAfter('/', "") else u
+        }
         val personelSide = p.startsWith("/personel") || me.isPersonel
         val uuid = Regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}").find(p)?.value
         return when {

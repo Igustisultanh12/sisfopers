@@ -136,7 +136,7 @@ fun HomeScreen() {
 @Composable
 fun HeroCard(me: Me, stats: List<Triple<String, Int, androidx.compose.ui.graphics.vector.ImageVector>>, extra: String? = null) {
     Box(Modifier.fillMaxWidth().appear(0).clip(RoundedCornerShape(28.dp)).background(Sx.HeroGradient)) {
-        id.my.sisfoperskc.app.ui.auth.AnimatedBlobs()
+        id.my.sisfoperskc.app.ui.auth.AnimatedBlobs(Modifier.matchParentSize())
         Column(Modifier.padding(20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Avatar(me.photo, me.fullName, 54.dp, ring = Color.White.copy(0.6f))

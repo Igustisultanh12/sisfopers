@@ -114,7 +114,7 @@ fun LoginScreen() {
     Box(Modifier.fillMaxSize().background(Sx.Bg)) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).imePadding()) {
             Box(Modifier.fillMaxWidth().height(330.dp).clip(RoundedCornerShape(bottomStart = 44.dp, bottomEnd = 44.dp)).background(Sx.HeroGradient)) {
-                AnimatedBlobs()
+                AnimatedBlobs(Modifier.matchParentSize())
                 Column(
                     Modifier.fillMaxWidth().statusBarsPadding().padding(top = 36.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,

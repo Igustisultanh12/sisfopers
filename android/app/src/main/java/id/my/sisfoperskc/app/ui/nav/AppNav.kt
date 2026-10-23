@@ -25,6 +25,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import id.my.sisfoperskc.app.data.Api
 import id.my.sisfoperskc.app.data.ApiEvent
 import id.my.sisfoperskc.app.data.Auth
@@ -129,8 +130,9 @@ fun SisfoApp(pendingUrl: MutableState<String?>, pendingNotificationId: MutableSt
 
     // Navigasi dari notifikasi
     val url = pendingUrl.value
-    LaunchedEffect(url, me?.id) {
-        if (url != null && me != null && nav.currentDestination?.route !in setOf(null, Rt.SPLASH)) {
+    val entry by nav.currentBackStackEntryAsState()
+    LaunchedEffect(url, me?.id, entry?.destination?.route) {
+        if (url != null && me != null && entry?.destination?.route !in setOf(null, Rt.SPLASH, Rt.LOGIN, Rt.ONBOARD, Rt.GATE_OTP, Rt.GATE_SINYALMEN, Rt.GATE_WILAYAH)) {
             pendingNotificationId.value?.let { id -> Api.send("/notifications/$id/read") }
             pendingUrl.value = null
             pendingNotificationId.value = null
