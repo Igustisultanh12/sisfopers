@@ -18,3 +18,6 @@ Backend harus memuat perubahan branch `api-mobile` (API `/api/m`, tabel `mobile_
 
 ### Instalasi
 Unduh APK di bawah, izinkan "Instal aplikasi tidak dikenal", lalu pasang. Android 7.0 ke atas.
+
+### Panduan
+Buku panduan penggunaan (PDF & Word) tersedia bersama paparan aplikasi.
