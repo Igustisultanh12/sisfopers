@@ -297,15 +297,16 @@ fun RemoteImage(
     contentScale: ContentScale = ContentScale.Crop,
     contentDescription: String? = null,
     fallback: androidx.compose.ui.graphics.painter.Painter? = null,
+    alignment: Alignment = Alignment.Center,
 ) {
     val url = Api.fileUrl(path)
     if (url == null) {
-        if (fallback != null) Image(fallback, contentDescription, modifier, contentScale = contentScale)
+        if (fallback != null) Image(fallback, contentDescription, modifier, alignment = alignment, contentScale = contentScale)
         return
     }
     if (url.startsWith("data:")) {
         val bmp = remember(url) { decodeDataUri(url) }
-        if (bmp != null) Image(bmp, contentDescription, modifier, contentScale = contentScale)
+        if (bmp != null) Image(bmp, contentDescription, modifier, alignment = alignment, contentScale = contentScale)
         return
     }
     val ctx = LocalContext.current
@@ -313,6 +314,7 @@ fun RemoteImage(
         model = ImageRequest.Builder(ctx).data(url).crossfade(true).build(),
         contentDescription = contentDescription,
         contentScale = contentScale,
+        alignment = alignment,
         modifier = modifier,
         error = fallback,
         fallback = fallback,

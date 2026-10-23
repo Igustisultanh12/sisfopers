@@ -20,6 +20,13 @@ adb shell pm grant $PKG android.permission.RECORD_AUDIO 2>/dev/null || true
 adb shell settings put global window_animation_scale 1
 adb shell settings put global transition_animation_scale 1
 
+tap_text() { # ketuk elemen berdasarkan teks (uiautomator)
+  adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
+  local b
+  b=$(adb shell cat /sdcard/ui.xml | tr '>' '\n' | grep "text=\"$1\"" | head -1 | sed -n 's/.*bounds="\[\([0-9]*\),\([0-9]*\)\]\[\([0-9]*\),\([0-9]*\)\]".*/\1 \2 \3 \4/p')
+  if [ -n "$b" ]; then set -- $b; adb shell input tap $(( ($1 + $3) / 2 )) $(( ($2 + $4) / 2 )); fi
+}
+
 shot() { # nama peran rute jeda [aksi]
   local name=$1 role=$2 route=$3 wait=${4:-10} action=${5:-}
   if [ -n "$route" ]; then
@@ -31,6 +38,7 @@ shot() { # nama peran rute jeda [aksi]
   case "$action" in
     drawer) adb shell input tap 100 208; sleep 2 ;;
     scroll) adb shell input swipe 540 1900 540 700 600; sleep 2 ;;
+    back) tap_text "Tampak Belakang"; sleep 2 ;;
     scroll2) adb shell input swipe 540 1900 540 600 500; sleep 1; adb shell input swipe 540 1900 540 600 500; sleep 1; adb shell input swipe 540 1900 540 900 500; sleep 2 ;;
   esac
   adb exec-out screencap -p > "$OUT/$name.png"
@@ -69,7 +77,8 @@ shot 18_admin_skep admin admin/skep
 shot 19_admin_pengkinian admin admin/pengkinian
 shot 20_admin_pendidikan admin admin/pendidikan
 shot 21_admin_ekta admin admin/ekta
-shot 22_admin_ekta_detail admin admin/ekta/1
+shot 22_admin_ekta_detail admin admin/ekta/4
+shot 22b_admin_ekta_back admin admin/ekta/4 10 back
 shot 23_admin_otp admin admin/otp
 shot 24_admin_otp_reset admin admin/otp-reset
 shot 25_admin_broadcast admin broadcast
@@ -114,6 +123,7 @@ shot 77_pers_tickets personel my/tickets
 shot 78_pers_forms personel my/forms
 shot 79_pers_form personel "my/forms/$PFORM"
 shot 80_pers_ekta personel my/ekta
+shot 80b_pers_ekta_back personel my/ekta 10 back
 shot 81_pers_chat personel my/chat
 shot 82_pers_vicon personel vicon
 shot 83_pers_notifications personel notifications

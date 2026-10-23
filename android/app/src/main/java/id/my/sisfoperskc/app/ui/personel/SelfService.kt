@@ -69,6 +69,7 @@ import id.my.sisfoperskc.app.data.strOrNull
 import id.my.sisfoperskc.app.data.strings
 import id.my.sisfoperskc.app.ui.auth.AsnJenisOpts
 import id.my.sisfoperskc.app.ui.auth.OtpBoxes
+import id.my.sisfoperskc.app.ui.components.KtaCardView
 import id.my.sisfoperskc.app.ui.components.Accept
 import id.my.sisfoperskc.app.ui.components.Avatar
 import id.my.sisfoperskc.app.ui.components.Badge
@@ -576,7 +577,7 @@ fun MyEktaScreen() {
     ShellScaffold(title = "E-KTA Saya", subtitle = "Kartu Tanda Anggota Elektronik") { inner ->
         PageContent(loader, Modifier.padding(top = inner.calculateTopPadding())) { data ->
             val p = data.obj("personel")
-            EktaCard(p, Session.me.value?.pangkatLabel ?: p.str("pangkat"))
+            KtaCardView(p, p.objOrNull("ekta"), data.objOrNull("ektaSettings"), Modifier.appear(0))
             if (data.bool("is_under_development")) {
                 SxCard(Modifier.fillMaxWidth().appear(2), color = Sx.AmberSoft, border = Sx.Amber.copy(0.3f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -592,45 +593,3 @@ fun MyEktaScreen() {
     }
 }
 
-@Composable
-fun EktaCard(p: JsonObject, pangkatLabel: String, nomor: String? = null) {
-    Box(
-        Modifier.fillMaxWidth().aspectRatio(1.586f).appear(0).clip(RoundedCornerShape(24.dp))
-            .background(Brush.linearGradient(listOf(Color(0xFF0F2A6B), Color(0xFF1D4ED8), Color(0xFF0EA5E9)))),
-    ) {
-        id.my.sisfoperskc.app.ui.auth.AnimatedBlobs(Modifier.matchParentSize())
-        Column(Modifier.fillMaxSize().padding(18.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                id.my.sisfoperskc.app.ui.components.AppLogo(30.dp)
-                Spacer(Modifier.width(8.dp))
-                Column(Modifier.weight(1f)) {
-                    Text("KARTU TANDA ANGGOTA", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
-                    Text("KOMPONEN CADANGAN", color = Color.White.copy(0.8f), fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-                }
-                MatraBadgeOnDark(p.str("matra"))
-            }
-            Spacer(Modifier.weight(1f))
-            Row(verticalAlignment = Alignment.Bottom) {
-                Box(Modifier.size(width = 72.dp, height = 92.dp).clip(RoundedCornerShape(12.dp)).background(Color.White.copy(0.2f)).border(2.dp, Color.White.copy(0.7f), RoundedCornerShape(12.dp))) {
-                    RemoteImage(p.strOrNull("photo_profile"), Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                }
-                Spacer(Modifier.width(14.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(p.str("full_name").uppercase(), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                    Text(pangkatLabel, color = Color.White.copy(0.85f), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                    Spacer(Modifier.height(6.dp))
-                    Text("NIKC", color = Color.White.copy(0.6f), fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                    Text(p.str("nikc"), color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
-                    if (nomor != null) Text("No. KTA $nomor", color = Color.White.copy(0.8f), fontSize = 11.sp)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun MatraBadgeOnDark(matra: String?) {
-    Box(Modifier.clip(RoundedCornerShape(10.dp)).background(Color.White.copy(0.2f)).padding(horizontal = 10.dp, vertical = 4.dp)) {
-        Text(Fmt.matra(matra), color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold)
-    }
-}

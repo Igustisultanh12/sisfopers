@@ -36,6 +36,7 @@ import id.my.sisfoperskc.app.data.bool
 import id.my.sisfoperskc.app.data.int
 import id.my.sisfoperskc.app.data.obj
 import id.my.sisfoperskc.app.data.objOrNull
+import id.my.sisfoperskc.app.data.toPage
 import id.my.sisfoperskc.app.data.str
 import id.my.sisfoperskc.app.data.strOrNull
 import id.my.sisfoperskc.app.ui.auth.OtpBoxes
@@ -70,7 +71,9 @@ import id.my.sisfoperskc.app.ui.components.rememberPaged
 import id.my.sisfoperskc.app.ui.nav.LocalNav
 import id.my.sisfoperskc.app.ui.nav.Rt
 import id.my.sisfoperskc.app.ui.nav.ShellScaffold
-import id.my.sisfoperskc.app.ui.personel.EktaCard
+import id.my.sisfoperskc.app.ui.components.KtaCardView
+import id.my.sisfoperskc.app.ui.components.opts
+import id.my.sisfoperskc.app.ui.components.SelectF
 import id.my.sisfoperskc.app.ui.theme.Sx
 import kotlinx.coroutines.launch
 
@@ -135,11 +138,27 @@ private fun EktaSettingsDialog(onDismiss: () -> Unit, onSaved: () -> Unit) {
             TextFieldF(form, "ekta_signer_name", "Nama Pejabat Penandatangan")
             TextFieldF(form, "ekta_signer_rank", "Pangkat Pejabat")
             TextFieldF(form, "ekta_signer_title", "Jabatan Pejabat")
-            TextFieldF(form, "ekta_font_family", "Jenis Font")
-            TextFieldF(form, "ekta_font_size", "Ukuran Font", placeholder = "11px")
+            SelectF(form, "ekta_font_family", "Jenis Font", opts("Arial" to "Arial", "Times New Roman" to "Times New Roman", "Tahoma" to "Tahoma", "Verdana" to "Verdana", "Segoe UI" to "Segoe UI", "Courier New" to "Courier New"))
+            SelectF(form, "ekta_font_size", "Ukuran Font", opts("9px" to "9px", "10px" to "10px", "11px" to "11px (bawaan)", "12px" to "12px", "13px" to "13px"))
             FileF(form, "ekta_logo_komcad", "Logo Komcad", Accept.Image, existingPath = loader.data?.obj("ektaSettings")?.strOrNull("logo_komcad"))
             FileF(form, "ekta_signature", "Tanda Tangan", Accept.Image, existingPath = loader.data?.obj("ektaSettings")?.strOrNull("signature"))
             FileF(form, "ekta_stamp", "Stempel", Accept.Image, existingPath = loader.data?.obj("ektaSettings")?.strOrNull("stamp"))
+            // Pratinjau seketika seperti di web
+            val base = loader.data?.obj("ektaSettings")
+            val preview = loader.data?.get("personels").toPage().items.firstOrNull()
+            if (preview != null) {
+                Text("Pratinjau Format Kartu", style = MaterialTheme.typography.titleSmall)
+                val live = kotlinx.serialization.json.JsonObject(
+                    (base ?: kotlinx.serialization.json.JsonObject(emptyMap())) + mapOf(
+                        "signer_name" to kotlinx.serialization.json.JsonPrimitive(form["ekta_signer_name"]),
+                        "signer_rank" to kotlinx.serialization.json.JsonPrimitive(form["ekta_signer_rank"]),
+                        "signer_title" to kotlinx.serialization.json.JsonPrimitive(form["ekta_signer_title"]),
+                        "font_family" to kotlinx.serialization.json.JsonPrimitive(form["ekta_font_family"]),
+                        "font_size" to kotlinx.serialization.json.JsonPrimitive(form["ekta_font_size"]),
+                    ).filterValues { it.content.isNotBlank() },
+                )
+                KtaCardView(preview, preview.objOrNull("ekta"), live)
+            }
             PrimaryButton("Simpan Pengaturan", {
                 scope.launch { if (Ui.report(form.submit("/admin/ekta/settings"))) onSaved() }
             }, Modifier.fillMaxWidth(), loading = form.submitting)
@@ -160,7 +179,7 @@ fun EktaDetailScreen(id: String) {
         PageContent(loader, Modifier.padding(top = inner.calculateTopPadding())) { data ->
             val p = data.obj("personel")
             val ekta = p.objOrNull("ekta")
-            EktaCard(p, p.str("pangkat"), ekta?.strOrNull("nomor_kta"))
+            KtaCardView(p, ekta, data.objOrNull("ektaSettings"), Modifier.appear(0), showVerifyLink = ekta?.str("status") == "TERBIT")
             SxCard(Modifier.fillMaxWidth().appear(1)) {
                 Row { SectionTitle("Data Kartu", Modifier.weight(1f)); StatusBadge(ekta?.str("status") ?: "BELUM_TERBIT") }
                 InfoRow("Nama", p.str("full_name"))
