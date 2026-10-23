@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Illuminate\Support\ViewErrorBag;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -35,6 +36,8 @@ class MobileBridge
         $request->headers->set('X-Inertia', 'true');
         $request->headers->set('X-Requested-With', 'XMLHttpRequest');
 
+        // Driver default diganti ke array agar helper session() memakai store yang sama
+        config(['session.driver' => 'array']);
         $session = app('session')->driver('array');
         $session->setId(Str::random(40));
         $session->start();
@@ -45,9 +48,54 @@ class MobileBridge
 
         $this->authenticateToken($request);
 
+        // Pulihkan data sesi milik token (alur multi-langkah seperti OTP)
+        $sessionKey = $this->sessionCacheKey($request);
+        if ($sessionKey) {
+            $stored = Cache::get($sessionKey);
+            if (is_array($stored)) {
+                foreach ($stored as $key => $value) {
+                    $session->put($key, $value);
+                }
+            }
+        }
+
         $response = $next($request);
 
-        return $this->transform($request, $response, $session);
+        $result = $this->transform($request, $response, $session);
+
+        if ($sessionKey) {
+            $this->persistSession($sessionKey, $session);
+        }
+
+        return $result;
+    }
+
+    protected function sessionCacheKey(Request $request): ?string
+    {
+        $token = $request->attributes->get('mobile_token');
+        return $token ? 'mobile_session:' . $token->id : null;
+    }
+
+    protected function persistSession(string $key, $session): void
+    {
+        try {
+            $data = $session->all();
+            $transient = array_merge(
+                (array) ($data['_flash']['new'] ?? []),
+                (array) ($data['_flash']['old'] ?? []),
+                ['_flash', '_token', '_previous', 'errors', 'success', 'error', 'message', 'status', 'info', 'warning', 'ineligible_error', 'url']
+            );
+            foreach ($transient as $k) {
+                unset($data[$k]);
+            }
+            if (empty($data)) {
+                Cache::forget($key);
+            } else {
+                Cache::put($key, $data, now()->addHours(6));
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 
     protected function authenticateToken(Request $request): void
@@ -113,7 +161,7 @@ class MobileBridge
         $successMessage = $session->get('success') ?? $session->get('message') ?? $session->get('status') ?? $session->get('info');
 
         // Rute gerbang wajib yang memerlukan tindakan khusus di aplikasi
-        if ($path === '/login' && !$hasUser) {
+        if ($path === '/login' && !$hasUser && $successMessage === null) {
             return new JsonResponse([
                 'success' => false,
                 'code' => 'unauthenticated',
