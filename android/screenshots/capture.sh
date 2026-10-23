@@ -14,6 +14,8 @@ adb shell am broadcast -a com.android.systemui.demo -e command battery -e level 
 adb shell am broadcast -a com.android.systemui.demo -e command network -e wifi show -e level 4 >/dev/null
 adb shell am broadcast -a com.android.systemui.demo -e command network -e mobile show -e datatype none -e level 4 >/dev/null
 adb shell am broadcast -a com.android.systemui.demo -e command notifications -e visible false >/dev/null
+adb shell settings put global hide_error_dialogs 1
+adb shell pm disable-user --user 0 com.google.android.apps.nexuslauncher >/dev/null 2>&1 || true
 adb shell pm grant $PKG android.permission.POST_NOTIFICATIONS 2>/dev/null || true
 adb shell pm grant $PKG android.permission.CAMERA 2>/dev/null || true
 adb shell pm grant $PKG android.permission.RECORD_AUDIO 2>/dev/null || true
@@ -27,8 +29,11 @@ tap_text() { # ketuk elemen berdasarkan teks (uiautomator)
   if [ -n "$b" ]; then set -- $b; adb shell input tap $(( ($1 + $3) / 2 )) $(( ($2 + $4) / 2 )); fi
 }
 
+ONLY=$(cat screenshots/ONLY 2>/dev/null || true)
+
 shot() { # nama peran rute jeda [aksi]
   local name=$1 role=$2 route=$3 wait=${4:-10} action=${5:-}
+  if [ -n "$ONLY" ] && ! echo "$name" | grep -qE "$ONLY"; then return; fi
   if [ -n "$route" ]; then
     adb shell am start -S -W -n $PKG/$ACT --es demo_role "$role" --es demo_route "$route" >/dev/null
   else
