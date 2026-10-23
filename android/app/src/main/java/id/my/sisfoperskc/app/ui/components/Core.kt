@@ -296,8 +296,13 @@ fun RemoteImage(
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Crop,
     contentDescription: String? = null,
+    fallback: androidx.compose.ui.graphics.painter.Painter? = null,
 ) {
-    val url = Api.fileUrl(path) ?: return
+    val url = Api.fileUrl(path)
+    if (url == null) {
+        if (fallback != null) Image(fallback, contentDescription, modifier, contentScale = contentScale)
+        return
+    }
     if (url.startsWith("data:")) {
         val bmp = remember(url) { decodeDataUri(url) }
         if (bmp != null) Image(bmp, contentDescription, modifier, contentScale = contentScale)
@@ -309,6 +314,8 @@ fun RemoteImage(
         contentDescription = contentDescription,
         contentScale = contentScale,
         modifier = modifier,
+        error = fallback,
+        fallback = fallback,
     )
 }
 
@@ -343,7 +350,7 @@ fun Avatar(path: String?, name: String?, size: Dp = 44.dp, radius: Dp? = null, r
 
 @Composable
 fun AppLogo(size: Dp = 56.dp, modifier: Modifier = Modifier) {
-    Image(painterResource(R.drawable.ic_logo), null, modifier.size(size))
+    Image(painterResource(R.drawable.logo_tni), null, modifier.size(size))
 }
 
 // ------------------------------------------------------------------ Tombol

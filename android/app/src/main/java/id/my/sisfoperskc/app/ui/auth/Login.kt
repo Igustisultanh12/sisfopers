@@ -1,6 +1,8 @@
 package id.my.sisfoperskc.app.ui.auth
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.ui.res.painterResource
+import id.my.sisfoperskc.app.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -113,10 +115,11 @@ fun LoginScreen() {
 
     Box(Modifier.fillMaxSize().background(Sx.Bg)) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).imePadding()) {
-            Box(Modifier.fillMaxWidth().height(330.dp).clip(RoundedCornerShape(bottomStart = 44.dp, bottomEnd = 44.dp)).background(Sx.HeroGradient)) {
+            Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(bottomStart = 44.dp, bottomEnd = 44.dp)).background(Sx.HeroGradient)) {
                 AnimatedBlobs(Modifier.matchParentSize())
                 Column(
-                    Modifier.fillMaxWidth().statusBarsPadding().padding(top = 36.dp),
+                    // ruang bawah = tumpang tindih kartu login (52dp) + jarak, agar logo matra tidak terpotong
+                    Modifier.fillMaxWidth().statusBarsPadding().padding(top = 32.dp, bottom = 76.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Box(
@@ -137,13 +140,18 @@ fun LoginScreen() {
                         modifier = Modifier.padding(horizontal = 32.dp).appear(2),
                     )
                     Spacer(Modifier.height(14.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.appear(3)) {
-                        listOf("logo_tni", "logo_ad", "logo_al", "logo_au").forEach { k ->
-                            val path = config?.strOrNull(k)
-                            if (path != null) {
-                                Box(Modifier.size(36.dp).clip(RoundedCornerShape(12.dp)).background(Color.White.copy(0.95f)).padding(4.dp)) {
-                                    RemoteImage(path, Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Fit)
-                                }
+                    // Lambang Tri Matra: TNI AD, TNI AL, TNI AU
+                    Row(horizontalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.appear(3)) {
+                        listOf("logo_ad" to R.drawable.logo_ad, "logo_al" to R.drawable.logo_al, "logo_au" to R.drawable.logo_au).forEach { (k, res) ->
+                            Box(
+                                Modifier.size(46.dp).clip(RoundedCornerShape(14.dp)).background(Color.White.copy(0.95f)).padding(6.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                RemoteImage(
+                                    config?.strOrNull(k), Modifier.fillMaxSize(),
+                                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                                    fallback = painterResource(res),
+                                )
                             }
                         }
                     }

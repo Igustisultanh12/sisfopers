@@ -1,5 +1,9 @@
 ## SISFOPERS KC — Aplikasi Android
 
+### Perubahan 1.0.1
+- Ikon aplikasi, layar pembuka, dan logo di dalam aplikasi kini memakai lambang Mabes TNI.
+- Lambang Tri Matra (TNI AD, TNI AL, TNI AU) di halaman masuk tampil utuh, tidak lagi terpotong kartu login.
+
 Aplikasi native (Kotlin + Jetpack Compose) dengan tampilan mengikuti versi web dan animasi interaktif.
 
 ### Fitur
