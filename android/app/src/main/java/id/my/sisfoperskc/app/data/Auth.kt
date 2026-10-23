@@ -39,10 +39,25 @@ object Auth {
         else -> Rt.HOME
     }
 
-    suspend fun login(context: Context, username: String, password: String): ApiResult {
+    /** ID perangkat yang stabil (tetap sama walau aplikasi dipasang ulang) untuk aturan satu akun satu HP. */
+    fun deviceId(context: Context): String {
+        @Suppress("HardwareIds")
+        val raw = android.provider.Settings.Secure.getString(context.contentResolver, android.provider.Settings.Secure.ANDROID_ID)
+            ?: (android.os.Build.MANUFACTURER + android.os.Build.MODEL + android.os.Build.FINGERPRINT)
+        val digest = java.security.MessageDigest.getInstance("SHA-256").digest(("sisfoperskc:" + raw).toByteArray())
+        return digest.take(16).joinToString("") { "%02x".format(it) }
+    }
+
+    fun deviceName(): String = "${android.os.Build.MANUFACTURER.replaceFirstChar { it.uppercase() }} ${android.os.Build.MODEL}"
+
+    suspend fun login(context: Context, username: String, password: String, logoutWeb: Boolean = false): ApiResult {
         val r = Api.appSend(
             "/login",
-            mapOf("username" to username.trim(), "password" to password, "device_name" to "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"),
+            mapOf(
+                "username" to username.trim(), "password" to password,
+                "device_name" to deviceName(), "device_id" to deviceId(context),
+                "logout_web" to logoutWeb,
+            ),
         )
         if (r is ApiResult.Ok) {
             val token = r.data.strOrNull("token")

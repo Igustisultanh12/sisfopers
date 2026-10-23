@@ -28,6 +28,16 @@ class SisfoMessagingService : FirebaseMessagingService() {
             return
         }
         if (!Session.isLoggedIn) return
+        if (type == "device_released") {
+            // Perangkat ini dilepas dari akun lewat tautan email: akhiri sesi lokal
+            if (AppVisibility.foreground) {
+                id.my.sisfoperskc.app.data.Api.events.tryEmit(id.my.sisfoperskc.app.data.ApiEvent.Unauthenticated)
+            } else {
+                id.my.sisfoperskc.app.data.Auth.clearLocal(applicationContext)
+            }
+            Notifier.show(applicationContext, key = "device_released", title = title, body = body, channel = Notifier.CH_GENERAL, url = null, notificationId = null)
+            return
+        }
         val url = data["url"]
 
         when (type) {

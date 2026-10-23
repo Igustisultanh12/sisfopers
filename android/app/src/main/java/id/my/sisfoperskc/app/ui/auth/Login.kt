@@ -25,6 +25,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Badge
+import androidx.compose.material.icons.outlined.Computer
+import androidx.compose.material.icons.outlined.MarkEmailRead
+import androidx.compose.material.icons.outlined.PhonelinkLock
 import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Person
@@ -52,7 +55,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import id.my.sisfoperskc.app.BuildConfig
+import id.my.sisfoperskc.app.data.Api
 import id.my.sisfoperskc.app.data.ApiResult
+import id.my.sisfoperskc.app.data.objOrNull
 import id.my.sisfoperskc.app.data.Auth
 import id.my.sisfoperskc.app.data.Session
 import id.my.sisfoperskc.app.data.bool
@@ -86,10 +91,14 @@ fun LoginScreen() {
     var errors by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var config by remember { mutableStateOf<JsonObject?>(null) }
     var serverDialog by remember { mutableStateOf(false) }
+    var deviceConflict by remember { mutableStateOf<JsonObject?>(null) }
+    var webActiveMsg by remember { mutableStateOf<String?>(null) }
+    var releaseBusy by remember { mutableStateOf(false) }
+    var releaseInfo by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) { config = Auth.loadConfig(ctx) }
 
-    fun submit() {
+    fun submit(logoutWeb: Boolean = false) {
         val e = mutableMapOf<String, String>()
         if (username.isBlank()) e["username"] = "NIKC / username wajib diisi."
         if (password.isBlank()) e["password"] = "Kata sandi wajib diisi."
@@ -98,15 +107,19 @@ fun LoginScreen() {
         focus.clearFocus()
         scope.launch {
             loading = true
-            when (val r = Auth.login(ctx, username, password)) {
+            when (val r = Auth.login(ctx, username, password, logoutWeb)) {
                 is ApiResult.Ok -> {
                     val me = Session.me.value
-                    Ui.success("Selamat datang, ${me?.fullName ?: ""}")
+                    Ui.success(if (logoutWeb) "Sesi web diakhiri. Selamat datang, ${me?.fullName ?: ""}" else "Selamat datang, ${me?.fullName ?: ""}")
                     nav.navigate(Auth.routeFor(me)) { popUpTo(0) { inclusive = true } }
                 }
-                is ApiResult.Err -> {
-                    errors = r.errors
-                    Ui.error(r.message)
+                is ApiResult.Err -> when (r.code) {
+                    "device_conflict" -> deviceConflict = r.data ?: JsonObject(emptyMap())
+                    "web_session_active" -> webActiveMsg = r.message
+                    else -> {
+                        errors = r.errors
+                        Ui.error(r.message)
+                    }
                 }
             }
             loading = false
@@ -202,6 +215,62 @@ fun LoginScreen() {
                 )
             }
         }
+    }
+
+    // Akun sedang login di HP lain
+    deviceConflict?.let { info ->
+        val dev = info.objOrNull("device")
+        val devName = dev?.strOrNull("name") ?: "perangkat lain"
+        SxDialog(
+            onDismiss = { deviceConflict = null; releaseInfo = null },
+            title = "Akun Sedang Digunakan",
+            message = "Anda sedang login di $devName. Silakan logout atau lepaskan perangkat di $devName terlebih dahulu, lalu login kembali.",
+            icon = Icons.Outlined.PhonelinkLock,
+            tone = Tone.Amber,
+            dismissText = "Mengerti",
+        ) {
+            dev?.strOrNull("last_active")?.let {
+                Text("Terakhir aktif: ${id.my.sisfoperskc.app.data.Fmt.dateTime(it)}", style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                Spacer(Modifier.height(12.dp))
+            }
+            if (releaseInfo != null) {
+                Notice(releaseInfo ?: "", Tone.Green, Icons.Outlined.MarkEmailRead)
+            } else {
+                Column(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Sx.BlueSoft)
+                        .pressable({
+                            if (releaseBusy) return@pressable
+                            scope.launch {
+                                releaseBusy = true
+                                val rr = Api.appSend("/device-release/request", mapOf("username" to username.trim()))
+                                releaseBusy = false
+                                if (rr is ApiResult.Ok) releaseInfo = rr.message ?: "Tautan pelepasan perangkat telah dikirim ke email terdaftar." else Ui.report(rr)
+                            }
+                        }).padding(14.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text("Kehilangan akses ke $devName?", style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center)
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        if (releaseBusy) "Mengirim tautan…" else "Klik di sini — sistem mengirim tautan ke email terdaftar untuk melepaskan HP lama.",
+                        color = Sx.Blue, fontWeight = FontWeight.Bold, fontSize = 13.sp, textAlign = TextAlign.Center,
+                    )
+                }
+            }
+        }
+    }
+
+    // Sesi web masih aktif
+    webActiveMsg?.let { msg ->
+        SxDialog(
+            onDismiss = { webActiveMsg = null },
+            title = "Sesi Web Aktif",
+            message = msg,
+            icon = Icons.Outlined.Computer,
+            confirmText = "Iya",
+            dismissText = "Tidak",
+            onConfirm = { webActiveMsg = null; submit(logoutWeb = true) },
+        )
     }
 
     if (serverDialog) {

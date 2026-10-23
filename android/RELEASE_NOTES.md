@@ -1,5 +1,10 @@
 ## SISFOPERS KC — Aplikasi Android
 
+### Perubahan 1.0.3
+- **Satu akun satu perangkat:** bila akun sedang login di HP lain, aplikasi menampilkan peringatan untuk logout/melepaskan perangkat tersebut. Bila kehilangan akses HP lama, ketuk "Kehilangan akses…" — tautan dikirim ke email terdaftar untuk melepaskan HP lama (verifikasi NIKC, tanggal lahir, kata sandi, dan OTP email).
+- **Sesi web aktif:** saat login aplikasi ketika akun masih aktif di web, muncul pertanyaan "Anda sedang aktif di sesi web. Apakah Anda ingin logout sesi web?" — pilih Iya untuk mengakhiri sesi web dan melanjutkan login.
+- HP yang dilepas otomatis keluar dari akun.
+
 ### Perubahan 1.0.2
 - Kartu E-KTA kini identik dengan versi web: sisi depan & belakang, QR verifikasi keaslian, watermark KOMCAD, lambang Komcad, blok pejabat (stempel & tanda tangan), sinyalemen, tanda kehormatan, dan tanda tangan pemegang.
 - Tab Tampak Depan/Belakang, tombol Balik Kartu (animasi), dan Cetak E-KTA.

@@ -40,6 +40,7 @@ sealed class ApiResult {
         val code: String? = null,
         val message: String,
         val errors: Map<String, String> = emptyMap(),
+        val data: JsonObject? = null,
     ) : ApiResult()
 
     val isOk get() = this is Ok
@@ -222,7 +223,7 @@ object Api {
             }
             val successFlag = obj["success"] as? JsonPrimitive
             if (successFlag != null && !obj.bool("success", true)) {
-                return ApiResult.Err(status, code, serverMessage ?: "Permintaan tidak dapat diproses.", errorsOf(obj))
+                return ApiResult.Err(status, code, serverMessage ?: "Permintaan tidak dapat diproses.", errorsOf(obj), obj)
             }
             return ApiResult.Ok(obj, message = serverMessage)
         }
@@ -239,7 +240,7 @@ object Api {
             in 500..599 -> serverMessage?.takeIf { it.length < 200 && !it.contains("SQLSTATE") } ?: "Terjadi gangguan pada server ($status)."
             else -> serverMessage ?: "Permintaan gagal ($status)."
         }
-        return ApiResult.Err(status, code, message, errors)
+        return ApiResult.Err(status, code, message, errors, obj)
     }
 
     private fun errorsOf(obj: JsonObject?): Map<String, String> {
