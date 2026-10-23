@@ -351,6 +351,55 @@
             </div>
           </div>
         </div>
+
+        <!-- Notifikasi Push Aplikasi Android (Firebase Cloud Messaging) -->
+        <div class="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-sm space-y-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Notifikasi Push Aplikasi</h3>
+              <p class="text-[11px] text-slate-500 mt-1">Firebase Cloud Messaging untuk aplikasi Android SISFOPERSKC.</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer shrink-0">
+              <input type="checkbox" class="sr-only peer" v-model="fcm.enabled" />
+              <div class="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:bg-[#2563EB] transition after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition peer-checked:after:translate-x-5"></div>
+            </label>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 text-[11px]">
+            <div class="rounded-xl border p-2.5" :class="fcmStatus.server_ready ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-slate-50 border-slate-200 text-slate-500'">
+              <span class="block font-bold uppercase text-[9px] tracking-wider">Server (pengirim)</span>
+              <span class="font-semibold">{{ fcmStatus.server_ready ? 'Siap' : 'Belum siap' }}</span>
+            </div>
+            <div class="rounded-xl border p-2.5" :class="fcmStatus.client_ready ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-slate-50 border-slate-200 text-slate-500'">
+              <span class="block font-bold uppercase text-[9px] tracking-wider">Aplikasi (penerima)</span>
+              <span class="font-semibold">{{ fcmStatus.client_ready ? 'Siap' : 'Belum siap' }}</span>
+            </div>
+          </div>
+          <div v-if="fcmStatus.project_id || fcmStatus.client_email" class="text-[11px] text-slate-500 space-y-0.5">
+            <div v-if="fcmStatus.project_id">Project: <span class="font-semibold text-slate-700">{{ fcmStatus.project_id }}</span></div>
+            <div v-if="fcmStatus.client_email" class="truncate">Service account: <span class="font-semibold text-slate-700">{{ fcmStatus.client_email }}</span></div>
+            <div>Perangkat terdaftar: <span class="font-semibold text-slate-700">{{ fcmStatus.devices ?? 0 }}</span></div>
+          </div>
+
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">Service Account (JSON)</label>
+              <input type="file" accept=".json,application/json" @change="e => fcm.service_account = e.target.files[0] || null" class="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-[#2563EB] hover:file:bg-blue-100" />
+              <p class="text-[10px] text-slate-400 mt-1">Firebase Console › Project settings › Service accounts › Generate new private key.</p>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">google-services.json</label>
+              <input type="file" accept=".json,application/json" @change="e => fcm.google_services = e.target.files[0] || null" class="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-[#2563EB] hover:file:bg-blue-100" />
+              <p class="text-[10px] text-slate-400 mt-1">Daftarkan aplikasi Android dengan package <span class="font-mono">id.my.sisfoperskc.app</span>, lalu unduh berkasnya.</p>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-2 pt-1">
+            <button type="button" @click="saveFcm" class="py-2 px-4 bg-[#2563EB] hover:bg-[#1E40AF] text-white text-xs font-semibold rounded-xl transition cursor-pointer">Simpan FCM</button>
+            <button type="button" @click="testFcm" class="py-2 px-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl transition cursor-pointer">Kirim Uji</button>
+            <button v-if="fcmStatus.server_ready || fcmStatus.client_ready" type="button" @click="deleteFcm" class="py-2 px-4 bg-white border border-red-200 hover:bg-red-50 text-red-600 text-xs font-semibold rounded-xl transition cursor-pointer">Hapus</button>
+          </div>
+        </div>
       </div>
     </div>
   </AuthenticatedLayout>
@@ -359,7 +408,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import { useSwal } from '@/Composables/useSwal';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -515,6 +564,75 @@ const promptTestSend = async () => {
       closeLoading();
       alertError('Koneksi Gagal', 'Gagal memproses pengiriman pesan uji coba.');
     }
+  }
+};
+
+// =================== Notifikasi Push Aplikasi (FCM) ===================
+const fcm = reactive({
+  enabled: props.settings.fcm_enabled === '1',
+  service_account: null,
+  google_services: null,
+});
+const fcmStatus = ref({});
+
+const loadFcmStatus = async () => {
+  try {
+    const res = await axios.get(route('admin.setting.fcm-status'));
+    fcmStatus.value = res.data.status || {};
+  } catch (e) {
+    fcmStatus.value = {};
+  }
+};
+onMounted(loadFcmStatus);
+
+const saveFcm = async () => {
+  const data = new FormData();
+  data.append('fcm_enabled', fcm.enabled ? '1' : '0');
+  if (fcm.service_account) data.append('service_account', fcm.service_account);
+  if (fcm.google_services) data.append('google_services', fcm.google_services);
+  showLoadingProgress('Menyimpan konfigurasi FCM...');
+  try {
+    const res = await axios.post(route('admin.setting.fcm'), data);
+    closeLoading();
+    fcmStatus.value = res.data.status || fcmStatus.value;
+    alertSuccess('Tersimpan', res.data.message);
+  } catch (err) {
+    closeLoading();
+    alertError('Gagal Menyimpan', err?.response?.data?.message || 'Periksa kembali berkas yang diunggah.');
+  }
+};
+
+const testFcm = async () => {
+  showLoadingProgress('Mengirim notifikasi uji...');
+  try {
+    const res = await axios.post(route('admin.setting.fcm-test'));
+    closeLoading();
+    alertSuccess('Terkirim', res.data.message);
+  } catch (err) {
+    closeLoading();
+    alertError('Gagal', err?.response?.data?.message || 'Notifikasi uji gagal dikirim.');
+  }
+};
+
+const deleteFcm = async () => {
+  const confirm = await Swal.fire({
+    title: 'Hapus konfigurasi FCM?',
+    text: 'Notifikasi push aplikasi Android akan berhenti sampai berkas diunggah kembali.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#DC2626',
+    cancelButtonColor: '#1E293B',
+    confirmButtonText: 'Hapus',
+    cancelButtonText: 'Batal',
+  });
+  if (!confirm.isConfirmed) return;
+  try {
+    const res = await axios.delete(route('admin.setting.fcm-delete'));
+    fcmStatus.value = res.data.status || {};
+    fcm.enabled = false;
+    alertSuccess('Dihapus', res.data.message);
+  } catch (err) {
+    alertError('Gagal', 'Konfigurasi FCM gagal dihapus.');
   }
 };
 </script>

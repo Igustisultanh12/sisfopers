@@ -25,6 +25,9 @@ class AppServiceProvider extends ServiceProvider
         // Paksa skema HTTPS secara absolut untuk mengatasi Mixed Content di Nginx/aaPanel SSL
         URL::forceScheme('https');
 
+        // Notifikasi push aplikasi Android (FCM) — dikonfigurasi di Pengaturan Sistem admin
+        \App\Support\MobilePushHooks::register();
+
         // Blade directive @tanggalId — format tanggal Indonesia (dipakai di semua blade PDF)
         // Contoh: @tanggalId => "20 Juli 2026"
         Blade::directive('tanggalId', function () {

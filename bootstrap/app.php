@@ -27,6 +27,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'under_maintenance' => \App\Http\Middleware\CheckMaintenanceMode::class,
         ]);
 
+        // Jembatan aplikasi Android harus berjalan sebelum middleware autentikasi
+        $middleware->prependToPriorityList(
+            before: \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+            prepend: \App\Http\Middleware\MobileBridge::class,
+        );
+
         // Append middleware global untuk kebutuhan response Inertia.js
         $middleware->web(append: [
             HandleInertiaRequests::class,

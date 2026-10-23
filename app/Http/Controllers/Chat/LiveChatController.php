@@ -1140,6 +1140,9 @@ class LiveChatController extends Controller
 
         Cache::put("live_chat:call:{$thread->uuid}", $callData, now()->addMinutes(10));
 
+        // Dering panggilan di aplikasi Android penerima (FCM)
+        \App\Support\MobilePushHooks::incomingCall($thread, $callData, $isPersonel);
+
         return response()->json([
             'success' => true,
             'call' => $callData,

@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\Mobile\MobileController;
+use App\Http\Middleware\MobileBridge;
 use App\Http\Controllers\Api\ApiAuthController;
 use App\Http\Controllers\Api\ApiDashboardController;
 use App\Http\Controllers\Api\ApiJobHistoryController;
@@ -79,3 +81,29 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/admin/settings/test-wa', [\App\Http\Controllers\Api\ApiAdminController::class, 'testWaConnection']);
     Route::get('/admin/reports', [\App\Http\Controllers\Api\ApiAdminController::class, 'getReportSummaries']);
 });
+/*
+|--------------------------------------------------------------------------
+| Aplikasi Android SISFOPERSKC (/api/m/*)
+|--------------------------------------------------------------------------
+| - /api/m/app/*  : login token, profil sesi, perangkat FCM, umpan notifikasi
+| - /api/m/{rute-web} : SELURUH rute web dijembatani ke aplikasi melalui
+|   MobileBridge (logika, validasi, dan hak akses identik dengan versi web).
+*/
+Route::prefix('m/app')->name('mobile.')->middleware(MobileBridge::class)->group(function () {
+    Route::get('/config', [MobileController::class, 'config'])->name('config');
+    Route::post('/login', [MobileController::class, 'login'])->middleware('throttle:20,1')->name('login');
+    Route::get('/me', [MobileController::class, 'me'])->name('me');
+    Route::post('/logout', [MobileController::class, 'logout'])->name('logout');
+    Route::post('/device', [MobileController::class, 'registerDevice'])->name('device.register');
+    Route::delete('/device', [MobileController::class, 'unregisterDevice'])->name('device.unregister');
+    Route::get('/notifications', [MobileController::class, 'notifications'])->name('notifications');
+    Route::post('/notifications/read-all', [MobileController::class, 'readAllNotifications'])->name('notifications.read-all');
+    Route::post('/notifications/{id}/read', [MobileController::class, 'readNotification'])->name('notifications.read');
+});
+
+Route::prefix('m')->name('m.')->middleware(MobileBridge::class)->group(base_path('routes/web.php'));
+
+// Respons JSON untuk rute aplikasi Android yang tidak dikenali
+Route::any('m/{any}', function () {
+    return response()->json(['success' => false, 'code' => 'not_found', 'message' => 'Halaman atau fitur tidak ditemukan.'], 404);
+})->where('any', '.*')->name('mobile.fallback');

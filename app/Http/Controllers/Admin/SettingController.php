@@ -154,6 +154,102 @@ class SettingController extends Controller
     }
 
     /**
+     * Konfigurasi Notifikasi Push Aplikasi Android (Firebase Cloud Messaging).
+     * - service_account : berkas JSON service account Firebase (dipakai server untuk mengirim push)
+     * - google_services : berkas google-services.json (konfigurasi klien yang dibaca aplikasi saat dibuka)
+     */
+    public function updateFcm(Request $request)
+    {
+        $request->validate([
+            'fcm_enabled' => 'nullable',
+            'service_account' => 'nullable|file|max:256',
+            'google_services' => 'nullable|file|max:256',
+        ]);
+
+        $enabled = in_array((string) $request->input('fcm_enabled', '0'), ['1', 'true'], true);
+        Setting::updateOrCreate(['key' => 'fcm_enabled'], ['value' => $enabled ? '1' : '0']);
+
+        if ($request->hasFile('service_account')) {
+            $json = json_decode((string) file_get_contents($request->file('service_account')->getRealPath()), true);
+            if (!is_array($json) || ($json['type'] ?? '') !== 'service_account' || empty($json['private_key']) || empty($json['client_email']) || empty($json['project_id'])) {
+                return response()->json(['success' => false, 'message' => 'Berkas service account tidak valid. Unduh dari Firebase Console › Project settings › Service accounts › Generate new private key.'], 422);
+            }
+            $path = 'firebase/service-account.json';
+            \Illuminate\Support\Facades\Storage::disk('private')->put($path, json_encode($json));
+            Setting::updateOrCreate(['key' => 'fcm_service_account_path'], ['value' => $path]);
+            Setting::updateOrCreate(['key' => 'fcm_client_email'], ['value' => $json['client_email']]);
+            Setting::updateOrCreate(['key' => 'fcm_server_project_id'], ['value' => $json['project_id']]);
+        }
+
+        if ($request->hasFile('google_services')) {
+            $json = json_decode((string) file_get_contents($request->file('google_services')->getRealPath()), true);
+            $projectInfo = $json['project_info'] ?? null;
+            $clients = $json['client'] ?? [];
+            if (!is_array($projectInfo) || empty($clients)) {
+                return response()->json(['success' => false, 'message' => 'Berkas google-services.json tidak valid.'], 422);
+            }
+            $package = config('services.fcm.android_package', 'id.my.sisfoperskc.app');
+            $client = collect($clients)->first(fn ($c) => ($c['client_info']['android_client_info']['package_name'] ?? '') === $package) ?? $clients[0];
+            $appId = $client['client_info']['mobilesdk_app_id'] ?? null;
+            $apiKey = $client['api_key'][0]['current_key'] ?? null;
+            if (!$appId || !$apiKey) {
+                return response()->json(['success' => false, 'message' => 'google-services.json tidak memuat App ID / API key Android.'], 422);
+            }
+            Setting::updateOrCreate(['key' => 'fcm_project_id'], ['value' => $projectInfo['project_id'] ?? '']);
+            Setting::updateOrCreate(['key' => 'fcm_sender_id'], ['value' => (string) ($projectInfo['project_number'] ?? '')]);
+            Setting::updateOrCreate(['key' => 'fcm_android_app_id'], ['value' => $appId]);
+            Setting::updateOrCreate(['key' => 'fcm_api_key'], ['value' => $apiKey]);
+            Setting::updateOrCreate(['key' => 'fcm_storage_bucket'], ['value' => $projectInfo['storage_bucket'] ?? '']);
+            Setting::updateOrCreate(['key' => 'fcm_package_name'], ['value' => $client['client_info']['android_client_info']['package_name'] ?? '']);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Konfigurasi notifikasi push aplikasi berhasil disimpan.',
+            'status' => \App\Services\FcmService::status(),
+        ]);
+    }
+
+    public function fcmStatus()
+    {
+        return response()->json(['success' => true, 'status' => \App\Services\FcmService::status()]);
+    }
+
+    public function testFcm(Request $request)
+    {
+        if (!\App\Services\FcmService::enabled()) {
+            return response()->json(['success' => false, 'message' => 'FCM belum aktif. Aktifkan sakelar dan unggah berkas service account terlebih dahulu.'], 422);
+        }
+
+        $user = auth()->user();
+        $devices = \App\Models\MobileDevice::where('tokenable_type', get_class($user))->where('tokenable_id', $user->id)->count();
+        if ($devices === 0) {
+            return response()->json(['success' => false, 'message' => 'Belum ada perangkat Android yang terhubung ke akun admin ini. Login di aplikasi Android terlebih dahulu, lalu coba lagi.'], 422);
+        }
+
+        $result = \App\Services\FcmService::sendToNotifiable(get_class($user), $user->id, 'Uji Notifikasi SISFOPERSKC', 'Notifikasi push aplikasi Android berhasil dikonfigurasi.', ['url' => '/notifications'], 'notification');
+
+        return response()->json([
+            'success' => $result['sent'] > 0,
+            'message' => $result['sent'] > 0
+                ? "Notifikasi uji terkirim ke {$result['sent']} perangkat."
+                : ('Gagal mengirim notifikasi uji. ' . ($result['error'] ?? 'Periksa berkas service account.')),
+        ], $result['sent'] > 0 ? 200 : 422);
+    }
+
+    public function deleteFcm()
+    {
+        $path = Setting::where('key', 'fcm_service_account_path')->value('value');
+        if ($path) {
+            \Illuminate\Support\Facades\Storage::disk('private')->delete($path);
+        }
+        Setting::whereIn('key', ['fcm_enabled', 'fcm_service_account_path', 'fcm_client_email', 'fcm_server_project_id', 'fcm_project_id', 'fcm_sender_id', 'fcm_android_app_id', 'fcm_api_key', 'fcm_storage_bucket', 'fcm_package_name'])->delete();
+        \Illuminate\Support\Facades\Cache::forget('fcm:access_token');
+
+        return response()->json(['success' => true, 'message' => 'Konfigurasi FCM dihapus.', 'status' => \App\Services\FcmService::status()]);
+    }
+
+    /**
      * Mendeteksi alamat IP publik peladen secara otomatis
      */
     public function detectPublicIp()
