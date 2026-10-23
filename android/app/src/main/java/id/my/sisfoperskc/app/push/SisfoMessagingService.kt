@@ -5,6 +5,7 @@ import com.google.firebase.messaging.RemoteMessage
 import id.my.sisfoperskc.app.data.Fmt
 import id.my.sisfoperskc.app.data.Session
 import id.my.sisfoperskc.app.ui.nav.AppState
+import id.my.sisfoperskc.app.update.AppUpdater
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -18,11 +19,15 @@ class SisfoMessagingService : FirebaseMessagingService() {
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
-        if (!Session.isLoggedIn) return
         val data = message.data
         val type = data["type"] ?: "notification"
         val title = data["title"] ?: message.notification?.title ?: "SISFOPERS KC"
         val body = data["body"] ?: message.notification?.body ?: ""
+        if (type == "app_update") {
+            AppUpdater.onServerPush(applicationContext, data["version"].orEmpty(), title, body)
+            return
+        }
+        if (!Session.isLoggedIn) return
         val url = data["url"]
 
         when (type) {

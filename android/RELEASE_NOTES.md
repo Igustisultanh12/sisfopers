@@ -11,9 +11,10 @@ Aplikasi native (Kotlin + Jetpack Compose) dengan tampilan mengikuti versi web d
 - Pusat Layanan Informasi: chat dengan lampiran + panggilan video (Agora)
 - Vicon rapat dinas multi-peserta
 - Notifikasi push real-time (Firebase, diatur dari Pengaturan Sistem admin) dengan cadangan sinkronisasi berkala; panggilan masuk layar penuh
+- **Pembaruan aplikasi dari dalam aplikasi** (seperti SISINDEN): Admin mengunggah APK di Pengaturan Sistem → semua perangkat mendapat notifikasi, aplikasi mengunduh, memverifikasi SHA-256 & tanda tangan, lalu memasang. Cadangan otomatis dari GitHub Release ini. Pemeriksaan berkala tiap 6 jam, unduh otomatis via Wi-Fi (bisa dimatikan di menu Akun)
 
 ### Kebutuhan server
-Backend harus memuat perubahan branch `api-mobile` (API `/api/m`, tabel `mobile_devices`). Jalankan `php artisan migrate` setelah deploy.
+Backend harus memuat perubahan branch `api-mobile` (API `/api/m`, tabel `mobile_devices`, pembaruan APK). Setelah deploy jalankan `php artisan migrate` dan `php artisan optimize:clear`. Untuk unggah APK dari Pengaturan Sistem, naikkan `upload_max_filesize`/`post_max_size` PHP (mis. 100M) dan `client_max_body_size` Nginx.
 
 ### Instalasi
 Unduh APK di bawah, izinkan "Instal aplikasi tidak dikenal", lalu pasang. Android 7.0 ke atas.

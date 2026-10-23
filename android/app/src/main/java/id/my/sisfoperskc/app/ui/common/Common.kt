@@ -329,7 +329,9 @@ fun AccountScreen() {
                 }
             }
 
-            SxCard(Modifier.fillMaxWidth().appear(6), onClick = { nav.navigate(Rt.ABOUT) }, padding = PaddingValues(16.dp)) {
+            UpdateCard(6)
+
+            SxCard(Modifier.fillMaxWidth().appear(7), onClick = { nav.navigate(Rt.ABOUT) }, padding = PaddingValues(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconBox(Icons.Outlined.Info)
                     Spacer(Modifier.width(12.dp))
@@ -340,7 +342,7 @@ fun AccountScreen() {
                     Icon(Icons.AutoMirrored.Outlined.ArrowForward, null, tint = Sx.Faint)
                 }
             }
-            SoftButton("Keluar", { AppState.logoutRequest.value++ }, Modifier.fillMaxWidth().appear(7), icon = Icons.AutoMirrored.Outlined.Logout, tone = Tone.Red, height = 52.dp)
+            SoftButton("Keluar", { AppState.logoutRequest.value++ }, Modifier.fillMaxWidth().appear(8), icon = Icons.AutoMirrored.Outlined.Logout, tone = Tone.Red, height = 52.dp)
 
             if (editing) {
                 val form = rememberForm("username" to user.str("username"), "email" to user.str("email"), "phone_number" to (user.strOrNull("phone_number") ?: p?.strOrNull("phone_number")))
@@ -451,6 +453,7 @@ fun AboutScreen() {
                     "Pusat Layanan Informasi dengan chat & panggilan video",
                     "Vicon rapat dinas multi-peserta",
                     "Notifikasi push real-time",
+                    "Pembaruan aplikasi langsung dari dalam aplikasi",
                 ).forEach { Text("• $it", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 3.dp)) }
             }
             SxCard(Modifier.fillMaxWidth().appear(2)) {

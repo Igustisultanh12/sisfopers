@@ -55,6 +55,7 @@ import id.my.sisfoperskc.app.data.strOrNull
 import id.my.sisfoperskc.app.ui.auth.MatraOpts
 import id.my.sisfoperskc.app.ui.components.Accept
 import id.my.sisfoperskc.app.ui.components.Badge
+import id.my.sisfoperskc.app.ui.components.ChipsF
 import id.my.sisfoperskc.app.ui.components.DateF
 import id.my.sisfoperskc.app.ui.components.Divider
 import id.my.sisfoperskc.app.ui.components.FileF
@@ -267,6 +268,7 @@ fun PersonelFormScreen(uuid: String?) {
                 if (lookupMsg != null) Notice(lookupMsg ?: "", Tone.Blue)
                 TextFieldF(form, "full_name", "Nama Lengkap", required = true)
                 if (!isEdit) TextFieldF(form, "nik", "NIK", required = true, keyboardType = KeyboardType.Number, maxLength = 16)
+                if (!isEdit) ChipsF(form, "gender", "Jenis Kelamin", id.my.sisfoperskc.app.ui.auth.GenderOpts, required = true)
                 SelectF(form, "pangkat", "Pangkat", pangkat, required = true)
                 SelectF(form, "matra", "Matra", MatraOpts, required = true)
                 TextFieldF(form, "angkatan", "Angkatan", required = true, keyboardType = KeyboardType.Number, maxLength = 4)
@@ -284,7 +286,7 @@ fun PersonelFormScreen(uuid: String?) {
             }
             PrimaryButton(if (isEdit) "Simpan Perubahan" else "Daftarkan Personel", {
                 val required = mutableListOf("full_name" to "Nama", "email" to "Email", "phone_number" to "Nomor HP", "matra" to "Matra", "angkatan" to "Angkatan", "pangkat" to "Pangkat")
-                if (!isEdit) required += listOf("nik" to "NIK", "dob" to "Tanggal lahir", "province" to "Provinsi", "password" to "Kata sandi", "photo_profile" to "Pas foto")
+                if (!isEdit) required += listOf("nik" to "NIK", "gender" to "Jenis kelamin", "dob" to "Tanggal lahir", "province" to "Provinsi", "password" to "Kata sandi", "photo_profile" to "Pas foto")
                 if (!form.require(*required.toTypedArray())) return@PrimaryButton
                 scope.launch {
                     val r = form.submit(if (isEdit) "/admin/personel/$uuid" else "/admin/personel", method = if (isEdit) "PUT" else "POST")

@@ -36,6 +36,7 @@ import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.Send
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Sms
+import androidx.compose.material.icons.outlined.SystemUpdate
 import androidx.compose.material.icons.outlined.TableChart
 import androidx.compose.material.icons.outlined.Timeline
 import androidx.compose.material.icons.outlined.VideoCall
@@ -64,6 +65,7 @@ import id.my.sisfoperskc.app.data.Fmt
 import id.my.sisfoperskc.app.data.Session
 import id.my.sisfoperskc.app.data.bool
 import id.my.sisfoperskc.app.data.int
+import id.my.sisfoperskc.app.data.long
 import id.my.sisfoperskc.app.data.obj
 import id.my.sisfoperskc.app.data.objOrNull
 import id.my.sisfoperskc.app.data.str
@@ -310,6 +312,15 @@ fun SettingsScreen() {
         fcmForm["fcm_enabled"] = if (fcm.bool("enabled")) "1" else "0"
     }
     LaunchedEffect(Unit) { loadFcm() }
+    var appUpdate by remember { mutableStateOf<JsonObject?>(null) }
+    var uploadLimit by remember { mutableStateOf("") }
+    val apkForm = rememberForm("notify" to "1", "notes" to "")
+    suspend fun loadAppUpdate() {
+        val r = Api.get("/admin/pengaturan/app-update") as? ApiResult.Ok ?: return
+        appUpdate = r.data.objOrNull("app_update")
+        uploadLimit = r.data.str("upload_limit")
+    }
+    LaunchedEffect(Unit) { loadAppUpdate() }
 
     ShellScaffold(title = "Pengaturan Sistem", subtitle = "Konfigurasi aplikasi & integrasi") { inner ->
         PageContent(loader, Modifier.padding(top = inner.calculateTopPadding()).imePadding()) { data ->
@@ -339,6 +350,39 @@ fun SettingsScreen() {
                     }, Modifier.weight(1f), icon = Icons.Outlined.CloudUpload, loading = fcmForm.submitting)
                     SoftButton("Kirim Uji", { scope.launch { Ui.report(Api.send("/admin/pengaturan/fcm/test")) } }, Modifier.weight(1f), icon = Icons.Outlined.Send, tone = Tone.Green)
                     SoftButton("Hapus", { scope.launch { if (Ui.report(Api.send("/admin/pengaturan/fcm", method = "DELETE"))) loadFcm() } }, Modifier.weight(0.8f), icon = Icons.Outlined.Delete, tone = Tone.Red)
+                }
+            }
+            // Pembaruan aplikasi Android
+            FormSection("Pembaruan Aplikasi Android", "Unggah APK baru — aplikasi pengguna akan menawarkan pembaruan otomatis", Icons.Outlined.SystemUpdate) {
+                val au = appUpdate
+                if (au != null) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Badge("Versi ${au.str("version")}", Tone.Green)
+                        Badge(id.my.sisfoperskc.app.ui.common.fmtBytes(au.long("size")), Tone.Blue)
+                        if (au.int("notified") > 0) Badge("${au.int("notified")} dinotifikasi", Tone.Purple)
+                    }
+                    InfoRow("Diunggah", Fmt.dateTime(au.str("uploaded_at")) + au.strOrNull("uploaded_by")?.let { " · $it" }.orEmpty())
+                    InfoRow("SHA-256", au.str("sha256").take(16) + "…")
+                    au.strOrNull("notes")?.let { InfoRow("Catatan", it) }
+                } else {
+                    Notice("Belum ada APK pembaruan di server. Aplikasi tetap dapat memperbarui dari GitHub Release.", Tone.Gray)
+                }
+                FileF(apkForm, "apk", "Berkas APK", Accept.Apk, helper = "SISFOPERSKC-x.y.z.apk (paket id.my.sisfoperskc.app)" + if (uploadLimit.isNotBlank()) " · batas server $uploadLimit" else "")
+                TextFieldF(apkForm, "notes", "Catatan Rilis", minLines = 3, placeholder = "Perubahan pada versi ini")
+                SwitchF(apkForm, "notify", "Kirim notifikasi push", "Beri tahu semua perangkat terdaftar bahwa versi baru tersedia")
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SoftButton("Unggah APK", {
+                        if (!apkForm.require("apk" to "Berkas APK")) return@SoftButton
+                        scope.launch {
+                            val r = apkForm.submit("/admin/pengaturan/app-update", body = mapOf("notes" to apkForm["notes"], "notify" to (apkForm["notify"] == "1")))
+                            if (Ui.report(r)) { apkForm.files.clear(); apkForm["notes"] = ""; loadAppUpdate() }
+                        }
+                    }, Modifier.weight(1f), icon = Icons.Outlined.CloudUpload, loading = apkForm.submitting)
+                    if (au != null) {
+                        SoftButton("Hapus", {
+                            scope.launch { if (Ui.report(Api.send("/admin/pengaturan/app-update", method = "DELETE"))) loadAppUpdate() }
+                        }, Modifier.weight(0.7f), icon = Icons.Outlined.Delete, tone = Tone.Red)
+                    }
                 }
             }
             FormSection("Identitas Aplikasi", icon = Icons.Outlined.Settings) {

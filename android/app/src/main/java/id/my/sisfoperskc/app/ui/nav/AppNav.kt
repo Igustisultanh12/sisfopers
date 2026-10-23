@@ -1,5 +1,6 @@
 package id.my.sisfoperskc.app.ui.nav
 
+import id.my.sisfoperskc.app.ui.common.UpdatePrompt
 import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -153,6 +154,7 @@ fun SisfoApp(pendingUrl: MutableState<String?>, pendingNotificationId: MutableSt
                 authGraph()
                 mainGraph()
             }
+            UpdatePrompt()
             MessageHost()
         }
     }

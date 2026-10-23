@@ -549,6 +549,7 @@ enum class Accept(val mimes: Array<String>, val label: String) {
     ImageOrPdf(arrayOf("image/*", "application/pdf"), "Gambar atau PDF"),
     Excel(arrayOf("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-excel"), "Berkas Excel"),
     Json(arrayOf("application/json", "text/plain", "application/octet-stream"), "Berkas JSON"),
+    Apk(arrayOf("application/vnd.android.package-archive", "application/octet-stream"), "Berkas APK"),
     Any(arrayOf("*/*"), "Semua berkas"),
 }
 

@@ -11,6 +11,7 @@ import id.my.sisfoperskc.app.push.ForegroundWatcher
 import id.my.sisfoperskc.app.push.NotificationSyncWorker
 import id.my.sisfoperskc.app.push.Notifier
 import id.my.sisfoperskc.app.push.PushManager
+import id.my.sisfoperskc.app.update.AppUpdater
 
 class App : Application(), ImageLoaderFactory {
     override fun onCreate() {
@@ -21,6 +22,7 @@ class App : Application(), ImageLoaderFactory {
         PushManager.initFromCache(this)
         ForegroundWatcher.install(this)
         if (Session.isLoggedIn) NotificationSyncWorker.schedule(this)
+        AppUpdater.schedule(this)
     }
 
     override fun newImageLoader(): ImageLoader = ImageLoader.Builder(this)
