@@ -93,7 +93,7 @@ import kotlinx.coroutines.flow.drop
 private fun NavBackStackEntry.arg(name: String): String = arguments?.getString(name).orEmpty()
 
 @Composable
-fun SisfoApp(pendingUrl: MutableState<String?>, pendingNotificationId: MutableState<String?>) {
+fun SisfoApp(pendingUrl: MutableState<String?>, pendingNotificationId: MutableState<String?>, demoRoute: MutableState<String?>) {
     val nav = rememberNavController()
     val context = LocalContext.current
     val me by Session.me.collectAsState()
@@ -138,6 +138,16 @@ fun SisfoApp(pendingUrl: MutableState<String?>, pendingNotificationId: MutableSt
             pendingUrl.value = null
             pendingNotificationId.value = null
             nav.go(Rt.fromWebUrl(url, me))
+        }
+    }
+
+    // Mode demo (build tangkapan layar): buka rute tertentu setelah splash.
+    val demo = demoRoute.value
+    LaunchedEffect(demo, entry?.destination?.route) {
+        val cur = entry?.destination?.route
+        if (demo != null && cur != null && cur != Rt.SPLASH) {
+            demoRoute.value = null
+            nav.navigate(demo)
         }
     }
 

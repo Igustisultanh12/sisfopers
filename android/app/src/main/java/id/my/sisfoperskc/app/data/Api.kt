@@ -83,6 +83,7 @@ object Api {
                 }
                 chain.proceed(builder.build())
             }
+            .apply { if (Demo.enabled) addInterceptor(Demo.interceptor) }
             .build()
     }
 

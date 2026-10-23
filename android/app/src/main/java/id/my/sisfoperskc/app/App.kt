@@ -6,6 +6,7 @@ import coil.ImageLoaderFactory
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import id.my.sisfoperskc.app.data.Api
+import id.my.sisfoperskc.app.data.Demo
 import id.my.sisfoperskc.app.data.Session
 import id.my.sisfoperskc.app.push.ForegroundWatcher
 import id.my.sisfoperskc.app.push.NotificationSyncWorker
@@ -18,6 +19,7 @@ class App : Application(), ImageLoaderFactory {
         super.onCreate()
         Session.init(this)
         Api.init(this)
+        Demo.init(this)
         Notifier.createChannels(this)
         PushManager.initFromCache(this)
         ForegroundWatcher.install(this)

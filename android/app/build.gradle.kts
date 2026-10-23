@@ -8,6 +8,8 @@ plugins {
 val appVersionCode = (System.getenv("APP_VERSION_CODE") ?: "1").toInt()
 val appVersionName = System.getenv("APP_VERSION_NAME") ?: "1.0.0"
 val baseUrl = System.getenv("SISFOPERS_BASE_URL") ?: "https://sisfoperskc.my.id"
+// Build khusus tangkapan layar panduan (data contoh, tanpa server). Jangan dipakai untuk rilis.
+val demoBuild = System.getenv("SISFOPERS_DEMO") == "1"
 
 android {
     namespace = "id.my.sisfoperskc.app"
@@ -20,8 +22,9 @@ android {
         versionCode = appVersionCode
         versionName = appVersionName
         buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
+        buildConfigField("boolean", "DEMO", demoBuild.toString())
         vectorDrawables { useSupportLibrary = true }
-        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
+        ndk { abiFilters += if (demoBuild) listOf("arm64-v8a", "x86_64") else listOf("arm64-v8a", "armeabi-v7a") }
     }
 
     signingConfigs {
@@ -46,8 +49,12 @@ android {
         }
         debug {
             applicationIdSuffix = ".debug"
-            versionNameSuffix = "-debug"
+            if (!demoBuild) versionNameSuffix = "-debug"
         }
+    }
+
+    if (demoBuild) {
+        sourceSets["main"].assets.srcDir("../screenshots/assets")
     }
 
     compileOptions {

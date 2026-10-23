@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import id.my.sisfoperskc.app.data.Demo
 import id.my.sisfoperskc.app.push.Notifier
 import id.my.sisfoperskc.app.ui.nav.SisfoApp
 import id.my.sisfoperskc.app.ui.theme.SisfoTheme
@@ -16,14 +17,21 @@ class MainActivity : ComponentActivity() {
     val pendingUrl = mutableStateOf<String?>(null)
     val pendingNotificationId = mutableStateOf<String?>(null)
 
+    /** Hanya build tangkapan layar (mode demo): rute yang langsung dibuka. */
+    val demoRoute = mutableStateOf<String?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        if (Demo.enabled) {
+            intent?.getStringExtra("demo_role")?.let { Demo.signIn(it) }
+            demoRoute.value = intent?.getStringExtra("demo_route")
+        }
         handleIntent(intent)
         setContent {
             SisfoTheme {
-                SisfoApp(pendingUrl, pendingNotificationId)
+                SisfoApp(pendingUrl, pendingNotificationId, demoRoute)
             }
         }
     }
