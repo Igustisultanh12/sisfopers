@@ -24,14 +24,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Print
 import androidx.compose.material.icons.outlined.Sync
-import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -68,7 +71,9 @@ import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -122,6 +127,7 @@ class KtaData(personel: JsonObject, ekta: JsonObject?, settings: JsonObject?) {
     val name = p.strOrNull("full_name") ?: "-"
     val nikc = p.strOrNull("nikc") ?: p.objOrNull("user").strOrNull("username") ?: "-"
     val photo = p.strOrNull("photo_profile")
+    val initials = name.split(Regex("\\s+")).filter { it.isNotBlank() }.take(2).joinToString("") { it.take(1).uppercase() }.ifBlank { "P" }
     val matraCode = (p.strOrNull("matra") ?: "AD").uppercase()
     val nomor = e.strOrNull("nomor_kta") ?: "No. ...../KTA KC/${p.strOrNull("angkatan") ?: java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)}"
     val pangkat = e.strOrNull("pangkat") ?: p.strOrNull("pangkat") ?: "Prajurit Komcad"
@@ -257,12 +263,21 @@ fun KtaCardFace(data: KtaData, back: Boolean, modifier: Modifier = Modifier) {
             .border(1.dp, Color(0xFF064E3B).copy(alpha = 0.3f), RoundedCornerShape(16.dp)),
     ) {
         val px = Px(maxWidth.value / REF_W, LocalDensity.current)
-        KomcadWatermarkText(px)
-        // lambang Komcad besar di tengah (w-64 x scale-125, opacity 30%)
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Box(Modifier.size(px.dp(320f)).alpha(0.3f)) { KomcadLogo(data.logoKomcad) }
+        // gaya teks dasar web: line-height 1.5, tanpa padding font bawaan Android
+        CompositionLocalProvider(
+            LocalTextStyle provides TextStyle(
+                lineHeight = 1.5.em,
+                platformStyle = PlatformTextStyle(includeFontPadding = false),
+                lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None),
+            ),
+        ) {
+            KomcadWatermarkText(px)
+            // lambang Komcad besar di tengah (w-64 x scale-125, opacity 30%)
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Box(Modifier.size(px.dp(320f)).alpha(0.3f)) { KomcadLogo(data.logoKomcad) }
+            }
+            if (!back) FrontSide(data, px) else BackSide(data, px)
         }
-        if (!back) FrontSide(data, px) else BackSide(data, px)
     }
 }
 
@@ -289,6 +304,9 @@ private fun FrontSide(d: KtaData, px: Px) {
                     ) { KomcadLogo(d.logoKomcad) }
                     Box(Modifier.fillMaxWidth().weight(54f).background(d.photoBg), contentAlignment = Alignment.Center) {
                         if (d.photo != null) {
+                            Box(Modifier.fillMaxSize().background(Color(0xFFE2E8F0)), contentAlignment = Alignment.Center) {
+                                Text(d.initials, color = Color(0xFF334155), fontSize = px.sp(30f), fontFamily = font)
+                            }
                             RemoteImage(d.photo, Modifier.fillMaxSize(), contentScale = ContentScale.Crop, alignment = Alignment.TopCenter)
                         } else {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -340,7 +358,7 @@ private fun Signer(d: KtaData, px: Px, font: FontFamily) {
         if (d.signerLine2.isNotEmpty()) Text(d.signerLine2.uppercase(), color = INK, fontSize = px.sp(9.5f), fontFamily = font, lineHeight = px.sp(11.5f), letterSpacing = (-0.01).em)
         Box(Modifier.width(px.dp(155f)).height(px.dp(36f)).padding(vertical = px.dp(2f)), contentAlignment = Alignment.Center) {
             // stempel dinas (kiri, miring -12°)
-            Box(Modifier.align(Alignment.TopStart).offset(x = px.dp(-12f), y = px.dp(-4f)).size(px.dp(48f)).rotate(-12f).alpha(0.85f)) {
+            Box(Modifier.align(Alignment.TopStart).offset(x = px.dp(-12f), y = px.dp(-4f)).wrapContentSize(Alignment.TopStart, unbounded = true).requiredSize(px.dp(48f)).rotate(-12f).alpha(0.85f)) {
                 if (d.stamp != null) RemoteImage(d.stamp, Modifier.fillMaxSize(), contentScale = ContentScale.Fit) else DefaultStamp(px)
             }
             Box(Modifier.padding(start = px.dp(16f)), contentAlignment = Alignment.Center) {
@@ -444,7 +462,7 @@ private fun DataRow(label: String, value: String, px: Px, labelW: Float, font: F
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
         Text(label, color = INK, fontSize = fs, fontFamily = font, maxLines = 1, softWrap = false, overflow = TextOverflow.Clip, modifier = Modifier.width(px.dp(labelW)))
         Text(":", color = INK, fontSize = fs, fontFamily = font, modifier = Modifier.padding(end = px.dp(6f)))
-        Text(value, color = INK, fontSize = fs, fontFamily = font, maxLines = 1, softWrap = false, overflow = TextOverflow.Clip, modifier = Modifier.weight(1f, fill = false))
+        Text(value, color = INK, fontSize = fs, fontFamily = font, maxLines = 1, softWrap = false, overflow = TextOverflow.Clip)
         DottedLine(Modifier.weight(1f).padding(start = px.dp(4f), bottom = px.dp(sizePx * 0.28f)).height(px.dp(1.5f)), px)
     }
 }
