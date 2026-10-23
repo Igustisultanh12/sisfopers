@@ -1,5 +1,10 @@
 ## SISFOPERS KC — Aplikasi Android
 
+### Perubahan 1.0.2
+- Kartu E-KTA kini identik dengan versi web: sisi depan & belakang, QR verifikasi keaslian, watermark KOMCAD, lambang Komcad, blok pejabat (stempel & tanda tangan), sinyalemen, tanda kehormatan, dan tanda tangan pemegang.
+- Tab Tampak Depan/Belakang, tombol Balik Kartu (animasi), dan Cetak E-KTA.
+- Logo, tanda tangan, stempel, pejabat, serta jenis & ukuran font mengikuti Pengaturan E-KTA admin (dengan pratinjau langsung).
+
 ### Perubahan 1.0.1
 - Ikon aplikasi, layar pembuka, dan logo di dalam aplikasi kini memakai lambang Mabes TNI.
 - Lambang Tri Matra (TNI AD, TNI AL, TNI AU) di halaman masuk tampil utuh, tidak lagi terpotong kartu login.
