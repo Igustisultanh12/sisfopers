@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'fcm' => [
+        // Cadangan bila berkas service account tidak diunggah lewat Pengaturan Sistem admin
+        'credentials' => env('FIREBASE_CREDENTIALS', ''),
+        'android_package' => env('ANDROID_PACKAGE_NAME', 'id.my.sisfoperskc.app'),
+    ],
+
 ];
