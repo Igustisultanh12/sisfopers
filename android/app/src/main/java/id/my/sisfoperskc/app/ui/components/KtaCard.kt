@@ -428,9 +428,9 @@ private fun BackSide(d: KtaData, px: Px) {
 
 // ------------------------------------------------------------------ elemen kecil
 @Composable
-private fun Underlined(text: String, px: Px, size: Float, font: FontFamily) {
+private fun Underlined(text: String, px: Px, fontPx: Float, font: FontFamily) {
     Text(
-        text, color = INK, fontSize = px.sp(size), fontFamily = font, fontWeight = FontWeight.Bold, letterSpacing = 0.025.em,
+        text, color = INK, fontSize = px.sp(fontPx), fontFamily = font, fontWeight = FontWeight.Bold, letterSpacing = 0.025.em,
         maxLines = 1, softWrap = false,
         modifier = Modifier.drawBehind {
             drawLine(INK, Offset(0f, size.height), Offset(size.width, size.height), 1.dp.toPx())
