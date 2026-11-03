@@ -54,7 +54,8 @@ class MailGatewayController extends Controller
     {
         $request->validate([
             'mail_mailer'       => 'required|string|in:smtp,log',
-            'mail_host'         => 'required|string',
+            // Hanya hostname/IP (tanpa skema/slash/query) demi mencegah SSRF & injeksi.
+            'mail_host'         => ['required', 'string', 'max:100', 'regex:/^[A-Za-z0-9.\-]+$/'],
             'mail_port'         => 'required|numeric',
             'mail_username'     => 'nullable|string',
             'mail_password'     => 'nullable|string',
@@ -192,12 +193,8 @@ class MailGatewayController extends Controller
             return;
         }
 
-        if (!is_writable($envFile)) {
-            try {
-                @chmod($envFile, 0666);
-            } catch (\Throwable $e) {}
-        }
-
+        // Jangan melonggarkan izin .env menjadi world-writable; jika tak bisa ditulis,
+        // cukup simpan di database dan lewati penulisan file.
         if (!is_writable($envFile)) {
             \Illuminate\Support\Facades\Log::warning("File .env tidak memiliki izin tulis (Permission Denied). Pengaturan Mail Gateway tetap disimpan di database.");
             return;
@@ -207,9 +204,14 @@ class MailGatewayController extends Controller
             $content = file_get_contents($envFile);
 
             foreach ($data as $key => $value) {
+                // Cegah injeksi baris .env: buang CR/LF/null sehingga nilai tidak bisa
+                // menambah/menimpa variabel environment lain (mis. APP_DEBUG, DB_*).
+                $value = str_replace(["\r", "\n", "\0"], '', (string) $value);
+                // Netralkan '$' dan '\' agar tidak diperlakukan sebagai backreference oleh preg_replace.
+                $replacement = addcslashes("{$key}={$value}", '\\$');
                 $pattern = "/^{$key}=.*/m";
                 if (preg_match($pattern, $content)) {
-                    $content = preg_replace($pattern, "{$key}={$value}", $content);
+                    $content = preg_replace($pattern, $replacement, $content);
                 } else {
                     $content .= "\n{$key}={$value}";
                 }

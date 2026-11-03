@@ -495,7 +495,8 @@ class ApiAdminController extends Controller
 
         $rules = $request->validate([
             'app_name' => 'required|string|max:50',
-            'wa_host' => 'required|string',
+            // Hanya hostname/IP (tanpa skema/slash/query) untuk mencegah SSRF.
+            'wa_host' => ['required', 'string', 'max:100', 'regex:/^[A-Za-z0-9.\-]+$/'],
             'wa_port' => 'required|numeric',
             'wa_api_key' => 'nullable|string',
             'wa_session' => 'required|string'

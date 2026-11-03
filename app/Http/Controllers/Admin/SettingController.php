@@ -27,7 +27,9 @@ class SettingController extends Controller
     {
         $validated = $request->validate([
             'app_name' => 'required|string|max:50',
-            'wa_host' => 'required|string',
+            // Hanya hostname/IP (tanpa skema, slash, query, atau '@') agar nilai tidak
+            // bisa dialihkan ke URL internal sembarang (SSRF) saat diinterpolasi.
+            'wa_host' => ['required', 'string', 'max:100', 'regex:/^[A-Za-z0-9.\-]+$/'],
             'wa_port' => 'required|numeric',
             'wa_api_key' => 'nullable|string',
             'wa_session' => 'required|string',
@@ -39,7 +41,7 @@ class SettingController extends Controller
             'logo_au' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
             'disable_whatsapp_otp' => 'nullable',
             'under_maintenance' => 'nullable',
-            'coturn_host' => 'nullable|string|max:100',
+            'coturn_host' => ['nullable', 'string', 'max:100', 'regex:/^[A-Za-z0-9.\-]+$/'],
             'coturn_port' => 'nullable|numeric',
             'coturn_secret' => 'nullable|string|max:100',
             'metered_app_name' => 'nullable|string|max:100',
