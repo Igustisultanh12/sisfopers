@@ -18,14 +18,18 @@ class PersonelExport implements FromCollection, WithHeadings, WithMapping, WithE
     protected $signerJabatan;
 
     protected $signerHeader;
+    protected $scopeMatra;
+    protected $scopeAngkatan;
 
-    public function __construct($signerName = null, $signerPangkat = null, $signerNikc = null, $signerJabatan = null, $signerHeader = null)
+    public function __construct($signerName = null, $signerPangkat = null, $signerNikc = null, $signerJabatan = null, $signerHeader = null, $scopeMatra = null, $scopeAngkatan = null)
     {
         $this->signerName = $signerName ?: '-';
         $this->signerPangkat = $signerPangkat ?: '-';
         $this->signerNikc = $signerNikc ?: '-';
         $this->signerJabatan = $signerJabatan ?: '-';
         $this->signerHeader = $signerHeader ?: 'a.n. Komandan Komponen Cadangan,';
+        $this->scopeMatra = $scopeMatra;
+        $this->scopeAngkatan = $scopeAngkatan;
     }
 
     public function collection()
@@ -43,6 +47,10 @@ class PersonelExport implements FromCollection, WithHeadings, WithMapping, WithE
                           $q->where('status_verification', 'APPROVED');
                       });
             })
+            // Terapkan scope matra/angkatan pemanggil agar ekspor tidak membocorkan
+            // PII lintas matra (mengikuti scope yang berlaku pada daftar & PDF).
+            ->when($this->scopeMatra, fn ($q) => $q->where('matra', $this->scopeMatra))
+            ->when($this->scopeAngkatan, fn ($q) => $q->where('angkatan', $this->scopeAngkatan))
             ->with(['user', 'sinyalmen'])
             ->get()
             ->sortByDesc(function($personel) use ($rankOrder) {
