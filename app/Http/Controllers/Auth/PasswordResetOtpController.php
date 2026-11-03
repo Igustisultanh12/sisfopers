@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 use Inertia\Inertia;
 
 class PasswordResetOtpController extends Controller
@@ -38,15 +39,33 @@ class PasswordResetOtpController extends Controller
             'password.confirmed'=> 'Konfirmasi kata sandi baru tidak cocok.',
         ]);
 
+        // Batasi tebakan OTP per NIKC dan per IP untuk mencegah brute-force (OTP hanya 6 digit).
+        $throttleKeys = [
+            'pwreset-otp:nikc:' . trim($request->username),
+            'pwreset-otp:ip:' . $request->ip(),
+        ];
+        foreach ($throttleKeys as $tk) {
+            if (RateLimiter::tooManyAttempts($tk, 5)) {
+                $seconds = RateLimiter::availableIn($tk);
+                return back()->withErrors(['otp' => "Terlalu banyak percobaan. Coba lagi dalam {$seconds} detik atau minta OTP baru dari Admin."]);
+            }
+        }
+
         $personel = Personel::where('nikc', trim($request->username))
             ->with('user')
             ->first();
 
         if (!$personel) {
+            foreach ($throttleKeys as $tk) { RateLimiter::hit($tk, 900); }
             return back()->withErrors(['username' => 'Personel dengan NIKC tersebut tidak terdaftar di sistem kami.']);
         }
 
-        if (!$personel->reset_password_otp || $personel->reset_password_otp !== trim($request->otp)) {
+        if (!$personel->reset_password_otp || !hash_equals((string) $personel->reset_password_otp, trim($request->otp))) {
+            foreach ($throttleKeys as $tk) { RateLimiter::hit($tk, 900); }
+            // Setelah 5 percobaan gagal, hanguskan OTP agar tidak bisa ditebak lebih lanjut.
+            if (RateLimiter::attempts('pwreset-otp:nikc:' . trim($request->username)) >= 5) {
+                $personel->update(['reset_password_otp' => null, 'reset_password_otp_expired_at' => null]);
+            }
             return back()->withErrors(['otp' => 'Kode OTP Reset Password tidak cocok atau tidak valid.']);
         }
 
@@ -69,6 +88,9 @@ class PasswordResetOtpController extends Controller
             'reset_password_otp'             => null,
             'reset_password_otp_expired_at'  => null,
         ]);
+
+        // Reset counter throttle setelah berhasil.
+        foreach ($throttleKeys as $tk) { RateLimiter::clear($tk); }
 
         // Audit Trail Log
         AuditLog::create([
