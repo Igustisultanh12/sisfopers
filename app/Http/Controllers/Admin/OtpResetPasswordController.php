@@ -14,6 +14,17 @@ use Inertia\Inertia;
 class OtpResetPasswordController extends Controller
 {
     /**
+     * Penerbitan & pencetakan OTP reset password adalah kewenangan ADMIN saja.
+     * Tanpa gate ini, koordinator (yang juga diterima grup /admin) bisa menerbitkan
+     * OTP reset untuk personel mana pun lalu mengambil alih akunnya.
+     */
+    public function __construct()
+    {
+        $u = Auth::guard('web')->user() ?: Auth::guard('pju')->user();
+        abort_unless($u && method_exists($u, 'hasRole') && $u->hasRole('admin'), 403, 'Hanya Administrator yang diizinkan.');
+    }
+
+    /**
      * Tampilkan daftar personel aktif yang dapat di-reset password-nya
      */
     public function index(Request $request)

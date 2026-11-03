@@ -12,6 +12,13 @@ use Inertia\Inertia;
 
 class PjuManagementController extends Controller
 {
+    // Manajemen akun PJU adalah kewenangan ADMIN saja (koordinator juga diterima grup /admin).
+    public function __construct()
+    {
+        $u = \Illuminate\Support\Facades\Auth::guard('web')->user() ?: \Illuminate\Support\Facades\Auth::guard('pju')->user();
+        abort_unless($u && method_exists($u, 'hasRole') && $u->hasRole('admin'), 403, 'Hanya Administrator yang diizinkan.');
+    }
+
     public function index(Request $request)
     {
         $query = Pju::query();

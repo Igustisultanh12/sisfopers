@@ -231,9 +231,17 @@ class MasterPersonelController extends Controller
             'role' => 'required|string|in:admin,personel,kordinator_angkatan,kordinator_matra'
         ]);
 
+        // Hanya admin yang boleh menetapkan role selain 'personel'. Tanpa ini,
+        // koordinator (yang juga diterima grup /admin) bisa membuat akun admin baru.
+        $authUser = \Illuminate\Support\Facades\Auth::guard('web')->user() ?: \Illuminate\Support\Facades\Auth::guard('pju')->user();
+        $isAdmin = $authUser && method_exists($authUser, 'hasRole') && $authUser->hasRole('admin');
+
         DB::beginTransaction();
         try {
             $roleName = $request->input('role', 'personel');
+            if (!$isAdmin) {
+                $roleName = 'personel';
+            }
             $role = Role::where('name', $roleName)->first();
             
             $user = User::create([
@@ -443,6 +451,10 @@ class MasterPersonelController extends Controller
      */
     public function destroy($uuid)
     {
+        // Penghapusan permanen personel + akun adalah tindakan irreversible: ADMIN saja.
+        $authUser = \Illuminate\Support\Facades\Auth::guard('web')->user() ?: \Illuminate\Support\Facades\Auth::guard('pju')->user();
+        abort_unless($authUser && method_exists($authUser, 'hasRole') && $authUser->hasRole('admin'), 403, 'Hanya Administrator yang diizinkan menghapus personel.');
+
         DB::beginTransaction();
         try {
             $personel = Personel::where('uuid', $uuid)->firstOrFail();

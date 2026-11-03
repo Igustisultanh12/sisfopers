@@ -15,6 +15,13 @@ use Inertia\Inertia;
 
 class MailGatewayController extends Controller
 {
+    // Konfigurasi SMTP (termasuk kredensial) hanya boleh diakses/diubah ADMIN.
+    public function __construct()
+    {
+        $u = \Illuminate\Support\Facades\Auth::guard('web')->user() ?: \Illuminate\Support\Facades\Auth::guard('pju')->user();
+        abort_unless($u && method_exists($u, 'hasRole') && $u->hasRole('admin'), 403, 'Hanya Administrator yang diizinkan.');
+    }
+
     /**
      * Tampilkan halaman utama Mail Gateway
      */
