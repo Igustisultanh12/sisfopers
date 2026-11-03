@@ -131,14 +131,31 @@ php artisan queue:work
 
 ## 🔑 Akun Bawaan Sistem (Default Credentials)
 
-Gunakan akun di bawah ini untuk masuk pertama kali setelah melakukan seeding database:
+Akun bawaan dibuat oleh seeder. **Kata sandinya TIDAK dipublikasikan di sini** demi
+keamanan. Tetapkan kata sandi saat seeding melalui variabel environment, lalu segera
+ubah setelah login pertama:
 
-| Role | Username / NIK | Password | Kegunaan |
-| :--- | :--- | :--- | :--- |
-| **Administrator** | `admin.sisfopers` | `P@sswordEnterprise2026` | Mengakses panel kontrol admin utama |
-| **Komandan Satuan** | `komandan.kc` | `KomandanKC2026!` | Memantau statistik & data pasukan (Read-Only) |
-| **Koordinator Angkatan** | `koordinator.angkatan` | `KordinatorAngkatan2026!` | Mengelola & membina personel Angkatan 2026 |
-| **Koordinator Matra** | `koordinator.matra` | `KordinatorMatra2026!` | Mengelola personel Matra AL & membuat Broadcast Matra |
+```env
+SEED_ADMIN_PASSWORD=...
+SEED_KOMANDAN_PASSWORD=...
+SEED_KORD_ANGKATAN_PASSWORD=...
+SEED_KORD_MATRA_PASSWORD=...
+```
+
+Jika variabel tidak diisi di lingkungan **produksi**, seeder akan membangkitkan kata
+sandi acak dan menampilkannya sekali di konsol — jangan gunakan kata sandi yang pernah
+dipublikasikan/di-commit.
+
+| Role | Username / NIK | Kegunaan |
+| :--- | :--- | :--- |
+| **Administrator** | `admin.sisfopers` | Mengakses panel kontrol admin utama |
+| **Komandan Satuan** | `komandan.kc` | Memantau statistik & data pasukan (Read-Only) |
+| **Koordinator Angkatan** | `koordinator.angkatan` | Mengelola & membina personel Angkatan 2026 |
+| **Koordinator Matra** | `koordinator.matra` | Mengelola personel Matra & membuat Broadcast Matra |
+
+> ⚠️ Jika deployment produksi Anda pernah di-seed dengan kata sandi default lama
+> (`P@sswordEnterprise2026`, dll. yang sebelumnya tercantum di README ini), segera
+> ganti/nonaktifkan keempat akun tersebut: kata sandi itu ada di riwayat git publik.
 
 ---
 
