@@ -174,6 +174,43 @@ class Personel extends Model
         return $this->hasOne(LiveChatThread::class, 'personel_id')->where('status', 'OPEN')->latestOfMany();
     }
 
+    /**
+     * Kumpulkan path berkas yang dimiliki personel ini (dari kolomnya sendiri dan
+     * relasi pembawa berkas). Dipakai streamer /documents/* untuk menegakkan
+     * kepemilikan: personel biasa hanya boleh mengunduh berkasnya sendiri.
+     * Mengembalikan daftar path relatif + basename + prefix folder chat miliknya.
+     */
+    public function ownedDocumentPaths(): array
+    {
+        $paths = [];
+        $collect = function ($model) use (&$paths) {
+            if (!$model) return;
+            foreach ($model->getAttributes() as $v) {
+                if (is_string($v) && str_contains($v, '/') && !str_contains($v, ' ') && strlen($v) <= 255) {
+                    $rel = ltrim($v, '/');
+                    $paths[] = $rel;
+                    $paths[] = basename($rel);
+                }
+            }
+        };
+
+        $collect($this);
+        foreach (['riwayatPendidikan', 'pengkinianData', 'jobHistories', 'customFormResponses', 'tickets'] as $rel) {
+            try { foreach ($this->{$rel}()->get() as $m) { $collect($m); } } catch (\Throwable $e) {}
+        }
+        try { $collect($this->registration); } catch (\Throwable $e) {}
+        try { $collect($this->ekta); } catch (\Throwable $e) {}
+
+        // Lampiran chat tersimpan di chat_attachments/{thread uuid}/...
+        try {
+            foreach ($this->liveChatThreads()->pluck('uuid') as $u) {
+                $paths[] = "chat_attachments/{$u}";
+            }
+        } catch (\Throwable $e) {}
+
+        return array_values(array_unique(array_filter($paths)));
+    }
+
     public function ensureKomcadEducationExists(): void
     {
         // Pengecekan apakah personel ini sudah memiliki catatan Pendidikan Militer SKEP
