@@ -128,13 +128,31 @@ class DatabaseSeeder extends Seeder
             'updated_at' => now(),
         ]);
 
+        // Kata sandi akun bawaan diambil dari environment. Di PRODUKSI, bila tidak
+        // diset, dibangkitkan acak (ditampilkan sekali di konsol) agar tidak ada
+        // kata sandi default yang diketahui publik. Default lokal hanya untuk dev.
+        $seedPassword = function (string $envKey, string $localDefault) {
+            $val = env($envKey);
+            if (!empty($val)) {
+                return $val;
+            }
+            if (app()->environment('production')) {
+                $gen = Str::password(16);
+                if (isset($this->command)) {
+                    $this->command->warn("[seeder] {$envKey} tidak diset; memakai kata sandi acak: {$gen}");
+                }
+                return $gen;
+            }
+            return $localDefault;
+        };
+
         // 2. Seed Admin Default User
         DB::table('users')->insert([
             'uuid' => Str::uuid(),
             'role_id' => $adminRoleId,
             'username' => 'admin.sisfopers',
             'email' => 'admin@sisfoperskc.go.id',
-            'password' => Hash::make('P@sswordEnterprise2026'),
+            'password' => Hash::make($seedPassword('SEED_ADMIN_PASSWORD', 'P@sswordEnterprise2026')),
             'is_active' => true,
             'created_at' => now(),
             'updated_at' => now(),
@@ -146,7 +164,7 @@ class DatabaseSeeder extends Seeder
             'role_id' => $komandanRoleId,
             'username' => 'komandan.kc',
             'email' => 'komandan@sisfoperskc.go.id',
-            'password' => Hash::make('KomandanKC2026!'),
+            'password' => Hash::make($seedPassword('SEED_KOMANDAN_PASSWORD', 'KomandanKC2026!')),
             'is_active' => true,
             'created_at' => now(),
             'updated_at' => now(),
@@ -158,7 +176,7 @@ class DatabaseSeeder extends Seeder
             'role_id' => $kordinatorAngkatanRoleId,
             'username' => 'koordinator.angkatan',
             'email' => 'koordinator.angkatan@sisfoperskc.go.id',
-            'password' => Hash::make('KordinatorAngkatan2026!'),
+            'password' => Hash::make($seedPassword('SEED_KORD_ANGKATAN_PASSWORD', 'KordinatorAngkatan2026!')),
             'is_active' => true,
             'created_at' => now(),
             'updated_at' => now(),
@@ -195,7 +213,7 @@ class DatabaseSeeder extends Seeder
             'role_id' => $kordinatorMatraRoleId,
             'username' => 'koordinator.matra',
             'email' => 'koordinator.matra@sisfoperskc.go.id',
-            'password' => Hash::make('KordinatorMatra2026!'),
+            'password' => Hash::make($seedPassword('SEED_KORD_MATRA_PASSWORD', 'KordinatorMatra2026!')),
             'is_active' => true,
             'created_at' => now(),
             'updated_at' => now(),
