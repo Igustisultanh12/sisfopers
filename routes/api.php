@@ -41,7 +41,8 @@ Route::get('/settings/public', function () {
 Route::post('/auth/login', [ApiAuthController::class, 'login']);
 
 // Protected API routes (Wajib menyertakan Bearer Token Sanctum)
-Route::middleware('auth:sanctum')->group(function () {
+// EnsureAccountActive menolak token milik akun yang telah dinonaktifkan.
+Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureAccountActive::class])->group(function () {
     // Auth & Profile
     Route::get('/auth/me', [ApiAuthController::class, 'me']);
     Route::post('/auth/logout', [ApiAuthController::class, 'logout']);
