@@ -377,6 +377,10 @@ class ViconController extends Controller
             return back()->with('error', 'Kata sandi ruang rapat dinas tidak valid.');
         }
 
+        // Tandai bahwa personel ini sudah lolos gerbang passcode untuk ruang tsb,
+        // agar personelRoom dapat mengizinkan masuk langsung via uuid.
+        Session::put("vicon_personel_ok_{$room->id}", true);
+
         return redirect()->route('personel.vicon.room', $room->uuid);
     }
 
@@ -403,6 +407,15 @@ class ViconController extends Controller
                     $q->orWhere('personel_id', $personel->id);
                 }
             })->first();
+
+        // Ruang berpasscode: personel yang belum diundang (tidak punya baris participant)
+        // wajib lolos gerbang passcode via personelJoin lebih dulu. Cegah masuk langsung via uuid.
+        if (!$participant && !empty($room->guest_passcode) && !Session::get("vicon_personel_ok_{$room->id}")) {
+            return redirect()->route('personel.vicon.index')->with('error', 'Masuki ruang ini melalui kode & kata sandi undangan.');
+        }
+
+        // Jangan bocorkan passcode ruang ke klien.
+        $room->makeHidden(['guest_passcode']);
 
         if (!$participant) {
             $rank = $personel ? Personel::formatLongRank($personel->pangkat) : '';
@@ -579,6 +592,44 @@ class ViconController extends Controller
     }
 
     /**
+     * Pastikan pemanggil benar-benar peserta ruang ini sebelum menerbitkan token,
+     * membuka roster, atau mengirim chat. Mengembalikan ViconParticipant pemanggil,
+     * atau null untuk staff penyelenggara (admin/koordinator/host). Abort bila tak berhak.
+     */
+    private function resolveRoomParticipant(Request $request, ViconRoom $room): ?ViconParticipant
+    {
+        abort_if($room->status === 'ENDED', 410, 'Ruang konferensi telah berakhir.');
+
+        $user = Auth::user() ?: Auth::guard('pju')->user();
+        if ($user) {
+            $participant = ViconParticipant::where('room_id', $room->id)
+                ->where('user_id', $user->id)
+                ->first();
+            if ($participant) {
+                return $participant;
+            }
+            $isStaff = method_exists($user, 'hasRole') && (
+                $user->hasRole('admin') || $user->hasRole('kordinator_matra') || $user->hasRole('kordinator_angkatan')
+            );
+            if ($isStaff || (int) $room->host_user_id === (int) $user->id) {
+                return null;
+            }
+            abort(403, 'Anda bukan peserta ruang konferensi ini.');
+        }
+
+        // Tamu: wajib allow_guest dan guest_token yang cocok (diterbitkan guestJoinProcess
+        // setelah lolos cek passcode).
+        abort_unless($room->allow_guest, 403, 'Ruang ini tidak menerima tamu.');
+        $token = $request->input('guest_token') ?: Session::get("vicon_guest_{$room->room_code}");
+        $participant = ViconParticipant::where('room_id', $room->id)
+            ->where('role', 'GUEST')
+            ->where('guest_token', $token)
+            ->first();
+        abort_unless($participant, 403, 'Sesi tamu tidak valid. Silakan bergabung ulang melalui tautan undangan.');
+        return $participant;
+    }
+
+    /**
      * Menerbitkan Token Agora RTC Dinamis untuk Sesi Konferensi
      */
     public function getAgoraToken(Request $request, $uuid)
@@ -587,22 +638,14 @@ class ViconController extends Controller
             ->orWhere('room_code', $uuid)
             ->firstOrFail();
 
-        $uid = (int) $request->input('uid');
+        $participant = $this->resolveRoomParticipant($request, $room);
 
-        if (Auth::check()) {
-            $user = Auth::user();
-            if ($uid === 0) {
-                $uid = (int) $user->id;
-            }
+        // UID diturunkan dari identitas peserta, tidak pernah dari input klien.
+        if ($participant && $participant->agora_uid) {
+            $uid = (int) $participant->agora_uid;
         } else {
-            $token = $request->input('guest_token');
-            $participant = ViconParticipant::where('room_id', $room->id)
-                ->where('guest_token', $token)
-                ->first();
-
-            if ($participant) {
-                $uid = (int) $participant->agora_uid;
-            }
+            $authUser = Auth::user() ?: Auth::guard('pju')->user();
+            $uid = (int) ($authUser->id ?? 0);
         }
 
         if ($uid === 0) {
@@ -629,6 +672,9 @@ class ViconController extends Controller
         $room = ViconRoom::where('uuid', $uuid)
             ->orWhere('room_code', $uuid)
             ->firstOrFail();
+
+        // Hanya peserta sah yang boleh melihat roster & riwayat chat.
+        $this->resolveRoomParticipant($request, $room);
 
         $participants = ViconParticipant::with('personel')
             ->where('room_id', $room->id)
@@ -668,24 +714,28 @@ class ViconController extends Controller
             ->orWhere('room_code', $uuid)
             ->firstOrFail();
 
+        // Hanya peserta sah yang boleh mengirim chat.
+        $participant = $this->resolveRoomParticipant($request, $room);
+
         $request->validate([
             'message' => 'required|string|max:1000',
-            'sender_name' => 'nullable|string|max:100',
-            'sender_type' => 'nullable|string',
         ]);
 
-        $senderName = $request->input('sender_name');
-        $senderType = $request->input('sender_type', 'GUEST');
+        // Identitas pengirim diturunkan dari server, bukan dari input klien
+        // (mencegah penyamaran sebagai HOST / peserta lain).
+        $senderName = null;
+        $senderType = 'GUEST';
         $senderId = null;
 
-        if (Auth::check()) {
-            $user = Auth::user();
+        $user = Auth::user() ?: Auth::guard('pju')->user();
+        if ($user) {
             $senderId = $user->id;
-            $senderType = $user->hasRole('admin') ? 'HOST' : 'PERSONEL';
-            if (!$senderName) {
-                $rank = $user->personel ? Personel::formatLongRank($user->personel->pangkat) : '';
-                $senderName = trim("{$rank} " . ($user->personel ? $user->personel->full_name : $user->name));
-            }
+            $senderType = (method_exists($user, 'hasRole') && $user->hasRole('admin')) ? 'HOST' : 'PERSONEL';
+            $rank = $user->personel ? Personel::formatLongRank($user->personel->pangkat) : '';
+            $senderName = trim("{$rank} " . ($user->personel ? $user->personel->full_name : ($user->full_name ?? $user->name ?? 'Peserta')));
+        } elseif ($participant) {
+            $senderType = $participant->role ?: 'GUEST';
+            $senderName = $participant->display_name ?: 'Tamu';
         }
 
         $msg = ViconMessage::create([
