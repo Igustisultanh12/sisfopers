@@ -19,6 +19,97 @@ use Inertia\Inertia;
 class LiveChatController extends Controller
 {
     /**
+     * Scope matra/angkatan pemanggil staff:
+     * - admin / PJU tanpa matra: tanpa batas [null, null]
+     * - kordinator_matra: matra dari profil personel-nya
+     * - kordinator_angkatan: matra + angkatan dari profil personel-nya
+     * - PJU bermatra: matra PJU
+     * Sentinel '__none__' membuat query gagal-tertutup bila profil scope tak ada.
+     */
+    private function staffChatScope(): array
+    {
+        $user = Auth::user() ?: Auth::guard('pju')->user();
+        if (!$user || !method_exists($user, 'hasRole')) {
+            return [null, null];
+        }
+        if ($user->hasRole('admin')) {
+            return [null, null];
+        }
+        if ($user->hasRole('kordinator_matra')) {
+            return [$user->personel?->matra ?? '__none__', null];
+        }
+        if ($user->hasRole('kordinator_angkatan')) {
+            return [$user->personel?->matra ?? '__none__', $user->personel?->angkatan ?? '__none__'];
+        }
+        if (!empty($user->matra)) {
+            return [$user->matra, null];
+        }
+        return [null, null];
+    }
+
+    /** Terapkan scope staff ke query LiveChatThread (via relasi personel). */
+    private function applyThreadScope($query)
+    {
+        [$matra, $angkatan] = $this->staffChatScope();
+        return $query
+            ->when($matra, fn ($q) => $q->whereHas('personel', fn ($p) => $p->where('matra', $matra)))
+            ->when($angkatan, fn ($q) => $q->whereHas('personel', fn ($p) => $p->where('angkatan', $angkatan)));
+    }
+
+    /** Terapkan scope staff ke query Personel langsung. */
+    private function applyPersonelScope($query)
+    {
+        [$matra, $angkatan] = $this->staffChatScope();
+        return $query
+            ->when($matra, fn ($q) => $q->where('matra', $matra))
+            ->when($angkatan, fn ($q) => $q->where('angkatan', $angkatan));
+    }
+
+    /** Pastikan thread berada dalam scope staff pemanggil; jika tidak, 404. */
+    private function authorizeStaffThread(LiveChatThread $thread): void
+    {
+        [$matra, $angkatan] = $this->staffChatScope();
+        if ($matra === null && $angkatan === null) {
+            return;
+        }
+        $p = $thread->personel ?: Personel::find($thread->personel_id);
+        $ok = $p
+            && ($matra === null || $p->matra === $matra)
+            && ($angkatan === null || (string) $p->angkatan === (string) $angkatan);
+        abort_unless($ok, 404);
+    }
+
+    /** Pastikan personel target berada dalam scope staff pemanggil; jika tidak, 404. */
+    private function authorizeStaffPersonel(Personel $p): void
+    {
+        [$matra, $angkatan] = $this->staffChatScope();
+        $ok = ($matra === null || $p->matra === $matra)
+            && ($angkatan === null || (string) $p->angkatan === (string) $angkatan);
+        abort_unless($ok, 404);
+    }
+
+    /**
+     * Otorisasi akses thread untuk endpoint panggilan (dipakai personel & staff).
+     * Personel biasa wajib pemilik thread; staff dibatasi scope matra/angkatan.
+     */
+    private function authorizeCallThread(string $uuid): LiveChatThread
+    {
+        $thread = LiveChatThread::with('personel')->where('uuid', $uuid)->firstOrFail();
+        $user = Auth::user() ?: Auth::guard('pju')->user();
+        $isStaff = $user && method_exists($user, 'hasRole') && (
+            $user->hasRole('admin') || $user->hasRole('kordinator_matra')
+            || $user->hasRole('kordinator_angkatan') || !empty($user->matra)
+        );
+        if ($isStaff) {
+            $this->authorizeStaffThread($thread);
+            return $thread;
+        }
+        $personel = $user?->personel;
+        abort_unless($personel && (int) $personel->id === (int) $thread->personel_id, 403, 'Anda bukan pemilik sesi obrolan ini.');
+        return $thread;
+    }
+
+    /**
      * Halaman Utama Live Chat Mandiri untuk Personel Komcad
      */
     public function personelIndex(Request $request)
@@ -399,6 +490,7 @@ class LiveChatController extends Controller
             })
             ->orderBy('last_message_at', 'desc');
 
+        $threadsQuery = $this->applyThreadScope($threadsQuery);
         $threads = $threadsQuery->paginate(20)->withQueryString();
 
         $threads->getCollection()->transform(function ($th) {
@@ -419,6 +511,7 @@ class LiveChatController extends Controller
                 ->first();
 
             if ($activeThread) {
+                $this->authorizeStaffThread($activeThread);
                 if ($activeThread->unread_admin > 0) {
                     $activeThread->update(['unread_admin' => 0]);
                 }
@@ -489,6 +582,7 @@ class LiveChatController extends Controller
             })
             ->orderBy('last_message_at', 'desc');
 
+        $threadsQuery = $this->applyThreadScope($threadsQuery);
         $threads = $threadsQuery->limit(25)->get();
 
         $threads->transform(function ($th) {
@@ -504,6 +598,7 @@ class LiveChatController extends Controller
         if ($activeUuid) {
             $activeThread = LiveChatThread::where('uuid', $activeUuid)->first();
             if ($activeThread) {
+                $this->authorizeStaffThread($activeThread);
                 if ($activeThread->unread_admin > 0) {
                     $activeThread->update(['unread_admin' => 0]);
                     $activeThread->messages()
@@ -572,6 +667,7 @@ class LiveChatController extends Controller
     public function adminGetMessages(Request $request, $uuid)
     {
         $thread = LiveChatThread::with('personel.user')->where('uuid', $uuid)->firstOrFail();
+        $this->authorizeStaffThread($thread);
 
         if ($thread->unread_admin > 0) {
             $thread->update(['unread_admin' => 0]);
@@ -613,6 +709,7 @@ class LiveChatController extends Controller
     {
         $user = Auth::user();
         $thread = LiveChatThread::where('uuid', $uuid)->firstOrFail();
+        $this->authorizeStaffThread($thread);
 
         $request->validate([
             'message' => 'nullable|string|max:5000',
@@ -727,6 +824,7 @@ class LiveChatController extends Controller
     {
         $user = Auth::user();
         $thread = LiveChatThread::where('uuid', $uuid)->firstOrFail();
+        $this->authorizeStaffThread($thread);
 
         if ($thread->status === 'OPEN') {
             $personelAdmin = $user->personel;
@@ -767,6 +865,7 @@ class LiveChatController extends Controller
     public function adminToggleStatus(Request $request, $uuid)
     {
         $thread = LiveChatThread::where('uuid', $uuid)->firstOrFail();
+        $this->authorizeStaffThread($thread);
         $newStatus = $thread->status === 'OPEN' ? 'CLOSED' : 'OPEN';
 
         if ($newStatus === 'CLOSED') {
@@ -883,7 +982,7 @@ class LiveChatController extends Controller
 
         $cleanQ = preg_replace('/[^A-Za-z0-9]/', '', $q);
 
-        $personels = Personel::where(function ($sub) use ($q, $cleanQ) {
+        $personelQuery = Personel::where(function ($sub) use ($q, $cleanQ) {
                 $sub->where('full_name', 'like', "%{$q}%")
                     ->orWhere('nikc', 'like', "%{$q}%")
                     ->orWhere('nik', 'like', "%{$q}%")
@@ -894,7 +993,10 @@ class LiveChatController extends Controller
                         ->orWhere('nik', 'like', "%{$cleanQ}%");
                 }
             })
-            ->with(['user'])
+            ->with(['user']);
+
+        // Batasi hasil pencarian ke scope matra/angkatan pemanggil.
+        $personels = $this->applyPersonelScope($personelQuery)
             ->limit(15)
             ->get();
 
@@ -942,6 +1044,7 @@ class LiveChatController extends Controller
         ]);
 
         $personel = Personel::with('user')->findOrFail($request->personel_id);
+        $this->authorizeStaffPersonel($personel);
 
         // 1. Periksa apakah sudah ada utas berstatus OPEN untuk personel ini
         $thread = LiveChatThread::where('personel_id', $personel->id)
@@ -1048,6 +1151,7 @@ class LiveChatController extends Controller
     public function adminDestroy(Request $request, $uuid)
     {
         $thread = LiveChatThread::where('uuid', $uuid)->firstOrFail();
+        $this->authorizeStaffThread($thread);
         $thread->purgeFiles();
         $thread->messages()->delete();
         $thread->delete();
@@ -1061,6 +1165,7 @@ class LiveChatController extends Controller
     public function initiateCall(Request $request, $uuid)
     {
         $user = Auth::user();
+        $this->authorizeCallThread($uuid);
         $thread = LiveChatThread::with('personel.user')->where('uuid', $uuid)->firstOrFail();
 
         $isPersonel = false;
@@ -1151,6 +1256,7 @@ class LiveChatController extends Controller
      */
     public function getCallSignal(Request $request, $uuid)
     {
+        $this->authorizeCallThread($uuid);
         $callData = Cache::get("live_chat:call:{$uuid}");
 
         if ($callData) {
@@ -1240,10 +1346,11 @@ class LiveChatController extends Controller
      */
     public function getAgoraToken(Request $request, $uuid)
     {
-        $user = Auth::user();
-        $thread = LiveChatThread::where('uuid', $uuid)->firstOrFail();
+        $user = Auth::user() ?: Auth::guard('pju')->user();
+        $thread = $this->authorizeCallThread($uuid);
         $channelName = 'SISFOPERSKC_' . preg_replace('/[^a-zA-Z0-9]/', '', $thread->uuid);
-        $uid = (int) ($request->input('uid') ?: ($user->id ?? 1));
+        // UID diturunkan dari identitas pemanggil, bukan input klien.
+        $uid = (int) ($user->id ?? 1);
 
         $token = \App\Services\AgoraTokenService::generateToken($channelName, $uid);
         $appId = Setting::where('key', 'agora_app_id')->value('value') ?: env('AGORA_APP_ID', '19daeb63b0ec46f2b02197c9fbbe81d6');
@@ -1262,6 +1369,7 @@ class LiveChatController extends Controller
      */
     public function sendCallSignal(Request $request, $uuid)
     {
+        $this->authorizeCallThread($uuid);
         $action = $request->input('action');
         $payload = $request->input('data');
         $sender = $request->input('sender'); // 'caller' | 'callee'
@@ -1376,6 +1484,7 @@ class LiveChatController extends Controller
      */
     public function endCall(Request $request, $uuid)
     {
+        $this->authorizeCallThread($uuid);
         $callData = Cache::get("live_chat:call:{$uuid}");
         $reason = $request->input('reason', 'ended'); // 'ended', 'rejected', 'canceled', 'missed'
         $durationSeconds = (int) $request->input('duration_seconds', 0);
