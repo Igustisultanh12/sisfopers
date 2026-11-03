@@ -154,7 +154,7 @@ class MailGatewayController extends Controller
         Config::set('mail.from.name', $settings['mail_from_name'] ?? 'Sisfoperskc');
 
         try {
-            $otpDummy = str_pad(strval(rand(100000, 999999)), 6, '0', STR_PAD_LEFT);
+            $otpDummy = str_pad(strval(random_int(100000, 999999)), 6, '0', STR_PAD_LEFT);
             
             Mail::to($recipient)->send(
                 new OtpNotificationMail(

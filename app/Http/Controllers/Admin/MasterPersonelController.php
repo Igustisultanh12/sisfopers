@@ -255,7 +255,7 @@ class MasterPersonelController extends Controller
             // Standard Laravel upload (Disimpan di disk private aman)
             $fileName = $request->file('photo_profile')->store('personel/photos', 'private');
 
-            $otpCode   = str_pad(strval(rand(0, 999999)), 6, '0', STR_PAD_LEFT);
+            $otpCode   = str_pad(strval(random_int(0, 999999)), 6, '0', STR_PAD_LEFT);
             $expiredAt = now()->addHours(72);
 
             $personel = Personel::create(array_merge($validated, [

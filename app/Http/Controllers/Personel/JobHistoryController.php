@@ -87,7 +87,7 @@ class JobHistoryController extends Controller
             ], 429);
         }
 
-        $otpCode   = strval(rand(100000, 999999));
+        $otpCode   = strval(random_int(100000, 999999));
         $expiredAt = now()->addMinutes(10);
 
         $otpVerification = JobOtpVerification::create([
