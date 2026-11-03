@@ -75,7 +75,7 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     
     Route::get('/reset-password-otp', [\App\Http\Controllers\Auth\PasswordResetOtpController::class, 'create'])->name('password.reset-otp');
-    Route::post('/reset-password-otp', [\App\Http\Controllers\Auth\PasswordResetOtpController::class, 'store'])->name('password.update-otp');
+    Route::post('/reset-password-otp', [\App\Http\Controllers\Auth\PasswordResetOtpController::class, 'store'])->middleware('throttle:10,1')->name('password.update-otp');
 });
 
 // Modul Konferensi Video Dinas & Akses Tamu Luar (Agora RTC)
