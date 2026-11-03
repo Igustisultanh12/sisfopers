@@ -98,8 +98,14 @@ Route::get('/maintenance', function () {
         return redirect()->route('login');
     }
 
+    // Hanya kirim key tampilan publik; jangan pernah serialisasi seluruh tabel setting
+    // (berisi secret: wa_api_key, agora_app_certificate, mail_password, dll) ke halaman publik.
+    $publicKeys = [
+        'app_name', 'app_title', 'footer_text', 'favicon', 'login_background',
+        'logo_tni', 'logo_ad', 'logo_al', 'logo_au',
+    ];
     return Inertia::render('Maintenance', [
-        'settings' => \App\Models\Setting::all()->pluck('value', 'key')
+        'settings' => \App\Models\Setting::whereIn('key', $publicKeys)->pluck('value', 'key'),
     ]);
 })->name('maintenance');
 

@@ -99,6 +99,16 @@ class Personel extends Model
         'kotama', 'satuan_kewilayahan', 'is_kewilayahan_updated'
     ];
 
+    /**
+     * Kolom rahasia / kredensial yang tidak boleh ikut ter-serialisasi ke klien
+     * (Inertia props, JSON API). OTP verifikasi & reset password adalah secret
+     * out-of-band; membocorkannya memungkinkan bypass verifikasi & ambil alih akun.
+     */
+    protected $hidden = [
+        'manual_otp', 'manual_otp_expired_at', 'manual_otp_printed_at',
+        'reset_password_otp', 'reset_password_otp_expired_at', 'reset_password_otp_printed_at',
+    ];
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

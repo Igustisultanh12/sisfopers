@@ -94,18 +94,36 @@ class HandleInertiaRequests extends Middleware
                 'message' => $request->session()->get('message'),
             ],
 
-            // PARAMETER GLOBAL SETTING (Kunci rahasia hanya dibagikan ke sesi Admin)
+            // PARAMETER GLOBAL SETTING
+            // Non-admin & guest hanya menerima allowlist key tampilan publik.
+            // Admin menerima seluruh setting KECUALI key rahasia yang tetap tak pernah
+            // dikirim ke klien (gunakan endpoint admin khusus bila perlu nilainya).
             'settings' => function () use ($user) {
                 $settings = \App\Models\Setting::all()->pluck('value', 'key')->toArray();
-                $isAdmin = $user && method_exists($user, 'hasRole') && $user->hasRole('admin');
-                if (!$isAdmin) {
-                    unset($settings['turnstile_secret_key']);
-                    unset($settings['wa_api_key']);
-                    unset($settings['coturn_secret']);
-                    unset($settings['metered_api_key']);
-                    unset($settings['agora_app_certificate']);
+
+                // Key rahasia tidak pernah dibagikan ke klien (bahkan admin) via shared props.
+                $secretKeys = [
+                    'turnstile_secret_key', 'wa_api_key', 'coturn_secret',
+                    'metered_api_key', 'agora_app_certificate',
+                    'mail_password', 'mail_username',
+                ];
+                foreach ($secretKeys as $sk) {
+                    unset($settings[$sk]);
                 }
-                return $settings;
+
+                $isAdmin = $user && method_exists($user, 'hasRole') && $user->hasRole('admin');
+                if ($isAdmin) {
+                    return $settings;
+                }
+
+                // Allowlist key tampilan publik untuk non-admin / guest.
+                $publicKeys = [
+                    'app_name', 'app_title', 'footer_text', 'favicon',
+                    'login_background', 'logo_tni', 'logo_ad', 'logo_al', 'logo_au',
+                    'turnstile_enabled', 'turnstile_site_key', 'agora_app_id',
+                    'under_maintenance', 'disable_whatsapp_otp',
+                ];
+                return array_intersect_key($settings, array_flip($publicKeys));
             },
         ];
     }
