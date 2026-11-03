@@ -141,6 +141,10 @@ Route::middleware(['auth:web,pju'])->group(function () {
         }
         $filename = basename($cleanPath);
 
+        // Kepemilikan: personel biasa hanya boleh mengunduh berkasnya sendiri.
+        // Staff (admin/komandan/koordinator/PJU) boleh melihat berkas personel.
+        \App\Support\DocumentAccess::authorize($cleanPath, $filename);
+
         $candidates = [
             storage_path('app/private/' . $cleanPath),
             storage_path('app/public/' . $cleanPath),
@@ -223,6 +227,9 @@ Route::middleware(['auth:web,pju'])->group(function () {
             abort(404);
         }
         $filename = basename($cleanPath);
+
+        // Kepemilikan: personel biasa hanya boleh mengunduh berkasnya sendiri.
+        \App\Support\DocumentAccess::authorize($cleanPath, $filename);
 
         $candidates = [
             storage_path('app/private/' . $cleanPath),
