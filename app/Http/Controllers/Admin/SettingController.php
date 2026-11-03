@@ -10,6 +10,13 @@ use Inertia\Inertia;
 
 class SettingController extends Controller
 {
+    // Pengaturan sistem & secret gateway hanya boleh diakses/diubah ADMIN.
+    public function __construct()
+    {
+        $u = \Illuminate\Support\Facades\Auth::guard('web')->user() ?: \Illuminate\Support\Facades\Auth::guard('pju')->user();
+        abort_unless($u && method_exists($u, 'hasRole') && $u->hasRole('admin'), 403, 'Hanya Administrator yang diizinkan.');
+    }
+
     public function index()
     {
         $settings = Setting::all()->pluck('value', 'key');

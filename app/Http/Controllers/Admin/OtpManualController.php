@@ -14,6 +14,17 @@ use Inertia\Inertia;
 
 class OtpManualController extends Controller
 {
+    // Penerbitan & pencetakan OTP manual verifikasi hanya kewenangan ADMIN.
+    // (verifyManual dikecualikan: dipakai personel untuk memasukkan OTP miliknya.)
+    public function __construct()
+    {
+        $u = \Illuminate\Support\Facades\Auth::guard('web')->user() ?: \Illuminate\Support\Facades\Auth::guard('pju')->user();
+        $isPersonelOtpEntry = request()->routeIs('personel.face-verification.otp-manual');
+        if (!$isPersonelOtpEntry) {
+            abort_unless($u && method_exists($u, 'hasRole') && $u->hasRole('admin'), 403, 'Hanya Administrator yang diizinkan.');
+        }
+    }
+
     /**
      * Tampilkan daftar personel yang sudah APPROVED tapi belum verifikasi OTP (face_verified = false)
      */
