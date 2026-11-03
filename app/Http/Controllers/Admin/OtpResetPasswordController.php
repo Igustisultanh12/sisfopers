@@ -62,7 +62,7 @@ class OtpResetPasswordController extends Controller
     {
         $personel = Personel::with('user')->findOrFail($id);
 
-        $otpCode   = str_pad(strval(rand(0, 999999)), 6, '0', STR_PAD_LEFT);
+        $otpCode   = str_pad(strval(random_int(0, 999999)), 6, '0', STR_PAD_LEFT);
         $expiredAt = now()->addHours(24); // OTP Reset berlaku 24 jam
 
         $personel->update([
@@ -120,7 +120,7 @@ class OtpResetPasswordController extends Controller
         $count     = 0;
 
         foreach ($personels as $personel) {
-            $otpCode = str_pad(strval(rand(0, 999999)), 6, '0', STR_PAD_LEFT);
+            $otpCode = str_pad(strval(random_int(0, 999999)), 6, '0', STR_PAD_LEFT);
             $personel->update([
                 'reset_password_otp'             => $otpCode,
                 'reset_password_otp_expired_at'  => $expiredAt,

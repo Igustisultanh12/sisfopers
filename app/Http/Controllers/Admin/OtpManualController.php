@@ -68,7 +68,7 @@ class OtpManualController extends Controller
             return back()->with('error', 'Personel ini sudah melakukan verifikasi OTP sebelumnya.');
         }
 
-        $otpCode   = str_pad(strval(rand(0, 999999)), 6, '0', STR_PAD_LEFT);
+        $otpCode   = str_pad(strval(random_int(0, 999999)), 6, '0', STR_PAD_LEFT);
         $expiredAt = now()->addHours(72);
 
         $personel->update([
@@ -125,7 +125,7 @@ class OtpManualController extends Controller
         $count     = 0;
 
         foreach ($personels as $personel) {
-            $otpCode = str_pad(strval(rand(0, 999999)), 6, '0', STR_PAD_LEFT);
+            $otpCode = str_pad(strval(random_int(0, 999999)), 6, '0', STR_PAD_LEFT);
             $personel->update([
                 'manual_otp'             => $otpCode,
                 'manual_otp_expired_at'  => $expiredAt,
