@@ -140,6 +140,10 @@ Route::middleware(['auth:web,pju'])->group(function () {
 
         $cleanPath = ltrim($path, '/');
         $cleanPath = preg_replace('/^(app\/private\/|app\/public\/|app\/|private\/|storage\/|public\/|\/storage\/|\/admin\/|admin\/)+/', '', $cleanPath);
+        // Tolak path traversal / null byte: cegah pembacaan file di luar direktori storage (mis. .env, APP_KEY).
+        if (str_contains($cleanPath, '..') || str_contains($path, "\0") || str_contains($cleanPath, "\\")) {
+            abort(404);
+        }
         $filename = basename($cleanPath);
 
         $candidates = [
@@ -219,6 +223,10 @@ Route::middleware(['auth:web,pju'])->group(function () {
     Route::get('/documents/private/{path}', function ($path) {
         $cleanPath = ltrim($path, '/');
         $cleanPath = preg_replace('/^(app\/private\/|app\/public\/|app\/|private\/|storage\/|public\/|\/storage\/|\/admin\/|admin\/)+/', '', $cleanPath);
+        // Tolak path traversal / null byte: cegah pembacaan file di luar direktori storage (mis. .env, APP_KEY).
+        if (str_contains($cleanPath, '..') || str_contains($path, "\0") || str_contains($cleanPath, "\\")) {
+            abort(404);
+        }
         $filename = basename($cleanPath);
 
         $candidates = [
@@ -300,6 +308,10 @@ Route::middleware(['auth:web,pju'])->group(function () {
 Route::get('/storage/{path}', function ($path) {
     $cleanPath = ltrim($path, '/');
     $cleanPath = preg_replace('/^(storage\/|public\/|private\/)+/', '', $cleanPath);
+    // Tolak path traversal / null byte.
+    if (str_contains($cleanPath, '..') || str_contains($path, "\0") || str_contains($cleanPath, "\\")) {
+        abort(404);
+    }
     $filename = basename($cleanPath);
     $filenameWithoutExt = pathinfo($filename, PATHINFO_FILENAME);
 
@@ -323,7 +335,10 @@ Route::get('/storage/{path}', function ($path) {
         $possibleSubpaths[] = 'personel/skep_requests/' . $fileVar;
     }
 
-    foreach (['public', 'local', 'private'] as $diskName) {
+    // Rute publik tanpa autentikasi: HANYA layani disk publik.
+    // Disk 'local'/'private' (root storage/app/private) berisi KTP/SKEP/foto privat
+    // dan tidak boleh dapat diunduh anonim hanya dari nama berkas.
+    foreach (['public'] as $diskName) {
         foreach ($possibleSubpaths as $subPath) {
             if (Storage::disk($diskName)->exists($subPath)) {
                 $fullPath = Storage::disk($diskName)->path($subPath);
