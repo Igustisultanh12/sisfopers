@@ -131,11 +131,45 @@ class ReportController extends Controller
         return Personel::formatShortRank($pangkat);
     }
 
+    /**
+     * Scope matra/angkatan efektif untuk pemanggil:
+     * - PJU: kolom matra pada akun PJU.
+     * - Koordinator: matra/angkatan dari profil personel-nya (bukan kolom users,
+     *   yang memang tidak ada sehingga scope lama inert).
+     * - Admin: tanpa batas (null, null).
+     */
+    private function resolveScope(): array
+    {
+        $user = auth()->user() ?: \Illuminate\Support\Facades\Auth::guard('pju')->user();
+        if (!$user) {
+            return [null, null];
+        }
+        // Akun PJU membawa kolom matra langsung.
+        if (!empty($user->matra) && !(method_exists($user, 'hasRole'))) {
+            return [$user->matra, null];
+        }
+        if (method_exists($user, 'hasRole')) {
+            if ($user->hasRole('admin')) {
+                return [null, null];
+            }
+            $personel = method_exists($user, 'personel') || isset($user->personel) ? $user->personel : null;
+            if ($user->hasRole('kordinator_matra')) {
+                return [$personel->matra ?? null, null];
+            }
+            if ($user->hasRole('kordinator_angkatan')) {
+                return [$personel->matra ?? null, $personel->angkatan ?? null];
+            }
+        }
+        // PJU dengan hasRole (jika ada) atau fallback: pakai matra bila tersedia.
+        return [$user->matra ?? null, null];
+    }
+
     public function personelExcel()
     {
         $signer = $this->getSignerData();
+        [$scopeMatra, $scopeAngkatan] = $this->resolveScope();
         return Excel::download(
-            new PersonelExport($signer['name'], $signer['pangkat'], $signer['nikc'], $signer['jabatan'], $signer['header']), 
+            new PersonelExport($signer['name'], $signer['pangkat'], $signer['nikc'], $signer['jabatan'], $signer['header'], $scopeMatra, $scopeAngkatan),
             'Laporan_Instansial_Personel_KC_' . date('YmdHis') . '.xlsx'
         );
     }
