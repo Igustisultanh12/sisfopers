@@ -27,12 +27,20 @@ class ProfileController extends Controller
             $personelData = $user->personel;
         }
 
+        // Foto akun: avatar unggahan (disk publik); bila belum ada, pakai pasfoto personel
+        // dari database yang tersimpan privat (dilayani lewat private-stream + cek kepemilikan).
+        $avatarUrl = $user->avatar ? asset('storage/' . $user->avatar) : null;
+        if (!$avatarUrl && $user->personel && $user->personel->photo_profile) {
+            $prefix = $request->is('api/m/*') ? '/api/m' : '';
+            $avatarUrl = url($prefix . '/documents/private-stream?path=' . urlencode($user->personel->photo_profile));
+        }
+
         return Inertia::render('Profile/Edit', [
             'user' => [
                 'id' => $user->id,
                 'username' => $user->username,
                 'email' => $user->email,
-                'avatar' => $user->avatar ? asset('storage/' . $user->avatar) : null,
+                'avatar' => $avatarUrl,
                 'phone_number' => $user->personel ? $user->personel->phone_number : ($user->phone_number ?? ''),
                 'created_at' => $user->created_at->translatedFormat('d M Y (H:i)') . ' WIB',
                 'google2fa_enabled' => (bool) $user->google2fa_secret,
@@ -63,7 +71,7 @@ class ProfileController extends Controller
 
         if ($request->hasFile('avatar')) {
             if ($user->avatar) {
-                Storage::disk('private')->delete($user->avatar);
+                Storage::disk('public')->delete($user->avatar);
             }
             $dataUpdate['avatar'] = $request->file('avatar')->store('avatars', 'public');
         }
