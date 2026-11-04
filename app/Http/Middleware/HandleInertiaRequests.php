@@ -44,9 +44,19 @@ class HandleInertiaRequests extends Middleware
             $needKewilayahanUpdate = (!$personel->is_kewilayahan_updated || empty($personel->kotama) || empty($personel->satuan_kewilayahan));
         }
 
+        // Foto pengguna untuk layout: avatar unggahan akun (disk publik), atau pasfoto
+        // personel (disk privat, dilayani private-stream dengan cek kepemilikan).
+        $avatarUrl = null;
+        if ($user && !empty($user->avatar)) {
+            $avatarUrl = asset('storage/' . $user->avatar);
+        } elseif ($personel && !empty($personel->photo_profile)) {
+            $prefix = $request->is('api/m/*') ? '/api/m' : '';
+            $avatarUrl = url($prefix . '/documents/private-stream?path=' . urlencode($personel->photo_profile));
+        }
+
         return [
             ...parent::share($request),
-            
+
             // MAP DATA AUTH SECARA STRICT DAN AMAN UNTUK MEMBENTENGIN LAYOUT VUE
             'auth' => [
                 'user' => $user ? [
@@ -54,6 +64,7 @@ class HandleInertiaRequests extends Middleware
                     'username'         => $user->username,
                     'full_name'        => $user->full_name ?? $user->username,
                     'email'            => $user->email,
+                    'avatar_url'       => $avatarUrl,
                     'whatsapp_number'  => $user->phone_number ?? $user->whatsapp_number ?? '-',
                     'jabatan_pju'      => $user->jabatan_pju ?? null,
                     'satuan_wilayah'   => $user->satuan_wilayah ?? null,

@@ -341,7 +341,8 @@
           :class="route().current('profile.edit') ? 'bg-[#2563EB]/5 text-[#2563EB]' : 'hover:bg-slate-100/80'"
           class="flex items-center gap-3.5 mb-4 p-2 rounded-xl transition duration-150 group cursor-pointer"
         >
-          <div class="w-10 h-10 rounded-xl bg-[#2563EB]/10 flex items-center justify-center font-bold text-xs text-[#2563EB] uppercase select-none group-hover:bg-[#2563EB] group-hover:text-white transition duration-150">
+          <img v-if="authProps?.user?.avatar_url && !avatarFailed" :src="authProps.user.avatar_url" @error="avatarFailed = true" alt="Foto profil" class="w-10 h-10 rounded-xl object-cover flex-shrink-0 bg-slate-100" />
+          <div v-else class="w-10 h-10 rounded-xl bg-[#2563EB]/10 flex items-center justify-center font-bold text-xs text-[#2563EB] uppercase select-none group-hover:bg-[#2563EB] group-hover:text-white transition duration-150">
             {{ authProps?.user?.username ? authProps.user.username.substring(0, 2).toUpperCase() : 'US' }}
           </div>
           <div class="text-xs truncate flex-1" v-if="authProps?.user">
@@ -634,7 +635,8 @@
             :class="route().current('profile.edit') ? 'bg-[#2563EB]/5 text-[#2563EB]' : 'hover:bg-slate-100/80'"
             class="flex items-center gap-3.5 mb-4 p-2 rounded-xl transition duration-150 group cursor-pointer"
           >
-            <div class="w-10 h-10 rounded-xl bg-[#2563EB]/10 flex items-center justify-center font-bold text-xs text-[#2563EB] uppercase select-none group-hover:bg-[#2563EB] group-hover:text-white transition duration-150">
+            <img v-if="authProps?.user?.avatar_url && !avatarFailed" :src="authProps.user.avatar_url" @error="avatarFailed = true" alt="Foto profil" class="w-10 h-10 rounded-xl object-cover flex-shrink-0 bg-slate-100" />
+            <div v-else class="w-10 h-10 rounded-xl bg-[#2563EB]/10 flex items-center justify-center font-bold text-xs text-[#2563EB] uppercase select-none group-hover:bg-[#2563EB] group-hover:text-white transition duration-150">
               {{ authProps?.user?.username ? authProps.user.username.substring(0, 2).toUpperCase() : 'US' }}
             </div>
             <div class="text-xs truncate flex-1" v-if="authProps?.user">
@@ -1139,6 +1141,9 @@ const getNotificationStyles = (iconKey) => {
 };
 
 const authProps = computed(() => page.props.auth);
+// Jika foto gagal dimuat, kembali ke inisial; reset saat URL foto berganti.
+const avatarFailed = ref(false);
+watch(() => page.props.auth?.user?.avatar_url, () => { avatarFailed.value = false; });
 const unreadCount = computed(() => page.props.auth?.unread_notifications_count || 0);
 const allNotifications = computed(() => page.props.auth?.all_notifications || []);
 const settings = computed(() => page.props.settings || {});
