@@ -17,6 +17,7 @@ import androidx.compose.material.icons.outlined.ManageAccounts
 import androidx.compose.material.icons.outlined.Mail
 import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material.icons.outlined.Password
+import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.School
 import androidx.compose.material.icons.outlined.Settings
@@ -43,6 +44,7 @@ object Rt {
     const val FORGOT_NIKC = "forgot-nikc"
     const val RESET_PASSWORD = "reset-password"
     const val MAINTENANCE = "maintenance"
+    const val VERIFY_KTA = "verifikasi-kta"
     const val GATE_OTP = "gate/otp"
     const val GATE_SINYALMEN = "gate/sinyalmen"
     const val GATE_WILAYAH = "gate/kewilayahan"
@@ -142,6 +144,7 @@ data class MenuGroup(val title: String, val items: List<MenuItem>)
 
 object Menus {
     fun groups(me: Me): List<MenuGroup> {
+        val verifyKta = MenuItem(Rt.VERIFY_KTA, "Verifikasi E-KTA", Icons.Outlined.QrCodeScanner, Sx.Green, "Pindai QR kartu anggota")
         val selfService = MenuGroup(
             "Data Mandiri Saya",
             listOf(
@@ -163,6 +166,7 @@ object Menus {
                         MenuItem(Rt.PENGKINIAN, "Verifikasi Pengkinian Data", Icons.Outlined.FactCheck, Sx.Cyan, "Pengajuan perubahan status"),
                         MenuItem(Rt.EDU_VERIF, "Verifikasi Pendidikan", Icons.Outlined.School, Sx.Purple, "Validasi ijazah & sertifikat"),
                         MenuItem(Rt.EKTA, "E-KTA Personel", Icons.Outlined.Badge, Sx.Amber, "Penerbitan kartu anggota"),
+                        verifyKta,
                     ),
                 ),
                 MenuGroup(
@@ -205,6 +209,7 @@ object Menus {
                         MenuItem(Rt.VERIF, "Konfirmasi Pendaftaran", Icons.Outlined.VerifiedUser, Sx.Green, "Verifikasi pendaftar"),
                         MenuItem(Rt.PENGKINIAN, "Verifikasi Pengkinian Data", Icons.Outlined.FactCheck, Sx.Cyan, "Pengajuan perubahan"),
                         MenuItem(Rt.EDU_VERIF, "Verifikasi Pendidikan", Icons.Outlined.School, Sx.Purple, "Validasi ijazah"),
+                        verifyKta,
                     ),
                 ),
                 MenuGroup(
@@ -231,11 +236,12 @@ object Menus {
                         MenuItem(Rt.FORMS, "Formulir & Rekrutmen", Icons.Outlined.EditNote, Sx.Green, "Formulir dinamis"),
                         MenuItem(Rt.CHAT, "Pusat Layanan Informasi", Icons.Outlined.SupportAgent, Sx.Cyan, "Live chat"),
                         MenuItem(Rt.VICON, "Vicon & Rapat Dinas", Icons.Outlined.VideoCall, Sx.Purple, "Rapat daring"),
+                        verifyKta,
                     ),
                 ),
             )
             "komandan" -> listOf(
-                MenuGroup("Utama", listOf(MenuItem(Rt.HOME, "Dashboard Utama", Icons.Outlined.Home))),
+                MenuGroup("Utama", listOf(MenuItem(Rt.HOME, "Dashboard Utama", Icons.Outlined.Home), verifyKta)),
                 selfService.copy(items = selfService.items.filter { it.route != Rt.MY_PENGKINIAN }),
             )
             else -> listOf(
@@ -250,6 +256,7 @@ object Menus {
                         MenuItem(Rt.MY_TICKETS, "Open Tiket Pengaduan", Icons.Outlined.ConfirmationNumber, Sx.Red, "Ajukan perubahan data"),
                         MenuItem(Rt.MY_PENGKINIAN, "Pengkinian Data", Icons.Outlined.UploadFile, Sx.Cyan, "Pembaruan status"),
                         MenuItem(Rt.MY_EKTA, "E-KTA Saya", Icons.Outlined.Badge, Sx.Amber, "Kartu anggota digital"),
+                        verifyKta,
                         MenuItem(Rt.MY_CHAT, "Pusat Layanan Informasi", Icons.Outlined.SupportAgent, Sx.Cyan, "Tanya petugas"),
                         MenuItem(Rt.VICON, "Vicon Dinas", Icons.Outlined.VideoCall, Sx.Purple, "Rapat daring"),
                     ),

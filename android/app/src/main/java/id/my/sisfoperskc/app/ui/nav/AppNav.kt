@@ -68,6 +68,7 @@ import id.my.sisfoperskc.app.ui.auth.ResetPasswordScreen
 import id.my.sisfoperskc.app.ui.auth.SinyalmenGateScreen
 import id.my.sisfoperskc.app.ui.auth.SkepRequestScreen
 import id.my.sisfoperskc.app.ui.auth.SplashScreen
+import id.my.sisfoperskc.app.ui.auth.VerifyKtaScreen
 import id.my.sisfoperskc.app.ui.chat.ChatRoomScreen
 import id.my.sisfoperskc.app.ui.chat.ChatThreadsScreen
 import id.my.sisfoperskc.app.ui.common.AboutScreen
@@ -176,6 +177,7 @@ private fun NavGraphBuilder.authGraph() {
     composable(Rt.LOGIN) { LoginScreen() }
     composable(Rt.REGISTER) { RegisterScreen() }
     composable(Rt.SKEP_REQUEST) { SkepRequestScreen() }
+    composable(Rt.VERIFY_KTA) { VerifyKtaScreen() }
     composable(Rt.FORGOT_NIKC) { ForgotNikcScreen() }
     composable(Rt.RESET_PASSWORD) { ResetPasswordScreen() }
     composable(Rt.MAINTENANCE) { MaintenanceScreen() }

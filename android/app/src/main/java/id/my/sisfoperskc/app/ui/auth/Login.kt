@@ -32,6 +32,7 @@ import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.UploadFile
+import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material.icons.automirrored.outlined.Login
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -207,6 +208,7 @@ fun LoginScreen() {
             Column(Modifier.padding(horizontal = 20.dp).offset(y = (-36).dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 AuthOption(Icons.Outlined.Badge, "Daftar Akun Personel", "Personel KC yang NIKC-nya sudah tercantum di SKEP") { nav.navigate(Rt.REGISTER) }
                 AuthOption(Icons.Outlined.UploadFile, "Ajukan Verifikasi SKEP", "NIKC belum terdaftar? Unggah berkas SKEP Anda") { nav.navigate(Rt.SKEP_REQUEST) }
+                AuthOption(Icons.Outlined.QrCodeScanner, "Verifikasi E-KTA", "Pindai QR kartu E-KTA untuk cek keasliannya") { nav.navigate(Rt.VERIFY_KTA) }
                 Spacer(Modifier.height(4.dp))
                 Text(
                     "SISFOPERS KC v${BuildConfig.VERSION_NAME}\n© Komponen Cadangan Tri Matra",

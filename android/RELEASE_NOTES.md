@@ -1,5 +1,8 @@
 ## SISFOPERS KC — Aplikasi Android
 
+### Perubahan 1.0.6
+- **Verifikasi E-KTA dengan scan QR:** pindai QR pada kartu E-KTA untuk memeriksa keasliannya. Bila valid, tampil data pemegang kartu (nama & NIKC disensor demi privasi); bila tidak terdaftar/belum disahkan, muncul peringatan **tidak valid**. Tersedia di halaman login (tanpa perlu masuk) dan di menu semua peran, dengan pilihan input kode manual.
+
 ### Perubahan 1.0.5
 - **E-KTA mengkilat:** kartu E-KTA kini memiliki efek kilau hologram yang menyapu kartu secara berkala (tidak ikut tercetak).
 

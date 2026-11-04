@@ -105,6 +105,8 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("com.google.zxing:core:3.5.3")
+    // Pemindai QR (Google Code Scanner): UI kamera disediakan Play Services, tanpa izin kamera tambahan
+    implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
     implementation("androidx.print:print:1.0.0")
 
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
