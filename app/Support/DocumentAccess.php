@@ -30,6 +30,13 @@ class DocumentAccess
             return;
         }
 
+        // Aset bersama kartu E-KTA (logo Komcad, tanda tangan & cap pejabat) diunggah
+        // admin ke disk publik dan tercetak di kartu setiap personel: boleh dibaca semua
+        // pengguna terautentikasi. Hanya path yang persis terdaftar di pengaturan.
+        if (($web || $pju) && in_array($cleanPath, self::sharedAssetPaths(), true)) {
+            return;
+        }
+
         if ($web && method_exists($web, 'hasRole')) {
             foreach (['admin', 'komandan', 'kordinator_matra', 'kordinator_angkatan'] as $staffRole) {
                 if ($web->hasRole($staffRole)) {
@@ -57,5 +64,21 @@ class DocumentAccess
 
         // Peran lain yang tak dikenal: tolak demi aman.
         abort(404);
+    }
+
+    /**
+     * Path (sudah dinormalisasi) aset E-KTA yang dipakai bersama semua kartu.
+     */
+    private static function sharedAssetPaths(): array
+    {
+        $values = \App\Models\Setting::whereIn('key', ['ekta_logo_komcad', 'ekta_signature', 'ekta_stamp'])
+            ->pluck('value')
+            ->filter()
+            ->all();
+
+        return array_values(array_map(
+            fn ($v) => preg_replace('#^(app/private/|app/public/|app/|private/|storage/|public/|/storage/|/admin/|admin/)+#', '', ltrim(trim((string) $v), '/')),
+            $values
+        ));
     }
 }
