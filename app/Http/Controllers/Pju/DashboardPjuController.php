@@ -137,22 +137,47 @@ class DashboardPjuController extends Controller
             'matra'      => 'nullable|in:AD,AL,AU',
         ]);
 
+        // Kolom broadcasts mengikuti skema utama (event_time, location, deadline, target).
+        $category = strtolower((string) $validated['category']);
+        if (!in_array($category, ['latihan', 'apel', 'mobilisasi', 'pengumuman', 'tugas'], true)) {
+            $category = 'pengumuman';
+        }
+        $eventDate = !empty($validated['event_date']) ? \Carbon\Carbon::parse($validated['event_date']) : now();
+        $matra = ($user && $user->matra) ? $user->matra : ($validated['matra'] ?? null);
+        $creatorId = ($user instanceof \App\Models\User)
+            ? $user->id
+            : \App\Models\User::whereHas('role', fn ($q) => $q->where('name', 'admin'))->orderBy('id')->value('id');
+
         $broadcast = Broadcast::create([
             'uuid'         => (string) \Illuminate\Support\Str::uuid(),
-            'created_by'   => $user ? $user->id : null,
+            'created_by'   => $creatorId,
             'title'        => $validated['title'],
-            'content'      => $validated['content'],
-            'category'     => $validated['category'],
-            'event_date'   => $validated['event_date'] ?? null,
-            'matra'        => ($user && $user->matra) ? $user->matra : ($validated['matra'] ?? null),
-            'target_scope' => ($user && $user->matra) ? 'MATRA' : 'SEMUA',
-            'status'       => 'PUBLISHED',
+            'category'     => $category,
+            'event_date'   => $eventDate->toDateString(),
+            'event_time'   => $request->input('event_time') ?: '08:00',
+            'location'     => $request->input('location') ?: (($user->satuan_wilayah ?? null) ?: '-'),
+            'description'  => $validated['content'],
+            'deadline'     => $eventDate->copy()->endOfDay(),
+            'target_type'  => $matra ? 'MATRA' : 'ALL',
+            'target_value' => $matra,
+            'matra'        => $matra ?: 'ALL',
         ]);
 
         try {
+            $targets = Personel::with('user')->when($matra, fn ($q) => $q->where('matra', $matra))->get();
+            foreach ($targets as $pers) {
+                if ($pers->user) {
+                    $pers->user->notify(new \App\Notifications\NewBroadcastNotification($broadcast));
+                }
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Notifikasi broadcast PJU gagal: ' . $e->getMessage());
+        }
+
+        try {
             $personelQuery = Personel::query();
-            if ($broadcast->matra) {
-                $personelQuery->where('matra', $broadcast->matra);
+            if ($matra) {
+                $personelQuery->where('matra', $matra);
             }
             $personels = $personelQuery->get();
 
@@ -160,7 +185,7 @@ class DashboardPjuController extends Controller
                 if ($pers->phone_number) {
                     $msg = "*INFORMASI BROADCAST KEGIATAN KOMCAD*\n\n"
                         . "Judul: *{$broadcast->title}*\n\n"
-                        . "{$broadcast->content}\n\n"
+                        . "{$broadcast->description}\n\n"
                         . "Silakan login ke SISFOPERS untuk melakukan konfirmasi kehadiran.";
                     \App\Services\WhatsappService::sendMessage($pers->phone_number, $msg);
                 }

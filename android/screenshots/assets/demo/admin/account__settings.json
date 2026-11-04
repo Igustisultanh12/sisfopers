@@ -1,0 +1,1 @@
+{"component": "Profile/Edit", "props": {"user": {"id": 1, "username": "admin.sisfopers", "email": "admin@sisfoperskc.go.id", "avatar": null, "phone_number": "081230177700", "created_at": "10 Sep 2026 (09:00) WIB", "google2fa_enabled": false}, "role_name": "admin", "personel": null}, "url": "/api/m/account/settings", "version": "", "clearHistory": false, "encryptHistory": false}

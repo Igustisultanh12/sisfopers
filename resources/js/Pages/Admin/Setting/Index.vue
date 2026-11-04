@@ -351,6 +351,92 @@
             </div>
           </div>
         </div>
+
+        <!-- Notifikasi Push Aplikasi Android (Firebase Cloud Messaging) -->
+        <div class="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-sm space-y-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Notifikasi Push Aplikasi</h3>
+              <p class="text-[11px] text-slate-500 mt-1">Firebase Cloud Messaging untuk aplikasi Android SISFOPERSKC.</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer shrink-0">
+              <input type="checkbox" class="sr-only peer" v-model="fcm.enabled" />
+              <div class="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:bg-[#2563EB] transition after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition peer-checked:after:translate-x-5"></div>
+            </label>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 text-[11px]">
+            <div class="rounded-xl border p-2.5" :class="fcmStatus.server_ready ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-slate-50 border-slate-200 text-slate-500'">
+              <span class="block font-bold uppercase text-[9px] tracking-wider">Server (pengirim)</span>
+              <span class="font-semibold">{{ fcmStatus.server_ready ? 'Siap' : 'Belum siap' }}</span>
+            </div>
+            <div class="rounded-xl border p-2.5" :class="fcmStatus.client_ready ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-slate-50 border-slate-200 text-slate-500'">
+              <span class="block font-bold uppercase text-[9px] tracking-wider">Aplikasi (penerima)</span>
+              <span class="font-semibold">{{ fcmStatus.client_ready ? 'Siap' : 'Belum siap' }}</span>
+            </div>
+          </div>
+          <div v-if="fcmStatus.project_id || fcmStatus.client_email" class="text-[11px] text-slate-500 space-y-0.5">
+            <div v-if="fcmStatus.project_id">Project: <span class="font-semibold text-slate-700">{{ fcmStatus.project_id }}</span></div>
+            <div v-if="fcmStatus.client_email" class="truncate">Service account: <span class="font-semibold text-slate-700">{{ fcmStatus.client_email }}</span></div>
+            <div>Perangkat terdaftar: <span class="font-semibold text-slate-700">{{ fcmStatus.devices ?? 0 }}</span></div>
+          </div>
+
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">Service Account (JSON)</label>
+              <input type="file" accept=".json,application/json" @change="e => fcm.service_account = e.target.files[0] || null" class="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-[#2563EB] hover:file:bg-blue-100" />
+              <p class="text-[10px] text-slate-400 mt-1">Firebase Console › Project settings › Service accounts › Generate new private key.</p>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">google-services.json</label>
+              <input type="file" accept=".json,application/json" @change="e => fcm.google_services = e.target.files[0] || null" class="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-[#2563EB] hover:file:bg-blue-100" />
+              <p class="text-[10px] text-slate-400 mt-1">Daftarkan aplikasi Android dengan package <span class="font-mono">id.my.sisfoperskc.app</span>, lalu unduh berkasnya.</p>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-2 pt-1">
+            <button type="button" @click="saveFcm" class="py-2 px-4 bg-[#2563EB] hover:bg-[#1E40AF] text-white text-xs font-semibold rounded-xl transition cursor-pointer">Simpan FCM</button>
+            <button type="button" @click="testFcm" class="py-2 px-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl transition cursor-pointer">Kirim Uji</button>
+            <button v-if="fcmStatus.server_ready || fcmStatus.client_ready" type="button" @click="deleteFcm" class="py-2 px-4 bg-white border border-red-200 hover:bg-red-50 text-red-600 text-xs font-semibold rounded-xl transition cursor-pointer">Hapus</button>
+          </div>
+        </div>
+
+        <!-- Pembaruan Aplikasi Android (unggah APK) -->
+        <div class="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-sm space-y-4">
+          <div>
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Pembaruan Aplikasi Android</h3>
+            <p class="text-[11px] text-slate-500 mt-1">Unggah APK versi baru. Aplikasi di HP pengguna akan mendeteksi, mengunduh, memverifikasi tanda tangan, lalu memasang pembaruan.</p>
+          </div>
+          <div v-if="appUpdate" class="rounded-xl border bg-emerald-50 border-emerald-200 p-3 text-[11px] text-emerald-800 space-y-0.5">
+            <div class="font-bold text-emerald-900">Versi aktif di server: v{{ appUpdate.version }} <span class="font-semibold">(kode {{ appUpdate.version_code }}, {{ fmtSize(appUpdate.size) }})</span></div>
+            <div>Diunggah {{ fmtDate(appUpdate.uploaded_at) }} oleh {{ appUpdate.uploaded_by }}<span v-if="appUpdate.notified"> · pemberitahuan ke {{ appUpdate.notified }} pengguna</span></div>
+            <div v-if="appUpdate.notes" class="text-slate-600 whitespace-pre-line">{{ appUpdate.notes }}</div>
+            <div class="font-mono text-[9px] text-slate-400 break-all">SHA-256 {{ appUpdate.sha256 }}</div>
+          </div>
+          <div v-else class="rounded-xl border bg-slate-50 border-slate-200 p-3 text-[11px] text-slate-500">Belum ada APK pembaruan yang diunggah.</div>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">Berkas APK (SISFOPERSKC-x.y.z.apk)</label>
+              <input ref="apkInput" type="file" accept=".apk,application/vnd.android.package-archive" @change="pickApk" class="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-[#2563EB] hover:file:bg-blue-100" />
+              <p v-if="uploadLimit" class="text-[10px] text-slate-400 mt-1">Batas unggah server: {{ fmtSize(uploadLimit) }}.</p>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">Catatan Pembaruan</label>
+              <textarea v-model="apk.notes" rows="3" maxlength="2000" class="w-full border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs focus:ring-[#2563EB] focus:border-[#2563EB]" placeholder="Contoh: Perbaikan notifikasi dan fitur baru."></textarea>
+            </div>
+            <label class="flex items-center gap-2 text-[11px] text-slate-600 font-semibold">
+              <input type="checkbox" v-model="apk.notify" class="rounded border-slate-300 text-[#2563EB]" /> Kirim pemberitahuan pembaruan ke HP pengguna
+            </label>
+            <div v-if="apk.progress > 0 && apk.progress < 100" class="h-2 rounded-full bg-slate-100 overflow-hidden">
+              <div class="h-full bg-[#2563EB] transition-all" :style="{ width: apk.progress + '%' }"></div>
+            </div>
+            <p v-if="apk.error" class="text-[11px] text-red-600 font-semibold">{{ apk.error }}</p>
+          </div>
+          <div class="flex flex-wrap gap-2 pt-1">
+            <button type="button" @click="uploadApk" :disabled="apk.uploading" class="py-2 px-4 bg-[#2563EB] hover:bg-[#1E40AF] disabled:opacity-60 text-white text-xs font-semibold rounded-xl transition cursor-pointer">{{ apk.uploading ? 'Mengunggah ' + apk.progress + '%' : 'Unggah APK' }}</button>
+            <button v-if="appUpdate" type="button" @click="deleteApk" class="py-2 px-4 bg-white border border-red-200 hover:bg-red-50 text-red-600 text-xs font-semibold rounded-xl transition cursor-pointer">Hapus APK</button>
+          </div>
+        </div>
       </div>
     </div>
   </AuthenticatedLayout>
@@ -359,7 +445,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import { useSwal } from '@/Composables/useSwal';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -516,5 +602,134 @@ const promptTestSend = async () => {
       alertError('Koneksi Gagal', 'Gagal memproses pengiriman pesan uji coba.');
     }
   }
+};
+
+// =================== Notifikasi Push Aplikasi (FCM) ===================
+const fcm = reactive({
+  enabled: props.settings.fcm_enabled === '1',
+  service_account: null,
+  google_services: null,
+});
+const fcmStatus = ref({});
+
+const loadFcmStatus = async () => {
+  try {
+    const res = await axios.get(route('admin.setting.fcm-status'));
+    fcmStatus.value = res.data.status || {};
+  } catch (e) {
+    fcmStatus.value = {};
+  }
+};
+onMounted(loadFcmStatus);
+
+const saveFcm = async () => {
+  const data = new FormData();
+  data.append('fcm_enabled', fcm.enabled ? '1' : '0');
+  if (fcm.service_account) data.append('service_account', fcm.service_account);
+  if (fcm.google_services) data.append('google_services', fcm.google_services);
+  showLoadingProgress('Menyimpan konfigurasi FCM...');
+  try {
+    const res = await axios.post(route('admin.setting.fcm'), data);
+    closeLoading();
+    fcmStatus.value = res.data.status || fcmStatus.value;
+    alertSuccess('Tersimpan', res.data.message);
+  } catch (err) {
+    closeLoading();
+    alertError('Gagal Menyimpan', err?.response?.data?.message || 'Periksa kembali berkas yang diunggah.');
+  }
+};
+
+const testFcm = async () => {
+  showLoadingProgress('Mengirim notifikasi uji...');
+  try {
+    const res = await axios.post(route('admin.setting.fcm-test'));
+    closeLoading();
+    alertSuccess('Terkirim', res.data.message);
+  } catch (err) {
+    closeLoading();
+    alertError('Gagal', err?.response?.data?.message || 'Notifikasi uji gagal dikirim.');
+  }
+};
+
+const deleteFcm = async () => {
+  const confirm = await Swal.fire({
+    title: 'Hapus konfigurasi FCM?',
+    text: 'Notifikasi push aplikasi Android akan berhenti sampai berkas diunggah kembali.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#DC2626',
+    cancelButtonColor: '#1E293B',
+    confirmButtonText: 'Hapus',
+    cancelButtonText: 'Batal',
+  });
+  if (!confirm.isConfirmed) return;
+  try {
+    const res = await axios.delete(route('admin.setting.fcm-delete'));
+    fcmStatus.value = res.data.status || {};
+    fcm.enabled = false;
+    alertSuccess('Dihapus', res.data.message);
+  } catch (err) {
+    alertError('Gagal', 'Konfigurasi FCM gagal dihapus.');
+  }
+};
+
+// =================== Pembaruan Aplikasi Android ===================
+const appUpdate = ref(null);
+const uploadLimit = ref(0);
+const apkInput = ref(null);
+const apk = reactive({ file: null, notes: '', notify: true, progress: 0, uploading: false, error: '' });
+const fmtSize = (b) => {
+  if (!b) return '0 B';
+  if (b >= 1073741824) return (b / 1073741824).toFixed(1) + ' GB';
+  if (b >= 1048576) return (b / 1048576).toFixed(1) + ' MB';
+  return Math.round(b / 1024) + ' KB';
+};
+const fmtDate = (v) => { try { return new Date(v).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }); } catch (e) { return v; } };
+const loadAppUpdate = async () => {
+  try {
+    const res = await axios.get(route('admin.setting.app-update-status'));
+    appUpdate.value = res.data.app_update || null;
+    uploadLimit.value = res.data.upload_limit || 0;
+  } catch (e) { /* abaikan */ }
+};
+onMounted(loadAppUpdate);
+const pickApk = (e) => {
+  apk.error = '';
+  const f = e.target.files[0] || null;
+  if (f && !f.name.toLowerCase().endsWith('.apk')) { apk.error = 'Pilih berkas berekstensi .apk.'; apk.file = null; e.target.value = ''; return; }
+  if (f && uploadLimit.value && f.size > uploadLimit.value) { apk.error = `Ukuran APK ${fmtSize(f.size)} melebihi batas unggah server (${fmtSize(uploadLimit.value)}). Naikkan upload_max_filesize & post_max_size PHP serta client_max_body_size Nginx.`; apk.file = null; e.target.value = ''; return; }
+  apk.file = f;
+};
+const uploadApk = async () => {
+  if (!apk.file) { apk.error = 'Pilih berkas APK terlebih dahulu.'; return; }
+  const data = new FormData();
+  data.append('apk', apk.file);
+  data.append('notes', apk.notes || '');
+  data.append('notify', apk.notify ? '1' : '0');
+  apk.uploading = true; apk.progress = 0; apk.error = '';
+  try {
+    const res = await axios.post(route('admin.setting.app-update'), data, {
+      onUploadProgress: (ev) => { if (ev.total) apk.progress = Math.round(ev.loaded * 100 / ev.total); },
+    });
+    appUpdate.value = res.data.app_update || null;
+    apk.file = null; apk.notes = ''; if (apkInput.value) apkInput.value.value = '';
+    alertSuccess('Berhasil', res.data.message);
+  } catch (err) {
+    apk.error = err?.response?.data?.message || 'Unggah APK gagal.';
+  } finally {
+    apk.uploading = false;
+  }
+};
+const deleteApk = async () => {
+  const confirm = await Swal.fire({
+    title: 'Hapus APK pembaruan?', text: 'Aplikasi berhenti menawarkan pembaruan sampai APK baru diunggah.', icon: 'warning',
+    showCancelButton: true, confirmButtonColor: '#DC2626', cancelButtonColor: '#1E293B', confirmButtonText: 'Hapus', cancelButtonText: 'Batal',
+  });
+  if (!confirm.isConfirmed) return;
+  try {
+    const res = await axios.delete(route('admin.setting.app-update-delete'));
+    appUpdate.value = null;
+    alertSuccess('Dihapus', res.data.message);
+  } catch (e) { alertError('Gagal', 'APK gagal dihapus.'); }
 };
 </script>
