@@ -1,5 +1,15 @@
 ## SISFOPERS KC — Aplikasi Android
 
+### Perubahan 1.0.4 — Pembaruan keamanan
+- **Berkas & foto pribadi lebih aman:** dokumen privat (KTP, ijazah, lampiran, dll.) kini hanya dapat dibuka oleh pemiliknya atau petugas berwenang (Admin/Koordinator/PJU).
+- **Akun nonaktif otomatis keluar:** token aplikasi dari akun yang dinonaktifkan langsung ditolak.
+- **Reset kata sandi OTP diperketat:** batas percobaan per NIKC & per alamat, OTP dibatalkan setelah 5 kali salah.
+- **Vicon & Pusat Layanan Informasi:** hanya peserta/pihak terkait yang dapat bergabung, mengirim pesan, dan menerima panggilan.
+- **Hak akses menu admin:** pengaturan sistem, mail gateway, akun PJU, dan OTP reset kini khusus Administrator; ekspor laporan mengikuti cakupan matra/angkatan pengguna.
+- Data rahasia server tidak lagi ikut terkirim ke aplikasi.
+
+**Kebutuhan server:** perbaikan ini ada di sisi server (branch `android-release`). Deploy backend terbaru lalu jalankan `php artisan optimize:clear` agar perlindungan aktif untuk aplikasi maupun web.
+
 ### Perubahan 1.0.3
 - **Satu akun satu perangkat:** bila akun sedang login di HP lain, aplikasi menampilkan peringatan untuk logout/melepaskan perangkat tersebut. Bila kehilangan akses HP lama, ketuk "Kehilangan akses…" — tautan dikirim ke email terdaftar untuk melepaskan HP lama (verifikasi NIKC, tanggal lahir, kata sandi, dan OTP email).
 - **Sesi web aktif:** saat login aplikasi ketika akun masih aktif di web, muncul pertanyaan "Anda sedang aktif di sesi web. Apakah Anda ingin logout sesi web?" — pilih Iya untuk mengakhiri sesi web dan melanjutkan login.
