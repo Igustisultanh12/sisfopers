@@ -1,5 +1,8 @@
 ## SISFOPERS KC — Aplikasi Android
 
+### Perubahan 1.0.5
+- **E-KTA mengkilat:** kartu E-KTA kini memiliki efek kilau hologram yang menyapu kartu secara berkala (tidak ikut tercetak).
+
 ### Perubahan 1.0.4 — Pembaruan keamanan
 - **Berkas & foto pribadi lebih aman:** dokumen privat (KTP, ijazah, lampiran, dll.) kini hanya dapat dibuka oleh pemiliknya atau petugas berwenang (Admin/Koordinator/PJU).
 - **Akun nonaktif otomatis keluar:** token aplikasi dari akun yang dinonaktifkan langsung ditolak.

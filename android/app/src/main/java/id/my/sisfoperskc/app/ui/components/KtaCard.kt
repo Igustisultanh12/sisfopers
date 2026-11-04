@@ -2,7 +2,13 @@ package id.my.sisfoperskc.app.ui.components
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -52,6 +58,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
@@ -229,6 +236,8 @@ fun KtaCardView(personel: JsonObject, ekta: JsonObject?, settings: JsonObject?, 
                         drawLayer(layer)
                     },
             ) { KtaCardFace(data, showBack) }
+            // Efek mengkilat di atas kartu; di luar layer cetak sehingga tidak ikut tercetak.
+            KtaShine(Modifier.matchParentSize())
         }
         if (showVerifyLink) {
             Text(
@@ -239,6 +248,57 @@ fun KtaCardView(personel: JsonObject, ekta: JsonObject?, settings: JsonObject?, 
                 }).padding(vertical = 6.dp),
             )
         }
+    }
+}
+
+/**
+ * Kilau hologram: pita cahaya diagonal menyapu kartu dari kiri ke kanan lalu jeda,
+ * ditambah kilap statis halus. Sama dengan kelas .ekta-shine di EktaCard.vue.
+ */
+@Composable
+private fun KtaShine(modifier: Modifier = Modifier) {
+    val transition = rememberInfiniteTransition(label = "kta-shine")
+    // -0.6..1.6 lebar kartu; bagian di luar 0..1 = pita di luar kartu (jeda alami).
+    val sweep by transition.animateFloat(
+        initialValue = -0.6f,
+        targetValue = 1.6f,
+        animationSpec = infiniteRepeatable(
+            keyframes {
+                durationMillis = 4500
+                -0.6f at 0 using FastOutSlowInEasing
+                1.6f at 2475
+                1.6f at 4500
+            },
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "kta-shine-sweep",
+    )
+    Canvas(modifier.clip(RoundedCornerShape(16.dp))) {
+        val w = size.width
+        val h = size.height
+        // kilap statis halus (sudut kiri atas & kanan bawah sedikit lebih terang)
+        drawRect(
+            Brush.linearGradient(
+                0f to Color.White.copy(alpha = 0.18f),
+                0.45f to Color.Transparent,
+                0.7f to Color.Transparent,
+                1f to Color.White.copy(alpha = 0.07f),
+                start = Offset.Zero,
+                end = Offset(w, h),
+            ),
+        )
+        // pita cahaya berjalan (sudut ~115° seperti versi web)
+        val cx = sweep * w
+        val half = w * 0.16f
+        drawRect(
+            Brush.linearGradient(
+                0f to Color.Transparent,
+                0.5f to Color.White.copy(alpha = 0.32f),
+                1f to Color.Transparent,
+                start = Offset(cx - half, h * 0.15f),
+                end = Offset(cx + half, h * 0.85f),
+            ),
+        )
     }
 }
 

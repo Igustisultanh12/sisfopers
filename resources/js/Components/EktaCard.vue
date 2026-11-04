@@ -42,6 +42,10 @@
       </div>
     </div>
 
+    <!-- Animasi balik kartu 3D (sama seperti aplikasi: rotasi sumbu Y 0→180°, sisi bertukar di 90°) -->
+    <div class="ekta-flip-scene w-full max-w-[560px]">
+    <div class="ekta-flipper w-full" :style="{ transform: `rotateY(${angle}deg)` }">
+    <div class="ekta-face w-full" :style="{ transform: showBack ? 'rotateY(180deg)' : 'none' }">
     <!-- Container Utama Kartu Digital (Standar CR80 Aspect Ratio 85.6 x 54) -->
     <div
       id="printable-ekta"
@@ -63,7 +67,7 @@
       </div>
 
       <!-- ================= SISI DEPAN (FRONT SIDE) ================= -->
-      <div v-show="currentSide === 'front'" class="relative z-10 w-full h-full flex p-3 sm:p-3.5 gap-2.5">
+      <div v-show="!showBack" class="relative z-10 w-full h-full flex p-3 sm:p-3.5 gap-2.5">
         
         <!-- Kolom Kiri: Frame Tunggal Menyatu (Logo Komcad di Atas & Pasfoto di Bawah Sesuai Gambar Fisik Asli) -->
         <div class="w-[23%] flex flex-col shrink-0 h-full border border-[#142C0A] overflow-hidden bg-white shadow-xs">
@@ -211,7 +215,7 @@
       </div>
 
       <!-- ================= SISI BELAKANG (BACK SIDE) ================= -->
-      <div v-show="currentSide === 'back'" class="relative z-10 w-full h-full flex p-3 sm:p-3.5 gap-2.5 text-[#142C0A]">
+      <div v-show="showBack" class="relative z-10 w-full h-full flex p-3 sm:p-3.5 gap-2.5 text-[#142C0A]">
         
         <!-- Sisi Kiri: SINYALEMEN PEMEGANG -->
         <div class="w-[58%] flex flex-col justify-between h-full pr-1">
@@ -335,12 +339,18 @@
 
       </div>
 
+      <!-- Efek mengkilat (kilau hologram berjalan) — tidak ikut tercetak -->
+      <div class="ekta-shine absolute inset-0 z-20 pointer-events-none print:hidden" aria-hidden="true"></div>
+
+    </div>
+    </div>
+    </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch, onUnmounted } from 'vue';
 import KomcadEmblem from '@/Components/KomcadEmblem.vue';
 
 const props = defineProps({
@@ -371,6 +381,32 @@ const getAssetUrl = (path) => {
 };
 
 const currentSide = ref('front');
+
+// Sudut rotasi kartu (0 = depan, 180 = belakang). Sisi yang tampil ditentukan sudut,
+// sehingga isi kartu bertukar tepat saat kartu tegak lurus (90°), seperti di aplikasi.
+const angle = ref(0);
+const showBack = computed(() => angle.value > 90);
+let flipRaf = null;
+
+const animateTo = (target) => {
+  if (flipRaf) cancelAnimationFrame(flipRaf);
+  const from = angle.value;
+  if (from === target) return;
+  const reduce = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) { angle.value = target; return; }
+  const start = performance.now();
+  const duration = 520;
+  const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const step = (now) => {
+    const t = Math.min(1, (now - start) / duration);
+    angle.value = from + (target - from) * ease(t);
+    flipRaf = t < 1 ? requestAnimationFrame(step) : null;
+  };
+  flipRaf = requestAnimationFrame(step);
+};
+
+watch(currentSide, (side) => animateTo(side === 'back' ? 180 : 0));
+onUnmounted(() => { if (flipRaf) cancelAnimationFrame(flipRaf); });
 
 const flipCard = () => {
   currentSide.value = currentSide.value === 'front' ? 'back' : 'front';
@@ -547,7 +583,39 @@ const cardFontSize = computed(() => {
   font-family: inherit !important;
 }
 
+/* Balik kartu 3D */
+.ekta-flip-scene {
+  perspective: 1400px;
+}
+.ekta-flipper,
+.ekta-face {
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/* Kilau hologram: pita cahaya diagonal menyapu kartu, lalu jeda; plus kilap statis halus */
+.ekta-shine {
+  background-image:
+    linear-gradient(115deg, transparent 0%, transparent 42%, rgba(255, 255, 255, 0.32) 50%, transparent 58%, transparent 100%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, transparent 45%, transparent 70%, rgba(255, 255, 255, 0.07) 100%);
+  background-size: 300% 100%, 100% 100%;
+  background-repeat: no-repeat;
+  animation: ekta-shine-sweep 4.5s ease-in-out infinite;
+}
+@keyframes ekta-shine-sweep {
+  0%   { background-position: 100% 0, 0 0; }
+  55%  { background-position: 0% 0, 0 0; }
+  100% { background-position: 0% 0, 0 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ekta-shine { animation: none; background-position: 0% 0, 0 0; }
+}
+
 @media print {
+  .ekta-flipper,
+  .ekta-face {
+    transform: none !important;
+  }
   body * {
     visibility: hidden;
   }
