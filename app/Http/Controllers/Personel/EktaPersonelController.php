@@ -39,7 +39,8 @@ class EktaPersonelController extends Controller
                 'font_size'    => $settings['ekta_font_size'] ?? '11px',
             ],
             'personel'               => $personel,
-            'is_under_development'   => true,
+            // Kartu tampil hanya bila sudah diterbitkan admin; selain itu tetap "tahap pengembangan".
+            'is_under_development'   => !($personel && $personel->ekta && $personel->ekta->status === 'TERBIT'),
             'development_notice'     => 'Mohon Maaf fitur ini dalam tahap pengembangan',
             'development_description'=> 'Layanan penerbitan dan unduhan Kartu Tanda Anggota Elektronik (E-KTA) Komponen Cadangan saat ini sedang dalam proses finalisasi integrasi digital oleh Administrator Mabes Komcad RI.',
         ]);

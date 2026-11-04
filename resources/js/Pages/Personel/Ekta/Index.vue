@@ -2,7 +2,28 @@
   <AuthenticatedLayout>
     <template #header-title>Kartu Tanda Anggota Elektronik (E-KTA)</template>
 
-    <div class="space-y-6 max-w-4xl mx-auto py-6">
+    <!-- E-KTA SUDAH TERBIT: tampilkan kartu digital -->
+    <div v-if="!is_under_development && personel?.ekta" class="space-y-6 max-w-4xl mx-auto py-6">
+      <div class="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+        <div class="border-b border-slate-100 pb-4">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              STATUS: TERBIT &amp; AKTIF
+            </span>
+            <span class="text-xs font-mono text-slate-400">{{ personel.ekta.nomor_kta }}</span>
+          </div>
+          <h2 class="text-lg font-black text-slate-800 mt-1">Kartu Tanda Anggota Elektronik (E-KTA)</h2>
+          <p class="text-xs text-slate-500 mt-0.5">
+            Pemegang: <strong class="text-slate-800">{{ personel.full_name }}</strong> (NIKC: {{ personel.nikc }})
+          </p>
+        </div>
+        <div class="flex justify-center overflow-x-auto">
+          <EktaCard :personel="personel" :ekta="personel.ekta" :settings="ektaSettings" />
+        </div>
+      </div>
+    </div>
+
+    <div v-else class="space-y-6 max-w-4xl mx-auto py-6">
       <!-- Banner Informasi Pengembang -->
       <div class="bg-amber-50 border border-amber-200 rounded-3xl p-6 sm:p-8 text-center space-y-4 shadow-sm">
         <div class="w-16 h-16 bg-amber-100 text-amber-700 rounded-2xl flex items-center justify-center mx-auto border border-amber-200">
@@ -73,13 +94,16 @@
 import { ref } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import EktaCard from '@/Components/EktaCard.vue';
 
 const props = defineProps({
   personel: Object,
+  ektaSettings: Object,
   is_under_development: Boolean,
   development_notice: String,
   development_description: String,
 });
 
-const showModal = ref(true);
+// Popup "tahap pengembangan" hanya untuk personel yang E-KTA-nya belum diterbitkan.
+const showModal = ref(props.is_under_development !== false || !props.personel?.ekta);
 </script>

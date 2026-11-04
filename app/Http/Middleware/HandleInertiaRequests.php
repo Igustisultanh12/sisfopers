@@ -54,6 +54,11 @@ class HandleInertiaRequests extends Middleware
             $avatarUrl = url($prefix . '/documents/private-stream?path=' . urlencode($personel->photo_profile));
         }
 
+        // E-KTA hanya bisa dibuka personel bila kartunya sudah diterbitkan admin.
+        $ektaIssued = ($personel && !empty($personel->id))
+            ? \App\Models\Ekta::where('personel_id', $personel->id)->where('status', 'TERBIT')->exists()
+            : false;
+
         return [
             ...parent::share($request),
 
@@ -81,6 +86,7 @@ class HandleInertiaRequests extends Middleware
                     'kotama'                 => $personel->kotama,
                     'satuan_kewilayahan'     => $personel->satuan_kewilayahan,
                     'is_kewilayahan_updated' => $personel->is_kewilayahan_updated,
+                    'ekta_issued'            => $ektaIssued,
                 ] : null,
 
                 'needKewilayahanUpdate' => $needKewilayahanUpdate,
